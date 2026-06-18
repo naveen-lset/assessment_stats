@@ -25,15 +25,12 @@ const SCH_MON_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'J
 const SCH_DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const SCH_DOW_FULL = { Sun: 'Sunday', Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday' };
 
-/* Five-Domains assessment catalogue: Category → its Assessment Types.
-   Colours drawn from the existing module palette for visual consistency. */
-const SCH_CATS = [
-  { cat: 'Physical Health', color: '#FA6140', types: ['Eye Condition', 'Posture', 'Body Condition', 'Weight', 'Temperature'] },
-  { cat: 'Behaviour',       color: '#8479F9', types: ['Activity Level', 'Social Behaviour', 'Enrichment Response'] },
-  { cat: 'Environment',     color: '#00AFD6', types: ['Enclosure Condition', 'Habitat Monitoring', 'Temperature Monitoring'] },
-  { cat: 'Nutrition',       color: '#37BD69', types: ['Diet Review', 'Food Intake', 'Hydration', 'Body Weight Trend'] },
-  { cat: 'Mental Domain',   color: '#E4A11B', types: ['Enrichment Response', 'Stress Indicators', 'Cognitive Engagement'] },
-];
+/* Five-Domains assessment catalogue — derived from the shared CATALOGUE
+   (defined in app2-analytics.js, loaded first) so Scheduling, the Detailed
+   cards, History and Comparison all speak the SAME category→type vocabulary. */
+const SCH_CATS = (typeof CATALOGUE !== 'undefined')
+  ? CATALOGUE.map(c => ({ cat: c.cat, color: c.color, types: c.types.map(t => t.q) }))
+  : [];
 function schCat(name) { return SCH_CATS.find(c => c.cat === name); }
 function schCatColor(name) { const c = schCat(name); return c ? c.color : '#7A8684'; }
 
@@ -41,15 +38,9 @@ function schCatColor(name) { const c = schCat(name); return c ? c.color : '#7A86
    vocabulary as the Analytics module: numeric / scale / list / text). It is
    AUTO-MAPPED from the chosen type and NEVER shown during scheduling — the
    user only picks the assessment type; how it is answered is predetermined. */
-const SCH_TYPE_RT = {
-  'Eye Condition': 'list',        'Posture': 'list',          'Body Condition': 'scale',
-  'Weight': 'numeric',            'Temperature': 'numeric',   'Activity Level': 'scale',
-  'Social Behaviour': 'list',     'Enrichment Response': 'scale',
-  'Enclosure Condition': 'list',  'Habitat Monitoring': 'list', 'Temperature Monitoring': 'numeric',
-  'Diet Review': 'text',          'Food Intake': 'numeric',   'Hydration': 'scale', 'Body Weight Trend': 'numeric',
-  'Stress Indicators': 'scale',   'Cognitive Engagement': 'scale',
-};
-function schTypeRT(t) { return SCH_TYPE_RT[t] || 'text'; }
+/* Response type is intrinsic to each Assessment Type — read straight from the
+   shared CATALOGUE (via catType) so it can never drift from Analytics. */
+function schTypeRT(t) { const ty = (typeof catType === 'function') ? catType(t) : null; return ty ? ty.rt : 'text'; }
 /* { typeName: responseType } for a set of selected types — stored on the plan */
 function schMapResponses(types) {
   const m = {}; types.forEach(t => { m[t] = schTypeRT(t); }); return m;
@@ -101,11 +92,11 @@ let SCH_SEQ = 100;
 const SCHEDULE = [
   { id: 'SP-1', cat: 'Physical Health', types: ['Eye Condition', 'Posture', 'Weight'],        date: schD(2026, 5, 18), time: '10:00 AM', repeat: 'Weekly',  notes: 'Routine welfare check before enrichment session.' },
   { id: 'SP-2', cat: 'Behaviour',       types: ['Activity Level', 'Social Behaviour'],        date: schD(2026, 5, 18), time: '02:30 PM', repeat: 'One Time', notes: '' },
-  { id: 'SP-3', cat: 'Nutrition',       types: ['Diet Review'],                                date: schD(2026, 5, 19), time: '08:00 AM', repeat: 'Monthly', notes: '' },
-  { id: 'SP-4', cat: 'Environment',     types: ['Enclosure Condition', 'Habitat Monitoring'],  date: schD(2026, 5, 22), time: '11:00 AM', repeat: 'Weekly',  notes: '' },
-  { id: 'SP-5', cat: 'Physical Health', types: ['Body Condition', 'Temperature'],              date: schD(2026, 5, 25), time: '09:00 AM', repeat: 'Monthly', notes: '' },
+  { id: 'SP-3', cat: 'Nutrition',       types: ['Diet Acceptance'],                            date: schD(2026, 5, 19), time: '08:00 AM', repeat: 'Monthly', notes: '' },
+  { id: 'SP-4', cat: 'Environment',     types: ['Enclosure Cleanliness', 'Habitat Condition'], date: schD(2026, 5, 22), time: '11:00 AM', repeat: 'Weekly',  notes: '' },
+  { id: 'SP-5', cat: 'Physical Health', types: ['Body Condition Score', 'Temperature'],        date: schD(2026, 5, 25), time: '09:00 AM', repeat: 'Monthly', notes: '' },
   { id: 'SP-6', cat: 'Behaviour',       types: ['Activity Level', 'Social Behaviour'],         date: schD(2026, 5, 28), time: '09:00 AM', repeat: 'Weekly',  notes: '' },
-  { id: 'SP-7', cat: 'Mental Domain',   types: ['Enrichment Response'],                        date: schD(2026, 5, 30), time: '03:00 PM', repeat: 'One Time', notes: '' },
+  { id: 'SP-7', cat: 'Mental Domain',   types: ['Alertness'],                                  date: schD(2026, 5, 30), time: '03:00 PM', repeat: 'One Time', notes: '' },
   { id: 'SP-8', cat: 'Behaviour',       types: ['Activity Level', 'Enrichment Response'],      date: schD(2026, 6, 4),  time: '09:00 AM', repeat: 'Weekly',  notes: '' },
 ];
 /* auto-map each plan's response types (hidden — for downstream record creation) */

@@ -175,8 +175,8 @@ function catNewest(q) { return catChron(q).slice().reverse(); }
 let AA_TAB = 'overview';
 let AA_FILTER = 'Week';
 let AA_HIST_TYPE = 'All';
-let AA_CMP_MODE = 'prev';
-let AA_CMP_A = HISTORY[0].id, AA_CMP_B = HISTORY[1].id;
+let AA_CMP_CAT = 'Physical Health';   // comparison is scoped to one category
+let AA_CMP_IA = 0, AA_CMP_IB = 1;     // session indices (0 = newest)
 const AA_TABLIST = [
   { key: 'overview', label: 'Overview' },
   { key: 'history', label: 'History' },
@@ -224,8 +224,8 @@ function setMdFilter(q, f) {
 function setAaTab(k) { AA_TAB = k; hideAssessTip(); render2(); }
 function setAaFilter(f) { AA_FILTER = f; ASSESS_SEG = f; hideAssessTip(); render2(); }
 function setHistType(t) { AA_HIST_TYPE = t; render2(); }
-function setCmpMode(m) { AA_CMP_MODE = m; render2(); }
-function setCmpRec(which, id) { if (which === 'a') AA_CMP_A = id; else AA_CMP_B = id; render2(); }
+function setCmpCat(c) { AA_CMP_CAT = c; render2(); }
+function setCmpIdx(which, v) { v = +v; if (which === 'a') AA_CMP_IA = v; else AA_CMP_IB = v; render2(); }
 function openDetail(id) { hideAssessTip(); go2('assessDetail', { id }); }
 /* override: carry current filter context into the analytics page */
 function openAnalytics() { AA_FILTER = ASSESS_SEG; go2('assessAnalytics', { animalId: 'mk001', filter: ASSESS_SEG }); }
@@ -460,22 +460,18 @@ function aaLatest() {
 /* ===========================================================================
    HISTORY — chronological, type-filterable → Assessment Detail
    =========================================================================== */
-const HIST_FILTERS = ['All', 'Physical Health', 'Behaviour', 'Environment'];
-const Q_LABEL = { 'Body Condition': 'Body Score', 'Activity Level': 'Activity', 'Observation Notes': 'Environment' };
+const HIST_FILTERS = CAT_DOMAINS;   // All + the five assessment categories
+const Q_LABEL = { 'Body Condition Score': 'Body Score', 'Activity Level': 'Activity' };
 function qLabel(q) { return Q_LABEL[q] || q; }
-/* feed = readings grouped by domain (Physical Health / Behaviour / Environment) */
-const FEED_DEF = [
-  { q: 'Weight', dom: 'Physical Health' }, { q: 'Weight', dom: 'Physical Health' },
-  { q: 'Observation Notes', dom: 'Environment' }, { q: 'Weight', dom: 'Physical Health' },
-  { q: 'Body Condition', dom: 'Physical Health' }, { q: 'Observation Notes', dom: 'Environment' },
-  { q: 'Activity Level', dom: 'Behaviour' }, { q: 'Appetite', dom: 'Behaviour' },
-  { q: 'Observation Notes', dom: 'Environment' }, { q: 'Temperature', dom: 'Physical Health' },
-];
+/* feed = one reading per catalogue type, distributed across sessions, newest first */
 function buildFeed() {
-  return FEED_DEF.map((d, i) => {
-    const r = HISTORY[i % HISTORY.length], it = r.items.find(x => x.q === d.q);
-    return { q: d.q, label: qLabel(d.q), dom: d.dom, rt: it.rt, value: it.value, unit: it.unit, max: it.max, by: r.assessor, date: r.date, time: r.time, id: r.id };
-  });
+  const rows = [];
+  CATALOGUE.forEach(c => c.types.forEach(ty => {
+    const idx = catSeed(ty.q) % CAT_SESS.length, sess = CAT_SESS[idx], val = catNewest(ty.q)[idx];
+    rows.push({ q: ty.q, label: qLabel(ty.q), dom: c.cat, color: c.color, rt: ty.rt, value: val,
+      unit: ty.unit, max: ty.max, by: sess.by, date: sess.date, time: sess.time, k: idx });
+  }));
+  return rows.sort((a, b) => a.k - b.k);
 }
 const HS_FILT_ICON = '<svg viewBox="0 0 24 24" fill="none"><path d="M4 7h9M19 7h1M4 17h1M11 17h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="7" r="2.4" stroke="currentColor" stroke-width="1.8"/><circle cx="8" cy="17" r="2.4" stroke="currentColor" stroke-width="1.8"/></svg>';
 /* generic in-place list search — filters items inside the nearest [data-searchbox] by text */
@@ -498,10 +494,10 @@ function aaHistory() {
     const val = f.rt === 'text'
       ? `<div class="fc-note">${f.value}</div>`
       : `<div class="fc-val">${f.rt === 'numeric' ? f.value + ' ' + f.unit : f.rt === 'scale' ? f.value + ' / ' + f.max : f.value}</div>`;
-    const tap = f.rt === 'text' ? `openDetail('${f.id}')` : `openMetric('${f.q}')`;
-    return `<div class="feed-card" onclick="${tap}">
+    return `<div class="feed-card" onclick="openMetric('${f.q}')">
+      <span class="rec-dot" style="background:${f.color}"></span>
       <div class="fc-body"><div class="fc-cat">${f.label}</div>${val}
-        <div class="fc-meta">${f.by} · ${f.date} · ${f.time}</div></div>
+        <div class="fc-meta">${f.dom} · ${f.by} · ${f.date}</div></div>
       <span class="fc-chev">${I2.chevR}</span></div>`;
   }).join('')
     : `<div class="muted" style="text-align:center;padding:34px 16px">No ${AA_HIST_TYPE} records in this period.</div>`;
@@ -557,29 +553,28 @@ function cmpTextCard(itA, itB) {
     <div class="cmp-tblock"><div class="cmp-tlab">Current</div><div class="cmp-tbox cur">${itA.value}</div></div>
   </div>`;
 }
+/* build a comparable item from a type's value at session index idx */
+function cmpItem(ty, idx) {
+  return { q: ty.q, rt: ty.rt, unit: ty.unit, max: ty.max, options: ty.options, value: catNewest(ty.q)[idx] };
+}
 function aaComparison() {
-  let a, b;
-  if (AA_CMP_MODE === 'prev') { a = HISTORY[0]; b = HISTORY[1]; }
-  else { a = recById2(AA_CMP_A); b = recById2(AA_CMP_B); }
-  const opt = sel => HISTORY.map(r => `<option value="${r.id}" ${r.id === sel ? 'selected' : ''}>${r.date} · ${r.time}</option>`).join('');
-  const selector = AA_CMP_MODE === 'custom' ? `
-    <div class="cmp-selects">
-      <label>Record A<select onchange="setCmpRec('a',this.value)">${opt(AA_CMP_A)}</select></label>
-      <label>Record B<select onchange="setCmpRec('b',this.value)">${opt(AA_CMP_B)}</select></label>
-    </div>` : `
-    <div class="cmp-context"><span>Current · ${a.date}</span><span class="cmp-vs">vs</span><span>Previous · ${b.date}</span></div>`;
-
-  const rows = a.items.map(itA => {
-    const itB = b.items.find(x => x.q === itA.q);
-    return itA.rt === 'text' ? cmpTextCard(itA, itB) : cmpRowFor(itA, itB);
+  const cat = CATALOGUE.find(c => c.cat === AA_CMP_CAT) || CATALOGUE[0];
+  if (AA_CMP_IA === AA_CMP_IB) AA_CMP_IB = (AA_CMP_IA + 1) % CAT_SESS.length;
+  const chips = CATALOGUE.map(c =>
+    `<button class="tchip ${c.cat === AA_CMP_CAT ? 'active' : ''}" onclick="setCmpCat('${c.cat}')">${c.cat}</button>`).join('');
+  const opt = (sel) => CAT_SESS.map((s, i) => `<option value="${i}" ${i === sel ? 'selected' : ''}>${s.date}</option>`).join('');
+  const selector = `<div class="cmp-selects">
+      <label>Compare<select onchange="setCmpIdx('a',this.value)">${opt(AA_CMP_IA)}</select></label>
+      <label>With<select onchange="setCmpIdx('b',this.value)">${opt(AA_CMP_IB)}</select></label>
+    </div>`;
+  const rows = cat.types.map(ty => {
+    const itA = cmpItem(ty, AA_CMP_IA), itB = cmpItem(ty, AA_CMP_IB);
+    return ty.rt === 'text' ? cmpTextCard(itA, itB) : cmpRowFor(itA, itB);
   }).join('');
-
   return `
-    <div class="segment" id="cmpSeg">
-      <button class="seg ${AA_CMP_MODE === 'prev' ? 'active' : ''}" onclick="setCmpMode('prev')">Current vs Previous</button>
-      <button class="seg ${AA_CMP_MODE === 'custom' ? 'active' : ''}" onclick="setCmpMode('custom')">Custom</button>
-    </div>
+    <div class="tchip-row">${chips}</div>
     ${selector}
+    <div class="cmp-context"><span>${CAT_SESS[AA_CMP_IA].date}</span><span class="cmp-vs">vs</span><span>${CAT_SESS[AA_CMP_IB].date}</span></div>
     <div class="cmp-list">${rows}</div>`;
 }
 
