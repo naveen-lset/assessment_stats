@@ -228,6 +228,18 @@ html, body {
 }
 /* tint the inner stat tiles so they read on the white card */
 .assess-card .stat { background: var(--display-primary); box-shadow: none; }
+
+/* Home "Summary graph": one flat card — Assessments header + metric chips +
+   value + line chart + See More. No nested card, lighter chips, tight rhythm. */
+.assess-summary { gap: 0; padding: 16px 16px 18px; }
+.assess-summary .assess-head { margin-bottom: 2px; }
+.assess-summary .trend-chips { gap: 6px; padding: 10px 0 2px;
+  -webkit-mask-image: linear-gradient(90deg, #000 92%, transparent); mask-image: linear-gradient(90deg, #000 92%, transparent); }
+.assess-summary .trend-chips .tc { background: transparent; color: var(--neutral-secondary);
+  font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 100px; }
+.assess-summary .trend-chips .tc.active { background: #E4F1EC; color: #006D35; }
+.assess-summary .trend-val { margin-top: 14px; }
+.assess-summary .lc-wrap { margin-top: 6px; }
 .assess-head { display: flex; align-items: center; gap: 6px; }
 .assess-head .ah-title { flex: 1; font-size: 16px; font-weight: 500; color: var(--neutral-primary); }
 .assess-head .ah-next { width: 24px; height: 24px; color: var(--on-secondary-cont); background: none; border: 0; cursor: pointer; }
@@ -941,3 +953,91 @@ html, body {
   .v2-area .v2-line, .v2-area .v2-fill, .v2-area .v2-dot, .v2-bars rect, .v2-lolli rect, .v2-lolli circle, .v2-dots circle, .v2-dist-bar i, .v2-chips .v2-chip { animation: none; }
   .v2-area .v2-line { stroke-dasharray: none; }
 }
+
+/* =========================================================================
+   ASSESSMENT-TAB TYPE CONTAINERS  (Animal Profile · Assessment tab)
+   Teal-banded card per assessment type (Figma "Assessment" list reference).
+   ========================================================================= */
+.atc-wrap { display: flex; flex-direction: column; gap: 0; }
+
+/* "{N} Types" bar + tools */
+.atc-bar { display: flex; align-items: center; gap: 8px; padding: 2px 2px 12px; }
+.atc-count { flex: 1; font-size: 15px; font-weight: 600; color: var(--neutral-primary); }
+.atc-tools { display: flex; gap: 8px; }
+.atc-tool {
+  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+  background: #fff; border: 1px solid var(--neutral-05); border-radius: 9px;
+  color: var(--on-surface-green); cursor: pointer;
+}
+.atc-tool svg { width: 20px; height: 20px; }
+
+/* category filter chips */
+.atc-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; }
+.atc-chips::-webkit-scrollbar { display: none; }
+.atc-chip {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer;
+  padding: 8px 14px; border-radius: 100px;
+  background: #fff; border: 1px solid var(--neutral-05); color: var(--surface-variant);
+}
+.atc-chip i { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.atc-chip.active { background: var(--on-primary-cont); color: #fff; border-color: var(--on-primary-cont); }
+.atc-chip.active i { box-shadow: 0 0 0 2px rgba(255,255,255,.5); }
+
+/* card list */
+.atc-list { display: flex; flex-direction: column; gap: 12px; }
+.atc-catlabel {
+  font-size: 12px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
+  color: var(--neutral-secondary); margin: 6px 2px 0;
+}
+.atc-list > .atc-catlabel:first-child { margin-top: 0; }
+
+.atc-card {
+  background: #EAF7F4; border-radius: 12px; overflow: hidden; cursor: pointer;
+  box-shadow: 0 1px 3px rgba(20,61,46,.05), 0 6px 18px rgba(20,61,46,.05);
+  transition: transform .12s ease;
+}
+.atc-card:active { transform: scale(.992); }
+
+/* teal header band */
+.atc-head {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 14px 16px; background: #BFE9E2;
+}
+.atc-htext { flex: 1; min-width: 0; }
+.atc-type {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 16px; font-weight: 700; color: var(--on-primary-cont);
+}
+.atc-type .atc-chev { display: inline-flex; }
+.atc-type .atc-chev svg { width: 18px; height: 18px; }
+.atc-cat { margin-top: 2px; font-size: 13px; font-weight: 500; color: #3E6A6E; }
+.atc-add {
+  flex: 0 0 auto; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+  background: none; border: 0; color: var(--on-surface-green); cursor: pointer;
+}
+.atc-add svg { width: 24px; height: 24px; }
+
+/* body */
+.atc-body { padding: 14px 16px 16px; }
+
+/* numeric — up to 3 recent readings */
+.atc-nums { display: flex; align-items: flex-end; }
+.atc-col { flex: 1; min-width: 0; padding-right: 8px; }
+.atc-col + .atc-col { border-left: 1px solid rgba(20,61,46,.08); padding-left: 12px; }
+.atc-val { font-size: 22px; font-weight: 700; color: var(--neutral-secondary); line-height: 1.1; }
+.atc-val small { font-size: 12px; font-weight: 600; margin-left: 2px; }
+.atc-col.cur .atc-val { font-size: 28px; color: var(--on-surface-green); }
+.atc-rel { margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--neutral-secondary); }
+.atc-col.cur .atc-rel { color: var(--neutral-primary); }
+
+/* scale / list — single big latest value */
+.atc-single { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.atc-big { font-size: 28px; font-weight: 700; color: var(--on-surface-green); line-height: 1; }
+.atc-unit { font-size: 14px; font-weight: 600; color: var(--neutral-secondary); }
+.atc-word { font-size: 20px; font-weight: 700; color: var(--on-surface-green); line-height: 1.1; }
+.atc-rel2 { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--neutral-secondary); }
+
+/* text — latest note preview */
+.atc-note { font-size: 15px; font-weight: 400; color: var(--on-secondary-cont); line-height: 1.4; }
+.atc-note .atc-rel2 { display: block; margin: 8px 0 0; }

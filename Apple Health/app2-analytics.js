@@ -205,6 +205,77 @@ function catChron(q) {
 /* newest-first values aligned to CAT_SESS */
 function catNewest(q) { return catChron(q).slice().reverse(); }
 
+/* ===========================================================================
+   ASSESSMENT-TAB TYPE CONTAINERS  (Animal Profile · Assessment tab)
+   Figma "Assessment" list reference: teal-banded card per assessment type,
+   category filter chips on top, most-recent readings in the body. Catalogue-
+   driven so it stays in sync with Detailed / History / Schedule. Tapping a
+   card opens the same "See More Data" analytics sheet (openMetric).
+   =========================================================================== */
+/* demo recency labels for the most-recent readings (newest → older) */
+const ATC_REL = ['57 Mins ago', '3h ago', 'Yesterday', '7 Days ago', '30 Days ago', '60 Days ago', '90 Days ago', '120 Days ago'];
+const ATC_PLUS = '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+
+function assessTypeCard(q) {
+  const t = catType(q); if (!t) return '';
+  const newest = catNewest(q);          // newest-first values
+  let bodyHTML = '';
+  if (t.rt === 'numeric') {
+    bodyHTML = `<div class="atc-nums">${newest.slice(0, 3).map((v, i) =>
+      `<div class="atc-col ${i === 0 ? 'cur' : ''}">
+         <div class="atc-val">${v}<small>${t.unit}</small></div>
+         <div class="atc-rel">${ATC_REL[i]}</div>
+       </div>`).join('')}</div>`;
+  } else if (t.rt === 'scale') {
+    bodyHTML = `<div class="atc-single">
+      <span class="atc-big">${newest[0]}</span><span class="atc-unit">/ ${t.max}</span>
+      <span class="atc-rel2">${ATC_REL[0]}</span></div>`;
+  } else if (t.rt === 'list') {
+    bodyHTML = `<div class="atc-single">
+      <span class="atc-word">${newest[0]}</span>
+      <span class="atc-rel2">${ATC_REL[0]}</span></div>`;
+  } else {                              // text
+    bodyHTML = `<div class="atc-note">${newest[0]}<div class="atc-rel2">${ATC_REL[0]}</div></div>`;
+  }
+  return `<div class="atc-card" onclick="openMetric('${q}')">
+    <div class="atc-head" style="--cat:${t.catColor}">
+      <div class="atc-htext">
+        <div class="atc-type">${q} <span class="atc-chev">${I2.chevR}</span></div>
+        <div class="atc-cat">${t.cat}</div>
+      </div>
+      <button class="atc-add" onclick="event.stopPropagation()" aria-label="Add ${q}">${ATC_PLUS}</button>
+    </div>
+    <div class="atc-body">${bodyHTML}</div>
+  </div>`;
+}
+
+function assessTypeContainers() {
+  const cat = (typeof AM_ACAT !== 'undefined') ? AM_ACAT : 'All';
+  const cats = cat === 'All' ? CATALOGUE : CATALOGUE.filter(c => c.cat === cat);
+  const totalTypes = CATALOGUE.reduce((s, c) => s + c.types.length, 0);
+  const chips =
+    `<button class="atc-chip ${cat === 'All' ? 'active' : ''}" onclick="setAmACat('All')">All</button>` +
+    CATALOGUE.map(c =>
+      `<button class="atc-chip ${c.cat === cat ? 'active' : ''}" onclick="setAmACat('${c.cat}')">
+         <i style="background:${c.color}"></i>${c.cat} (${c.types.length})</button>`).join('');
+  const showLabels = cat === 'All';
+  const cards = cats.map(c =>
+    (showLabels ? `<div class="atc-catlabel">${c.cat}</div>` : '') +
+    c.types.map(ty => assessTypeCard(ty.q)).join('')
+  ).join('');
+  return `<div class="atc-wrap">
+    <div class="atc-bar">
+      <div class="atc-count">${totalTypes} Types</div>
+      <div class="atc-tools">
+        <button class="atc-tool" aria-label="Search types">${I2.search}</button>
+        <button class="atc-tool" aria-label="Add type">${ATC_PLUS}</button>
+      </div>
+    </div>
+    <div class="atc-chips">${chips}</div>
+    <div class="atc-list">${cards}</div>
+  </div>`;
+}
+
 /* ---- page state (filter context persists across tabs) -------------------- */
 /* Only 3 tabs — Analytics + Notes content live as scrollable Overview sections */
 let AA_TAB = 'overview';
@@ -576,8 +647,11 @@ function aaOverview() {
   return toggle + body;
 }
 
-/* Assessment Trend — field chips → selected metric value · trend · "See More Data" */
-function aaTrend() {
+/* Assessment Trend — field chips → selected metric value · trend · "See More Data".
+   Inner content split out so it can render flat inside another card (home page)
+   or wrapped in its own .wcard (analytics Summary view). */
+function aaTrendInner(opts) {
+  opts = opts || {};
   const q = AA_FIELD, it = trendItem(q), rt = it.rt;
   const chips = `<div class="trend-chips">${TREND_FIELDS.map(f =>
     `<button class="tc ${f.q === q ? 'active' : ''}" onclick="setAaField('${f.q}')">${f.label}</button>`).join('')}</div>`;
@@ -601,13 +675,15 @@ function aaTrend() {
     valHTML = `<span class="tv" style="font-size:22px">${HISTORY.length} entries</span><span class="td up">✦ latest today</span>`;
     viz = `<div class="oh-row">${['Active', 'Eating Well', 'Social', 'Alert', 'Playful'].map(h => `<span class="oh-c">✦ ${h}</span>`).join('')}</div>`;
   }
-  return `<div class="wcard">
-    <div class="wc-title">Assessment Trend</div>
-    ${chips}
+  const seeMore = opts.noSeeMore ? '' :
+    `<button class="see-more" onclick="openMetric('${q}')">See More Data ${I2.chevR}</button>`;
+  return `${chips}
     <div class="trend-val">${valHTML}</div>
     ${viz}
-    <button class="see-more" onclick="openMetric('${q}')">See More Data ${I2.chevR}</button>
-  </div>`;
+    ${seeMore}`;
+}
+function aaTrend() {
+  return `<div class="wcard"><div class="wc-title">Assessment Trend</div>${aaTrendInner()}</div>`;
 }
 
 /* Latest Record — selected metric's latest vs previous reading */

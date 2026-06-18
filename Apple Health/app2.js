@@ -196,6 +196,7 @@ const ASSESS = {
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
+  { key: 'assessment', label: 'Assessment' },
   { key: 'medical', label: 'Medical' },
   { key: 'enclosures', label: 'Enclosures' },
   { key: 'records', label: 'Records' },
@@ -204,9 +205,11 @@ const TABS = [
 ];
 
 let AM_TAB = 'overview';
+let AM_ACAT = 'All';        // Assessment-tab category filter (All | <catalogue category>)
 let ASSESS_SEG = 'Week';
 let ACTIVE_TIP = false;
 function setAmTab(k) { AM_TAB = k; render2(); }
+function setAmACat(c) { AM_ACAT = c; render2(); }
 
 /* ----------------------------------------------- ASSESSMENT ACTIVITY CHART -- */
 /* Count-based volume bars (gradient green) + dashed "Previous period" line +
@@ -402,6 +405,20 @@ document.addEventListener('click', e => {
   if (tip && !tip.contains(e.target)) hideAssessTip();
 });
 
+/* Assessment Summary container — the analytics "Summary" graph (Assessment
+   Trend: metric chips + interactive line chart) surfaced on the home page,
+   plus an entry into the full analytics. Lives on the Assessment tab. */
+function assessSummaryContainer() {
+  const trend = (typeof aaTrendInner === 'function') ? aaTrendInner({ noSeeMore: true }) : '';
+  return `<div class="assess-card assess-summary" id="assessCard">
+    <div class="assess-head">
+      <div class="ah-title">Assessments</div>
+      <button class="ah-next" onclick="openAnalytics()" aria-label="Open assessment analytics">${I2.chevR}</button>
+    </div>
+    ${trend}
+  </div>`;
+}
+
 SCREENS2.amOverview = () => {
   const a = ANIMAL;
 
@@ -416,24 +433,6 @@ SCREENS2.amOverview = () => {
   const identifiers = sectionCard('Identifiers',
     a.identifiers.map(([l, v]) => field(l, v)).join(''));
 
-  // --- Assessment Summary card (interactive activity chart + analytics entry) ---
-  const segs = ['Week', 'Month', 'Year'];
-  const assessCard = `<div class="assess-card" id="assessCard">
-    <div class="assess-head">
-      <div class="ah-title">Assessments</div>
-      <button class="ah-next" onclick="openAnalytics()" aria-label="Open assessment analytics">${I2.chevR}</button>
-    </div>
-    <div class="segment" id="assessSeg">
-      ${segs.map(s => `<button class="seg ${s === ASSESS_SEG ? 'active' : ''}" data-seg="${s}" onclick="selectSeg('${s}')">${s}</button>`).join('')}
-    </div>
-    <div class="ac-wrap" id="assessChart">${assessChartSVG(ASSESS_SEG)}</div>
-    <div class="stat-row">
-      <div class="stat"><div class="st-num">${ASSESS.total}</div><div class="st-lab">Total Records</div></div>
-      <div class="stat"><div class="st-date">${ASSESS.last}</div><div class="st-lab">Last Recorded On</div></div>
-    </div>
-    <div class="ac-tip" id="assessTip"></div>
-  </div>`;
-
   // --- Enclosure ---
   const enc = a.enclosure;
   const enclosure = sectionCard('Enclosure', `
@@ -442,11 +441,18 @@ SCREENS2.amOverview = () => {
       ${enc.lines.map(l => `<div class="dl-line">${l}</div>`).join('')}
     </div>`);
 
-  const upcoming = (typeof overviewUpcomingContainer === 'function') ? overviewUpcomingContainer() : '';
-  const body = AM_TAB === 'overview'
-    ? `${infoCard}${identifiers}${assessCard}${upcoming}${enclosure}`
-    : `<div style="padding:48px 16px;text-align:center;color:var(--neutral-secondary);font-size:14px">
+  let body;
+  if (AM_TAB === 'overview') {
+    body = `${infoCard}${identifiers}${enclosure}`;
+  } else if (AM_TAB === 'assessment') {
+    // Assessment summary on top → Upcoming Assessments → assessment-type containers
+    const upcoming = (typeof overviewUpcomingContainer === 'function') ? overviewUpcomingContainer() : '';
+    const types = (typeof assessTypeContainers === 'function') ? assessTypeContainers() : '';
+    body = `${assessSummaryContainer()}${upcoming}${types}`;
+  } else {
+    body = `<div style="padding:48px 16px;text-align:center;color:var(--neutral-secondary);font-size:14px">
          ${TABS.find(t => t.key === AM_TAB).label} — coming soon</div>`;
+  }
 
   return `<div class="screen active"><div class="scroll prof-scroll">
     ${heroHeader(a)}
