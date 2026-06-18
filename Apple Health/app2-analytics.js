@@ -122,21 +122,37 @@ const CATALOGUE = [
 const CAT_COLOR = {}; CATALOGUE.forEach(c => CAT_COLOR[c.cat] = c.color);
 const CAT_DOMAINS = ['All', ...CATALOGUE.map(c => c.cat)];
 const TYPE_INDEX = {};      // q → { ...type, cat, catColor, color, viz }
-/* per-type accent colour + chart style so EVERY card looks distinct.
-   numeric rotates area/line/columns · scale rotates bars/lollipop/dots. */
-const VIZ_PALETTE = ['#FA6140', '#F59E0B', '#E0457B', '#37BD69', '#00AFD6', '#6C7BF7', '#14B8A6', '#8B5CF6', '#EAB308', '#3E8EED', '#EF5DA8', '#0EA5A4'];
+/* lighten(+)/darken(-) a hex colour by amt (-1..1) */
+function shadeHex(hex, amt) {
+  const nu = parseInt(hex.slice(1), 16); let r = (nu >> 16) & 255, g = (nu >> 8) & 255, b = nu & 255;
+  if (amt >= 0) { r += (255 - r) * amt; g += (255 - g) * amt; b += (255 - b) * amt; }
+  else { r *= (1 + amt); g *= (1 + amt); b *= (1 + amt); }
+  return '#' + [r, g, b].map(x => Math.round(x).toString(16).padStart(2, '0')).join('');
+}
+/* per-type chart style + a colour that's a SHADE of its category hue
+   (harmonious within a category, still distinct per type). */
 const NUM_VARIANTS = ['area', 'line', 'col'];
-const SCALE_VARIANTS = ['bars', 'lolli', 'dots'];
+const SCALE_VARIANTS = ['bars', 'gauge', 'lolli', 'dots'];   // gauge = circular ring
+const LIST_VARIANTS = ['dist', 'donut'];                     // donut = circular distribution
+const SHADE_STEPS = [0, -0.16, 0.16, -0.30, 0.30, -0.08, 0.42];
+/* Distinct per-metric hues so adjacent graphs never read as the same colour.
+   Starts with the 5 brand category colours, then extends with more distinct
+   hues; assigned by a running index so neighbouring cards always differ. */
+const VIZ_PALETTE = [
+  '#FA6140', '#8479F9', '#00AFD6', '#E4A11B', '#37BD69',
+  '#EC4899', '#3B82F6', '#F97316', '#14B8A6', '#A855F7',
+  '#84CC16', '#E11D48',
+];
+const HERO_TYPES = ['Weight'];                               // rendered as a prominent detail card
 (() => {
-  let ci = 0, ni = 0, si = 0;
-  CATALOGUE.forEach(c => c.types.forEach(ty => {
-    const color = VIZ_PALETTE[ci++ % VIZ_PALETTE.length];
-    let viz = null;
+  let ni = 0, si = 0, li = 0, gi = 0;
+  CATALOGUE.forEach(c => c.types.forEach((ty, idx) => {
+    const color = VIZ_PALETTE[gi++ % VIZ_PALETTE.length];
+    let viz = 'chips';
     if (ty.rt === 'numeric') viz = NUM_VARIANTS[ni++ % NUM_VARIANTS.length];
     else if (ty.rt === 'scale') viz = SCALE_VARIANTS[si++ % SCALE_VARIANTS.length];
-    else if (ty.rt === 'list') viz = 'dist';
-    else viz = 'chips';
-    TYPE_INDEX[ty.q] = { ...ty, cat: c.cat, catColor: c.color, color, viz };
+    else if (ty.rt === 'list') viz = LIST_VARIANTS[li++ % LIST_VARIANTS.length];
+    TYPE_INDEX[ty.q] = { ...ty, cat: c.cat, catColor: c.color, color, viz, hero: HERO_TYPES.includes(ty.q) };
   }));
 })();
 function catType(q) { return TYPE_INDEX[q]; }
@@ -163,19 +179,22 @@ function catChron(q) {
   if (_catCache[q]) return _catCache[q];
   const ty = catType(q); if (!ty) return [];
   const N = CAT_SESS.length, seed = catSeed(q), out = [];
+  // gentle, mostly-monotonic trend + a single soft sine ripple (no harsh noise)
+  const dir = (seed % 2 === 0) ? 1 : -1;                 // overall up or down
+  const phase = (seed % 7) * 0.5, freq = 0.55 + (seed % 3) * 0.12;
   for (let i = 0; i < N; i++) {
     const t01 = i / (N - 1);
-    const wob = Math.sin((seed % 11) + i * 0.8) * 0.5 + (((seed + i * 53) % 100) / 100 - 0.5);
+    const ripple = Math.sin(phase + i * freq);           // smooth, ~[-1,1]
     if (ty.rt === 'numeric') {
-      const span = Math.max(0.4, Math.abs(ty.base) * 0.05);
-      let v = ty.base * (1 + 0.05 * (t01 - 0.5) * 2) + wob * span;
+      const span = Math.max(0.3, Math.abs(ty.base) * 0.03);
+      const v = ty.base * (1 + dir * 0.035 * (t01 - 0.5) * 2) + ripple * span * 0.6;
       out.push(+v.toFixed(ty.dp));
     } else if (ty.rt === 'scale') {
-      let v = 1 + (ty.max - 1) * (0.45 + 0.4 * t01) + wob * (ty.max * 0.12);
+      const v = 1 + (ty.max - 1) * (0.42 + 0.42 * t01) + ripple * (ty.max * 0.09);
       out.push(Math.max(1, Math.min(ty.max, Math.round(v))));
     } else if (ty.rt === 'list') {
       const li = ty.options.length;
-      let idx = Math.round((li - 1) * (0.35 + 0.45 * t01) + wob * 0.9);
+      const idx = Math.round((li - 1) * (0.32 + 0.5 * t01) + ripple * 0.55);
       out.push(ty.options[Math.max(0, Math.min(li - 1, idx))]);
     } else {
       out.push(CAT_NOTES[(seed + i) % CAT_NOTES.length]);
@@ -194,7 +213,7 @@ let AA_HIST_TYPE = 'All';
 let AA_CMP_CAT = 'Physical Health';   // comparison is scoped to one category
 let AA_CMP_IA = 0, AA_CMP_IB = 1;     // session indices (0 = newest)
 const AA_TABLIST = [
-  { key: 'overview', label: 'Overview' },
+  { key: 'overview', label: 'Summary' },
   { key: 'history', label: 'History' },
   { key: 'comparison', label: 'Comparison' },
   { key: 'schedule', label: 'Schedule' },
@@ -239,6 +258,8 @@ function setMdFilter(q, f) {
 
 function setAaTab(k) { AA_TAB = k; hideAssessTip(); render2(); }
 function setAaFilter(f) { AA_FILTER = f; ASSESS_SEG = f; hideAssessTip(); render2(); }
+let AA_ACT_CAT = 'All';   // activity-chart assessment-category filter (left)
+function setActCat(c) { AA_ACT_CAT = c; hideAssessTip(); render2(); }
 function setHistType(t) { AA_HIST_TYPE = t; render2(); }
 function setCmpCat(c) { AA_CMP_CAT = c; render2(); }
 function setCmpIdx(which, v) { v = +v; if (which === 'a') AA_CMP_IA = v; else AA_CMP_IB = v; render2(); }
@@ -305,11 +326,20 @@ function aaStatGrid() {
 /* activity chart card — Week/Month/Year inside; coral "previous" dashed line (Figma) */
 function aaActivityCard() {
   const segs = ['Week', 'Month', 'Year'];
+  const catName = AA_ACT_CAT || 'All';
+  const catOpts = CAT_DOMAINS.map(c => `<option value="${c}" ${c === catName ? 'selected' : ''}>${c === 'All' ? 'All Assessments' : c}</option>`).join('');
   return `<div class="assess-card" id="assessCard">
-    <div class="segment" id="assessSeg">
-      ${segs.map(s => `<button class="seg ${s === AA_FILTER ? 'active' : ''}" data-seg="${s}" onclick="setAaFilter('${s}')">${s}</button>`).join('')}
+    <div class="ac-top">
+      <span class="ac-catwrap">
+        <select class="ac-cat" onchange="setActCat(this.value)">${catOpts}</select>
+        <span class="ac-cat-chev">${I2.chevDown}</span>
+      </span>
+      <div class="segment ac-seg" id="assessSeg">
+        ${segs.map(s => `<button class="seg ${s === AA_FILTER ? 'active' : ''}" data-seg="${s}" onclick="setAaFilter('${s}')">${s}</button>`).join('')}
+      </div>
     </div>
-    <div class="ac-wrap" id="assessChart">${assessChartSVG(AA_FILTER, '#FA6140')}</div>
+    <div class="ac-wrap" id="assessChart">${assessChartSVG(AA_FILTER, catName)}</div>
+    <div class="ac-scrub" id="acScrubTip"></div>
     <div class="ac-tip" id="assessTip"></div>
   </div>`;
 }
@@ -343,80 +373,139 @@ function recRow(r) {
 /* Detailed-tab domain filter state (chips come from CAT_DOMAINS, cards from CATALOGUE) */
 let AA_OV_DOM = 'All';
 function setOvDom(d) { AA_OV_DOM = d; render2(); }
+/* shared: white-halo end dot so the marker reads cleanly over the line */
+function endDot(x, y, color, r) {
+  return `<circle class="v2-dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r + 1.6).toFixed(1)}" fill="#fff"/>`
+    + `<circle class="v2-dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${color}"/>`;
+}
 /* numeric → smooth AREA trend line, latest point accented */
 function v2Area(values, color, id) {
-  const w = 132, h = 48, pad = 3, iw = w - pad * 2, ih = h - pad * 2;
+  const w = 132, h = 48, pad = 5, iw = w - pad * 2, ih = h - pad * 2;
   const lo = Math.min(...values), hi = Math.max(...values), rng = (hi - lo) || 1;
   const X = i => pad + (i / (values.length - 1)) * iw, Y = v => pad + (1 - (v - lo) / rng) * ih;
   const pts = values.map((v, i) => [X(i), Y(v)]), line = smoothPath2(pts), last = pts[pts.length - 1];
   const area = `${line} L${last[0].toFixed(1)} ${h} L${pts[0][0].toFixed(1)} ${h} Z`;
   return `<svg class="v2-area" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".2"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
-    <path class="v2-fill" d="${area}" fill="url(#${id})"/><path class="v2-line" d="${line}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle class="v2-dot" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3" fill="${color}"/></svg>`;
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".18"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+    <path class="v2-fill" d="${area}" fill="url(#${id})"/><path class="v2-line" d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${endDot(last[0], last[1], color, 2.8)}</svg>`;
 }
 /* numeric variant → line with markers (no fill) */
 function v2Line(values, color) {
-  const w = 132, h = 48, pad = 4, iw = w - pad * 2, ih = h - pad * 2;
+  const w = 132, h = 48, pad = 5, iw = w - pad * 2, ih = h - pad * 2;
   const lo = Math.min(...values), hi = Math.max(...values), rng = (hi - lo) || 1;
   const X = i => pad + (i / (values.length - 1)) * iw, Y = v => pad + (1 - (v - lo) / rng) * ih;
   const pts = values.map((v, i) => [X(i), Y(v)]), line = smoothPath2(pts), last = pts[pts.length - 1];
   const dots = pts.map((p, i) => i === pts.length - 1 ? '' :
-    `<circle class="v2-dot" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.2" fill="#fff" stroke="${color}" stroke-width="1.5"/>`).join('');
+    `<circle class="v2-dot" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2" fill="#fff" stroke="${color}" stroke-width="1.4"/>`).join('');
   return `<svg class="v2-area" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-    <path class="v2-line" d="${line}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-    ${dots}<circle class="v2-dot" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.4" fill="${color}"/></svg>`;
+    <path class="v2-line" d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dots}${endDot(last[0], last[1], color, 3)}</svg>`;
 }
 /* numeric variant → recency columns (older lighter, latest full colour) */
 function v2Col(values, color) {
-  const n = values.length, w = 132, h = 48, gap = 4, bw = (w - gap * (n - 1)) / n;
+  const n = values.length, w = 132, h = 48, gap = 5, bw = (w - gap * (n - 1)) / n;
   const lo = Math.min(...values), hi = Math.max(...values), rng = (hi - lo) || 1;
+  const r = Math.min(3, bw / 2);
   const bars = values.map((v, i) => {
-    const bh = 8 + ((v - lo) / rng) * (h - 8), x = i * (bw + gap), y = h - bh;
-    const op = (0.32 + 0.68 * (i / (n - 1))).toFixed(2);
-    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${color}" fill-opacity="${op}" style="animation-delay:${(i * 0.05).toFixed(2)}s"/>`;
+    const bh = 7 + ((v - lo) / rng) * (h - 7), x = i * (bw + gap), y = h - bh;
+    const op = (0.30 + 0.70 * (i / (n - 1))).toFixed(2);
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${r.toFixed(1)}" fill="${color}" fill-opacity="${op}" style="animation-delay:${(i * 0.05).toFixed(2)}s"/>`;
   }).join('');
   return `<svg class="v2-bars" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${bars}</svg>`;
 }
 /* scale → mini bar chart, final (latest) bar accented */
 function v2Bars(values, color) {
-  const n = values.length, w = 132, h = 48, gap = 4, bw = (w - gap * (n - 1)) / n;
+  const n = values.length, w = 132, h = 48, gap = 5, bw = (w - gap * (n - 1)) / n;
   const lo = Math.min(...values), hi = Math.max(...values), rng = (hi - lo) || 1;
+  const r = Math.min(3, bw / 2);
   const bars = values.map((v, i) => {
-    const bh = 8 + ((v - lo) / rng) * (h - 8), x = i * (bw + gap), y = h - bh;
-    const fill = i === n - 1 ? color : '#E3E8EA';
-    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${fill}" style="animation-delay:${(i * 0.05).toFixed(2)}s"/>`;
+    const bh = 7 + ((v - lo) / rng) * (h - 7), x = i * (bw + gap), y = h - bh;
+    const fill = i === n - 1 ? color : '#E6EBED';
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${r.toFixed(1)}" fill="${fill}" style="animation-delay:${(i * 0.05).toFixed(2)}s"/>`;
   }).join('');
   return `<svg class="v2-bars" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${bars}</svg>`;
 }
 /* scale variant → lollipop (stem + dot), latest accented */
 function v2Lolli(values, color) {
-  const n = values.length, w = 132, h = 48, gap = 4, bw = (w - gap * (n - 1)) / n;
+  const n = values.length, w = 132, h = 48, gap = 5, bw = (w - gap * (n - 1)) / n;
   const lo = Math.min(...values), hi = Math.max(...values), rng = (hi - lo) || 1;
   const out = values.map((v, i) => {
-    const cy = 6 + (1 - (v - lo) / rng) * (h - 12), cx = i * (bw + gap) + bw / 2, lastOne = i === n - 1;
-    const col = lastOne ? color : '#CBD3D7';
-    return `<rect x="${(cx - 1).toFixed(1)}" y="${cy.toFixed(1)}" width="2" height="${(h - cy).toFixed(1)}" rx="1" fill="${col}" style="animation-delay:${(i * 0.05).toFixed(2)}s"/>`
-      + `<circle class="v2-dot" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${lastOne ? 4 : 3}" fill="${col}"/>`;
+    const cy = 7 + (1 - (v - lo) / rng) * (h - 14), cx = i * (bw + gap) + bw / 2, lastOne = i === n - 1;
+    const col = lastOne ? color : '#C5CFD4';
+    return `<rect x="${(cx - 1.25).toFixed(1)}" y="${cy.toFixed(1)}" width="2.5" height="${(h - cy).toFixed(1)}" rx="1.25" fill="${col}" fill-opacity="${lastOne ? 1 : .7}" style="animation-delay:${(i * 0.05).toFixed(2)}s"/>`
+      + (lastOne ? endDot(cx, cy, color, 3.4) : `<circle class="v2-dot" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="2.8" fill="${col}"/>`);
   }).join('');
   return `<svg class="v2-lolli" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${out}</svg>`;
 }
-/* scale variant → dot track on a faint baseline, latest accented */
+/* scale variant → connected dot track, latest accented */
 function v2Dots(values, color) {
-  const n = values.length, w = 132, h = 48, pad = 8, iw = w - pad * 2;
+  const n = values.length, w = 132, h = 48, pad = 7, iw = w - pad * 2;
   const lo = Math.min(...values), hi = Math.max(...values), rng = (hi - lo) || 1;
-  const X = i => pad + (i / (n - 1)) * iw, Y = v => 8 + (1 - (v - lo) / rng) * (h - 16);
+  const X = i => pad + (i / (n - 1)) * iw, Y = v => 9 + (1 - (v - lo) / rng) * (h - 18);
+  const poly = values.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
   const dots = values.map((v, i) => {
-    const lastOne = i === n - 1, col = lastOne ? color : '#CBD3D7';
-    return `<circle class="v2-dot" cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${lastOne ? 4.5 : 3}" fill="${col}" style="animation-delay:${(i * 0.05).toFixed(2)}s"/>`;
+    const lastOne = i === n - 1;
+    return lastOne ? endDot(X(i), Y(v), color, 3.6)
+      : `<circle class="v2-dot" cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="2.6" fill="#C5CFD4" style="animation-delay:${(i * 0.05).toFixed(2)}s"/>`;
   }).join('');
   return `<svg class="v2-dots" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-    <line x1="${pad}" y1="${h - 5}" x2="${w - pad}" y2="${h - 5}" stroke="#EEF1F3" stroke-width="2"/>${dots}</svg>`;
+    <polyline points="${poly}" fill="none" stroke="#E6EBED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>${dots}</svg>`;
+}
+/* scale variant → circular gauge (value / max) */
+function v2Gauge(value, max, color) {
+  const r = 17, cx = 24, cy = 24, C = 2 * Math.PI * r, frac = Math.max(0.001, Math.min(1, value / max));
+  return `<svg class="v2-gauge" viewBox="0 0 48 48">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#EDF1F3" stroke-width="5.5"/>
+    <circle class="v2-gauge-arc" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="${(frac * C).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"/>
+    <text x="24" y="26.5" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1A1D1F">${value}</text>
+    <text x="24" y="33" text-anchor="middle" font-size="7" font-weight="600" fill="#9AA6A2">/ ${max}</text></svg>`;
+}
+/* list variant → circular donut of the distribution, current value accented */
+function v2Donut(it, vals, color) {
+  const dist = {}; it.options.forEach(o => dist[o] = 0); vals.forEach(v => dist[v]++);
+  const total = vals.length || 1, cur = vals[vals.length - 1];
+  const r = 16, cx = 24, cy = 24, C = 2 * Math.PI * r, gap = 3, greys = ['#D7DEE2', '#C2CBD0', '#AEB9BF', '#97A4AA'];
+  const present = it.options.filter(o => dist[o] > 0);
+  let off = 0, g = 0;
+  const segs = present.map(o => {
+    const len = dist[o] / total * C, col = o === cur ? color : greys[g++ % greys.length];
+    const draw = Math.max(0.5, len - (present.length > 1 ? gap : 0));
+    const s = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${draw.toFixed(2)} ${(C - draw).toFixed(2)}" stroke-dashoffset="${(-off - gap / 2).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    off += len; return s;
+  }).join('');
+  return `<svg class="v2-donut" viewBox="0 0 48 48"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#EDF1F3" stroke-width="6"/>${segs}<text x="24" y="27.5" text-anchor="middle" font-size="11" font-weight="700" fill="#1A1D1F">${dist[cur]}</text></svg>`;
 }
 /* pick the numeric/scale renderer for a type's assigned variant */
 function v2Viz(it, s, color) {
   if (it.rt === 'numeric') return it.viz === 'line' ? v2Line(s, color) : it.viz === 'col' ? v2Col(s, color) : v2Area(s, color, 'va' + it.q.replace(/\W/g, ''));
-  return it.viz === 'lolli' ? v2Lolli(s, color) : it.viz === 'dots' ? v2Dots(s, color) : v2Bars(s, color);
+  return it.viz === 'gauge' ? v2Gauge(s[s.length - 1], it.max, color) : it.viz === 'lolli' ? v2Lolli(s, color) : it.viz === 'dots' ? v2Dots(s, color) : v2Bars(s, color);
+}
+/* wide trend chart for the prominent hero card */
+function v2HeroChart(values, color, id) {
+  const w = 320, h = 92, pad = 5, iw = w - pad * 2, ih = h - pad * 2;
+  const lo = Math.min(...values), hi = Math.max(...values), rng = (hi - lo) || 1;
+  const X = i => pad + (i / (values.length - 1)) * iw, Y = v => pad + (1 - (v - lo) / rng) * ih;
+  const pts = values.map((v, i) => [X(i), Y(v)]), line = smoothPath2(pts), last = pts[pts.length - 1];
+  const area = `${line} L${last[0].toFixed(1)} ${h} L${pts[0][0].toFixed(1)} ${h} Z`;
+  return `<svg class="v2-hero-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".22"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+    <path class="v2-fill" d="${area}" fill="url(#${id})"/><path class="v2-line" d="${line}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle class="v2-dot" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="5" fill="#fff"/><circle class="v2-dot" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.2" fill="${color}"/></svg>`;
+}
+/* prominent hero card (numeric) — big value + wide trend + Previous/Average/Min/Max */
+function v2HeroCard(m) {
+  const it = trendItem(m.q), color = it.color || m.color, s = seriesFor(m.q), u = it.unit;
+  const cur = s[s.length - 1], prev = s[s.length - 2], d = +(cur - prev).toFixed(1), flat = Math.abs(d) < 0.01, up = d > 0;
+  const avg = +(s.reduce((a, b) => a + b, 0) / s.length).toFixed(1), min = Math.min(...s), max = Math.max(...s);
+  const stats = [['Previous', prev + ' ' + u], ['Average', avg + ' ' + u], ['Min', min + ' ' + u], ['Max', max + ' ' + u]];
+  return `<div class="v2-card v2-hero" onclick="openMetric('${m.q}')">
+    <div class="v2-head"><span class="v2-name">${qLabel(m.q)}</span><span class="v2-chev">${I2.chevR}</span></div>
+    <div class="v2-hero-top"><span class="v2-hero-val">${cur}<small>${u}</small></span><span class="v2-sub ${flat ? 'eq' : up ? 'up' : 'dn'}">${flat ? '→ Stable' : (up ? '↑ +' : '↓ ') + Math.abs(d) + ' ' + u}</span></div>
+    <div class="v2-hero-chart">${v2HeroChart(s, color, 'vh' + m.q.replace(/\W/g, ''))}</div>
+    <div class="v2-hero-stats">${stats.map(([l, v]) => `<div class="v2-hs"><div class="v2-hs-l">${l}</div><div class="v2-hs-v">${v}</div></div>`).join('')}</div>
+    <div class="v2-when">Last recorded · ${CAT_SESS[0].date}</div>
+  </div>`;
 }
 
 /* one tappable card per metric — Apple-Health concept: colored icon + title,
@@ -456,24 +545,30 @@ function v2Card(m) {
     const total = vals.length, freq = Object.entries(dist).sort((a, b) => b[1] - a[1])[0][0];
     val = `<span class="v2-val text">${cur}</span>`;
     sub = `<div class="v2-sub muted">Most frequent · ${freq}</div>`;
-    const rows = it.options.map(o => ({ o, n: dist[o] })).sort((a, b) => b.n - a.n).slice(0, 3);
-    viz = `<div class="v2-dist">${rows.map(r => `<div class="v2-dist-bar"><i style="width:${Math.round(r.n / total * 100)}%;background:${r.o === cur ? color : '#C9D2D6'}"></i></div>`).join('')}</div>`;
+    if (it.viz === 'donut') {
+      viz = v2Donut(it, vals, color);
+    } else {
+      const rows = it.options.map(o => ({ o, n: dist[o] })).sort((a, b) => b.n - a.n).slice(0, 3);
+      viz = `<div class="v2-dist">${rows.map(r => `<div class="v2-dist-bar"><i style="width:${Math.round(r.n / total * 100)}%;background:${r.o === cur ? color : '#C9D2D6'}"></i></div>`).join('')}</div>`;
+    }
   }
   return `<div class="v2-card" onclick="openMetric('${m.q}')">${head}
     <div class="v2-foot"><div class="v2-lead">${val}${sub}<div class="v2-when">${when}</div></div><div class="v2-viz">${viz}</div></div></div>`;
 }
 function aaOverview() {
-  const mode = AA_OV_MODE || 'detailed';
-  const toggle = `<div class="segment v2-toggle">
-    <button class="seg ${mode === 'summary' ? 'active' : ''}" onclick="setOvMode('summary')">Summary</button>
-    <button class="seg ${mode === 'detailed' ? 'active' : ''}" onclick="setOvMode('detailed')">Detailed</button></div>`;
-  const metricSearch = `<div class="hist-search v2-search"><span class="hs-box">${I2.search}<input class="hs-in" type="text" placeholder="Search metrics" oninput="searchFilter(this,'.v2-card')"></span></div>`;
+  // Summary view (Assessment Trend + Latest Record) hidden for now — show Detailed directly.
+  const mode = 'detailed';
+  const toggle = '';
+  const metricSearch = `<div class="hist-search v2-search"><span class="hs-box">${I2.search}<input class="hs-in" type="text" placeholder="Search" oninput="searchFilter(this,'.v2-card')"></span></div>`;
   const domChips = `<div class="tchip-row v2-doms">${CAT_DOMAINS.map(d =>
     `<button class="tchip ${d === AA_OV_DOM ? 'active' : ''}" onclick="setOvDom('${d}')">${d}</button>`).join('')}</div>`;
   const cats = AA_OV_DOM === 'All' ? CATALOGUE : CATALOGUE.filter(c => c.cat === AA_OV_DOM);
   const showLabels = AA_OV_DOM === 'All';
   const cards = cats.map(c =>
-    (showLabels ? `<div class="v2-catlabel">${c.cat}</div>` : '') + c.types.map(ty => v2Card({ q: ty.q, color: c.color })).join('')
+    (showLabels ? `<div class="v2-catlabel">${c.cat}</div>` : '') + c.types.map(ty => {
+      const t = catType(ty.q);
+      return (t.hero ? v2HeroCard : v2Card)({ q: ty.q, color: t.color });
+    }).join('')
   ).join('');
   const body = mode === 'summary'
     ? `<div id="aaOvHost">${aaTrend()}${aaLatest()}</div>`
@@ -570,13 +665,12 @@ function aaHistory() {
       ? `<div class="fc-note">${f.value}</div>`
       : `<div class="fc-val">${f.rt === 'numeric' ? f.value + ' ' + f.unit : f.rt === 'scale' ? f.value + ' / ' + f.max : f.value}</div>`;
     return `<div class="feed-card" onclick="openMetric('${f.q}')">
-      <span class="rec-dot" style="background:${f.color}"></span>
       <div class="fc-body"><div class="fc-cat">${f.label}</div>${val}
         <div class="fc-meta">${f.dom} · ${f.by} · ${f.date}</div></div>
       <span class="fc-chev">${I2.chevR}</span></div>`;
   }).join('')
     : `<div class="muted" style="text-align:center;padding:34px 16px">No ${AA_HIST_TYPE} records in this period.</div>`;
-  return `<div class="tchip-row">${chips}</div><div data-searchbox>${search}<div class="feed-list">${cards}</div><div class="ls-empty">No matching records</div></div>`;
+  return `<div class="tchip-row v2-doms">${chips}</div><div data-searchbox>${search}<div class="feed-list">${cards}</div><div class="ls-empty">No matching records</div></div>`;
 }
 
 /* ===========================================================================
@@ -604,10 +698,42 @@ function aiSummary(a, b) {
   if (!out.length) out.push('No significant changes since the previous assessment.');
   return out;
 }
+/* classify a numeric value against its ideal (base): healthy band ±6%, caution ±16%, beyond = at risk */
+function numStatus(cur, ideal) {
+  const dev = (cur - ideal) / ideal, a = Math.abs(dev);
+  if (a <= 0.06) return { cls: 'ok', label: 'Healthy' };
+  const side = dev < 0 ? 'Low' : 'High';
+  if (a <= 0.16) return { cls: 'warn', label: side };
+  return { cls: 'risk', label: `${side} · At Risk` };
+}
+/* horizontal track placing current + previous against the ideal band */
+function idealTrack(cur, prev, ideal, dp) {
+  const lo = ideal * 0.7, hi = ideal * 1.3, span = hi - lo;
+  const pct = v => Math.max(2, Math.min(98, ((v - lo) / span) * 100));
+  const bandL = ((ideal * 0.94 - lo) / span) * 100, bandW = ((ideal * 1.06 - ideal * 0.94) / span) * 100;
+  return `<div class="cmp-track">
+    <i class="cmp-band" style="left:${bandL.toFixed(1)}%;width:${bandW.toFixed(1)}%"></i>
+    <i class="cmp-tick" style="left:${pct(prev).toFixed(1)}%"></i>
+    <i class="cmp-dot" style="left:${pct(cur).toFixed(1)}%"></i>
+  </div>`;
+}
 function cmpRowFor(itA, itB) {
+  const unit = itA.unit || '';
+  if (itA.rt === 'numeric') {
+    const ideal = catType(itA.q).base, dp = catType(itA.q).dp;
+    const d = +(itA.value - itB.value).toFixed(dp), dir = d > 0 ? 'up' : d < 0 ? 'dn' : 'eq';
+    const st = numStatus(itA.value, ideal);
+    const deltaHTML = `<span class="cmp-delta ${dir}">${dir === 'up' ? '↑' : dir === 'dn' ? '↓' : ''}${d > 0 ? '+' : ''}${d}${unit}</span>`;
+    return `<div class="cmp-card">
+      <div class="cmp-head"><span class="cmp-q">${qLabel(itA.q)}</span><span class="cmp-status ${st.cls}">${st.label}</span></div>
+      <div class="cmp-val"><span class="cmp-prev">${itB.value}${unit}</span><span class="cmp-arrow">»</span><span class="cmp-cur">${itA.value}${unit}</span>${deltaHTML}</div>
+      ${idealTrack(itA.value, itB.value, ideal, dp)}
+      <div class="cmp-scale"><span>Low</span><span class="cmp-ideal">Ideal ${+ideal.toFixed(dp)}${unit}</span><span>High</span></div>
+    </div>`;
+  }
   let valueHTML = '', deltaHTML = '';
-  if (itA.rt === 'numeric' || itA.rt === 'scale') {
-    const d = +(itA.value - itB.value).toFixed(1), unit = itA.unit || '', dir = d > 0 ? 'up' : d < 0 ? 'dn' : 'eq';
+  if (itA.rt === 'scale') {
+    const d = +(itA.value - itB.value).toFixed(1), dir = d > 0 ? 'up' : d < 0 ? 'dn' : 'eq';
     deltaHTML = `<span class="cmp-delta ${dir}">${dir === 'up' ? '↑ ' : dir === 'dn' ? '↓ ' : ''}${d > 0 ? '+' : ''}${d}${unit}</span>`;
     valueHTML = `<span class="cmp-prev">${itB.value}${unit}</span><span class="cmp-arrow">»</span><span class="cmp-cur">${itA.value}${unit}</span>`;
   } else {
@@ -647,7 +773,7 @@ function aaComparison() {
     return ty.rt === 'text' ? cmpTextCard(itA, itB) : cmpRowFor(itA, itB);
   }).join('');
   return `
-    <div class="tchip-row">${chips}</div>
+    <div class="tchip-row v2-doms">${chips}</div>
     ${selector}
     <div class="cmp-context"><span>${CAT_SESS[AA_CMP_IA].date}</span><span class="cmp-vs">vs</span><span>${CAT_SESS[AA_CMP_IB].date}</span></div>
     <div class="cmp-list">${rows}</div>`;
@@ -731,7 +857,7 @@ SCREENS2.assessAnalytics = (p = {}) => {
   else body = aaOverview();
   return `<div class="screen active"><div class="scroll">
     ${aidTopbar()}
-    <div class="aa-context">${aaStatGrid()}${aaActivityCard()}</div>
+    <div class="aa-context">${aaStatGrid()}</div><!-- ${'' /* aaActivityCard() hidden for now */} -->
     <div class="aa-tabwrap">${tabsBar(AA_TABLIST, AA_TAB, 'setAaTab')}
       <div class="body">${body}</div>
       <div style="height:24px"></div>
@@ -864,22 +990,224 @@ function msRows(q, fmt, colFn) {
       <div class="ms-pill" style="${style}">${fmt(v)}</div></div>`;
   }).join('');
 }
+/* ---- DAY view: intraday spot-readings (5–10 records across a single day) ---- */
+function mdDaySeries(q) {
+  const it = trendItem(q), base = seriesFor(q), isScale = it.rt === 'scale';
+  const cur = base[base.length - 1], seed = mdSeed(q + 'D'), ndp = it.dp == null ? 1 : it.dp;
+  const count = 5 + (seed % 6);                         // 5..10 records that day
+  const s0 = 7 * 60, s1 = 20 * 60;                       // 07:00 → 20:00
+  const times = Array.from({ length: count }, (_, i) => {
+    const m = Math.round(s0 + (s1 - s0) * (count === 1 ? 0 : i / (count - 1)));
+    return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+  });
+  const span = isScale ? Math.max(0.8, it.max * 0.12) : Math.max(0.4, Math.abs(cur) * 0.045);
+  const values = times.map((_, i) => {
+    const wob = Math.sin((seed % 7) + i * 1.1) * 0.7 + ((((seed + i * 61) % 100) / 100) - 0.5);
+    const v = cur + wob * span;
+    return isScale ? Math.max(1, Math.min(it.max, Math.round(v))) : +v.toFixed(ndp);
+  });
+  const avg = +(values.reduce((a, b) => a + b, 0) / count).toFixed(isScale ? 1 : ndp);
+  return { values, times, avg, count };
+}
+/* distinct intraday chart — discrete columns over a time-of-day axis (not the trend line) */
+function intradayChart(values, times, color, avg, fmt) {
+  const W = 340, H = 200, pl = 32, pr = 12, pt = 16, pb = 32, iw = W - pl - pr, ih = H - pt - pb;
+  const lo = Math.min(...values, avg), hi = Math.max(...values, avg), pad = (hi - lo || 1) * 0.2, L = lo - pad, rng = (hi + pad - L) || 1;
+  const Y = v => pt + (1 - (v - L) / rng) * ih;
+  const n = values.length, gap = Math.max(6, 16 - n), bw = Math.min(30, (iw - gap * (n - 1)) / n);
+  const x0 = pl + (iw - (bw * n + gap * (n - 1))) / 2;
+  let grid = '';
+  for (let k = 0; k <= 4; k++) {
+    const val = L + rng * k / 4, y = pt + (1 - k / 4) * ih;
+    grid += `<line x1="${pl}" y1="${y.toFixed(1)}" x2="${W - pr}" y2="${y.toFixed(1)}" stroke="#E2E8E5" stroke-width="1"/>`
+      + `<text x="${pl - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="9.5" fill="#7A8684">${rng >= 4 ? Math.round(val) : Math.round(val * 10) / 10}</text>`;
+  }
+  const ay = Y(avg);
+  const bars = values.map((v, i) => {
+    const x = x0 + i * (bw + gap), y = Y(v), h = Math.max(2, pt + ih - y);
+    const vlab = n <= 6 ? `<text x="${(x + bw / 2).toFixed(1)}" y="${(y - 5).toFixed(1)}" text-anchor="middle" font-size="9" fill="#44544A" font-weight="700">${fmt ? fmt(v) : v}</text>` : '';
+    const tlab = (n <= 8 || i % 2 === 0) ? `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="9" fill="#7A8684" font-weight="600">${times[i]}</text>` : '';
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${color}"/>${vlab}${tlab}`;
+  }).join('');
+  return `<svg class="md-chart" viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${grid}
+    <line x1="${pl}" y1="${ay.toFixed(1)}" x2="${W - pr}" y2="${ay.toFixed(1)}" stroke="#A9C3B8" stroke-width="1.2" stroke-dasharray="5 5"/>
+    <text x="${(W - pr).toFixed(1)}" y="${(ay - 6).toFixed(1)}" text-anchor="end" font-size="11" fill="#5C6B63" font-weight="700">avg ${avg}</text>
+    ${bars}</svg>`;
+}
+/* DAY history rows — the day's individual readings, keyed by time of day */
+function msDayRows(day, fmt) {
+  const last = day.times.length - 1;
+  return day.times.map((t, i) =>
+    `<div class="ms-row"><div class="ms-meta"><div class="ms-t">${t}</div><div class="ms-d">Today</div><div class="ms-a">${CAT_SESS[i % CAT_SESS.length].by}</div></div>
+      <div class="ms-pill" style="background:${i === last ? '#E1F9ED' : '#EFF5F2'};color:#1F515B">${fmt(day.values[i])}</div></div>`).join('');
+}
+/* ---- Schedule (planning) card — cadence + last/next planned reading + link to
+        the Schedule tab. Planning only: NO completion/overdue status. ---- */
+const MS_MON2 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function msAddDays(dateStr, days) {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime()) || !days) return null;
+  d.setDate(d.getDate() + days);
+  return d.getDate() + ' ' + MS_MON2[d.getMonth()] + ' ' + d.getFullYear();
+}
+const MS_CADENCE = { numeric: ['Weekly', 7], scale: ['Fortnightly', 14], list: ['Monthly', 30], text: ['As needed', 0] };
+const MS_REPEAT_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
+const MS_PLUS_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+/* "Your Schedule" card (Apple-Sleep style): next assessment + week strip + repeat,
+   sourced from the real planning data (SCHEDULE) for this assessment type. */
+function msScheduleCard(q, it) {
+  const plans = (typeof SCHEDULE !== 'undefined') ? SCHEDULE.filter(p => p.types && p.types.includes(q)) : [];
+  const plan = plans.length ? plans.slice().sort((a, b) => a.date - b.date)[0] : null;
+  const rel = (typeof schRel === 'function') ? schRel : (d => '' + d);
+  const repLbl = (typeof schRepeatLabel === 'function') ? schRepeatLabel : (p => p.repeat || '');
+  const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const head = `<div class="ms-sched-head"><div class="ms-card-t">Your Schedule</div>
+    <button class="ms-sched-link" onclick="closeSheet2();setAaTab('schedule')">Full Schedule ${I2.chevR}</button></div>`;
+  if (plan) {
+    const wd = plan.date.getDay();
+    const strip = DOW.map((d, i) => `<span class="ms-day ${i === wd ? 'on' : ''}">${d}</span>`).join('');
+    const rep = repLbl(plan);
+    return `<div class="ms-card ms-sched">${head}
+      <div class="ms-sched-next">
+        <span class="ms-sched-ic">${I2.cal}</span>
+        <div class="ms-sched-next-b"><div class="ms-sched-next-l">Next assessment</div>
+          <div class="ms-sched-next-v">${rel(plan.date)} · ${plan.time}</div></div>
+      </div>
+      <div class="ms-week">${strip}</div>
+      <div class="ms-sched-rep">${MS_REPEAT_IC}<span>${rep === 'One Time' ? 'Does not repeat' : 'Repeats · ' + rep}</span></div>
+    </div>`;
+  }
+  const cad = MS_CADENCE[it.rt] || ['Weekly', 7];
+  return `<div class="ms-card ms-sched">${head}
+    <div class="ms-sched-empty">
+      <div class="ms-sched-empty-t">Not scheduled yet</div>
+      <div class="ms-sched-empty-s">Recommended cadence · ${cad[0]}</div>
+    </div>
+    <button class="ms-sched-btn" onclick="closeSheet2();setAaTab('schedule')">${MS_PLUS_IC}<span>Schedule assessment</span></button>
+  </div>`;
+}
+/* ---- Monthly / Yearly (and any range) Insights card — narrative highlights that
+        adapt to the selected range tab and the metric's response type. ---- */
+const MS_RANGE_LABEL = { D: 'Today', W: 'This Week', M: 'This Month', '6M': 'Last 6 Months', Y: 'This Year' };
+function msInsRow(k, v, color, arrow) {
+  return `<div class="ms-ins"><span class="ms-ins-k">${k}</span><span class="ms-ins-v" style="color:${color || '#44544A'}">${arrow ? `<span class="ar">${arrow}</span>` : ''}${v}</span></div>`;
+}
+/* per-assessment clinical context → drives the "Status" insight (target band).
+   ideal:[lo,hi] · invert: lower-is-better (e.g. stress/aggression/fear). */
+const INSIGHT_META = {
+  // Physical Health
+  'Weight': { ideal: [18, 26] }, 'Temperature': { ideal: [38, 39.2] }, 'Heart Rate': { ideal: [60, 100] },
+  'Body Condition Score': { ideal: [4, 6] }, 'Hydration Status': { ideal: [4, 5] },
+  // Behaviour
+  'Activity Level': { ideal: [6, 10] }, 'Stress Behaviour': { ideal: [1, 2], invert: true }, 'Enrichment Response': { ideal: [4, 5] },
+  // Environment
+  'Ambient Temperature': { ideal: [20, 26] }, 'Humidity': { ideal: [50, 70] }, 'Noise Level': { ideal: [0, 60], invert: true },
+  'Enclosure Cleanliness': { ideal: [4, 5] }, 'Habitat Condition': { ideal: [4, 5] },
+  // Mental Domain
+  'Alertness': { ideal: [4, 5] }, 'Comfort Level': { ideal: [4, 5] }, 'Stress Level': { ideal: [1, 2], invert: true },
+  // Nutrition
+  'Food Intake': { ideal: [700, 1000] }, 'Water Intake': { ideal: [900, 1500] }, 'Feeding Frequency': { ideal: [3, 5] },
+  'Nutritional Status': { ideal: [4, 5] },
+};
+/* status of the latest value vs this assessment's target band */
+function insStatus(q, it, latest) {
+  const m = INSIGHT_META[q]; if (!m || !m.ideal) return null;
+  const [lo, hi] = m.ideal, u = it.rt === 'scale' ? '/' + it.max : (it.unit ? ' ' + it.unit : '');
+  let word, color;
+  if (latest >= lo && latest <= hi) { word = it.rt === 'scale' ? 'Ideal' : 'Normal'; color = '#34A853'; }
+  else if (latest > hi) { word = m.invert ? 'Elevated' : 'Above normal'; color = m.invert ? '#E93353' : '#E0883B'; }
+  else { word = m.invert ? 'Low' : 'Below normal'; color = '#E0883B'; }
+  return { word, color, target: `${lo}–${hi}${u}` };
+}
+/* list status: where the current option sits on its (best-last) scale.
+   target = the best option, so every list reports its goal like numeric bands do. */
+function insListStatus(it, cur) {
+  const i = it.options.indexOf(cur), n = it.options.length; if (i < 0 || n < 2) return null;
+  const f = i / (n - 1), target = it.options[n - 1];
+  if (f >= 0.75) return { word: 'Optimal', color: '#34A853', target };
+  if (f >= 0.5) return { word: 'Good', color: '#34A853', target };
+  if (f >= 0.25) return { word: 'Watch', color: '#E0883B', target };
+  return { word: 'Needs attention', color: '#E93353', target };
+}
+function msInsightsCard(q, it) {
+  const rt = it.rt;
+  let chip = '', rows = '';
+  if (rt === 'numeric' || rt === 'scale') {
+    const isScale = rt === 'scale';
+    let values, labels, n, avg;
+    if (MD_FILTER === 'D') { const day = mdDaySeries(q); values = day.values; labels = day.times; n = day.count; avg = day.avg; }
+    else { const s = mdSeries(q, MD_FILTER); values = isScale ? s.values.map(v => Math.round(v)) : s.values; labels = s.labels; n = values.length; avg = isScale ? +(values.reduce((a, b) => a + b, 0) / n).toFixed(1) : s.avg; }
+    const cur = values[n - 1], first = values[0], delta = +(cur - first).toFixed(1);
+    const min = Math.min(...values), max = Math.max(...values), peakLab = labels[values.indexOf(max)];
+    const u = isScale ? '/' + it.max : ' ' + it.unit, fmt = v => isScale ? v + '/' + it.max : v + ' ' + it.unit;
+    const thr = isScale ? 0.5 : Math.max(0.1, Math.abs(avg) * 0.02);
+    let tWord, tArrow, tColor;
+    if (Math.abs(delta) < thr) { tWord = 'Stable'; tArrow = '→'; tColor = '#8A9499'; }
+    else if (delta > 0) { tWord = 'Rising'; tArrow = '↑'; tColor = '#34A853'; }
+    else { tWord = 'Falling'; tArrow = '↓'; tColor = '#E93353'; }
+    chip = `<span class="ms-range">${MS_RANGE_LABEL[MD_FILTER] || ''}</span>`;
+    const st = insStatus(q, it, cur);
+    rows = (st ? msInsRow('Status', `${st.word} <span style="color:#7A8684;font-weight:500">(target ${st.target})</span>`, st.color) : '')
+      + msInsRow('Trend', `${tWord} <span style="color:#7A8684;font-weight:500">(${delta > 0 ? '+' : ''}${delta}${u} vs start)</span>`, tColor, tArrow)
+      + msInsRow('Range', `${fmt(min)} – ${fmt(max)}`)
+      + msInsRow('Peak', `${fmt(max)} · ${peakLab}`)
+      + msInsRow('Readings', n);
+  } else if (rt === 'list') {
+    const vals = seriesFor(q), dist = {};
+    it.options.forEach(o => dist[o] = 0); vals.forEach(v => { if (dist[v] !== undefined) dist[v]++; });
+    const freq = Object.entries(dist).sort((a, b) => b[1] - a[1])[0];
+    const first = vals[0], cur = vals[vals.length - 1];
+    const lst = insListStatus(it, cur);
+    rows = (lst ? msInsRow('Status', `${lst.word} <span style="color:#7A8684;font-weight:500">(target ${lst.target})</span>`, lst.color) : '')
+      + msInsRow('Current', it.value)
+      + msInsRow('Most frequent', `${freq[0]} (${freq[1]}×)`)
+      + msInsRow('Shift', cur === first ? 'No change' : `${first} → ${cur}`)
+      + msInsRow('Records', vals.length);
+  } else {
+    const contributors = new Set(CAT_SESS.map(s => s.by)).size;
+    rows = msInsRow('Observations', CAT_SESS.length)
+      + msInsRow('Latest', (CAT_SESS[0] || {}).date || '—')
+      + msInsRow('Contributors', contributors + ' keepers');
+  }
+  return `<div class="ms-card ms-ins-card"><div class="ms-card-t">Insights${chip}</div>${rows}</div>`;
+}
 /* sheet content (filter + type-adaptive body); re-rendered in place on filter change */
 function metricSheetInner(q) {
   const it = trendItem(q), rt = it.rt, flt = msFlt(q);
+  const scheduleCard = msScheduleCard(q, it), insightsCard = msInsightsCard(q, it);
   if (rt === 'numeric') {
+    const color = it.color || '#FA6140';
+    if (MD_FILTER === 'D') {
+      const day = mdDaySeries(q), min = Math.min(...day.values), max = Math.max(...day.values);
+      return `<div class="ms-white">${flt}<div class="ms-day-note">${day.count} records today · by time of day</div>
+        ${intradayChart(day.values, day.times, color, day.avg, v => v + it.unit)}</div>
+        <div class="ms-lower">${scheduleCard}${insightsCard}
+          <div class="ms-card ms-stats">${msStat('Records', day.count)}${msStat('Average', day.avg + ' ' + it.unit)}${msStat('Min', min + ' ' + it.unit)}${msStat('Max', max + ' ' + it.unit)}</div>
+          <div class="ms-card" data-searchbox><div class="ms-card-t">Today&rsquo;s Records</div>${listSearch('.ms-row')}<div class="ms-hist">${msDayRows(day, v => v + ' ' + it.unit)}</div><div class="ls-empty">No matching entries</div></div>
+        </div>`;
+    }
     const s = mdSeries(q, MD_FILTER), min = Math.min(...s.values), max = Math.max(...s.values);
-    return `<div class="ms-white">${flt}${lineInteractive('mdc', s.values, '#FA6140', { avg: s.avg, axes: true, labels: s.labels, valStrs: s.values.map(v => v + ' ' + it.unit) })}</div>
-      <div class="ms-lower">
+    return `<div class="ms-white">${flt}${lineInteractive('mdc', s.values, color, { avg: s.avg, axes: true, area: it.viz !== 'line', labels: s.labels, valStrs: s.values.map(v => v + ' ' + it.unit) })}</div>
+      <div class="ms-lower">${scheduleCard}${insightsCard}
         <div class="ms-card ms-stats">${msStat('Average', s.avg + ' ' + it.unit)}${msStat('Minimum', min + ' ' + it.unit)}${msStat('Maximum', max + ' ' + it.unit)}</div>
         <div class="ms-card" data-searchbox><div class="ms-card-t">${q} History</div>${listSearch('.ms-row')}<div class="ms-hist">${msRows(q, v => v + ' ' + it.unit)}</div><div class="ls-empty">No matching entries</div></div>
       </div>`;
   }
   if (rt === 'scale') {
+    const color = it.color || '#00AFD6';
+    if (MD_FILTER === 'D') {
+      const day = mdDaySeries(q), min = Math.min(...day.values), max = Math.max(...day.values);
+      return `<div class="ms-white">${flt}<div class="ms-day-note">${day.count} records today · by time of day</div>
+        ${intradayChart(day.values, day.times, color, day.avg, v => v + '/' + it.max)}</div>
+        <div class="ms-lower">${scheduleCard}${insightsCard}
+          <div class="ms-card ms-stats">${msStat('Records', day.count)}${msStat('Average', day.avg + '/' + it.max)}${msStat('Lowest', min + '/' + it.max)}${msStat('Highest', max + '/' + it.max)}</div>
+          <div class="ms-card" data-searchbox><div class="ms-card-t">Today&rsquo;s Records</div>${listSearch('.ms-row')}<div class="ms-hist">${msDayRows(day, v => v + ' / ' + it.max)}</div><div class="ls-empty">No matching entries</div></div>
+        </div>`;
+    }
     const s = mdSeries(q, MD_FILTER), vals = s.values.map(v => Math.round(v)), min = Math.min(...vals), max = Math.max(...vals);
     const avg = +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1), prog = seriesFor(q).slice(-4);
-    return `<div class="ms-white">${flt}${lineInteractive('mdc', s.values, '#00AFD6', { avg, axes: true, labels: s.labels, valStrs: s.values.map(v => Math.round(v) + ' / ' + it.max) })}</div>
-      <div class="ms-lower">
+    return `<div class="ms-white">${flt}${lineInteractive('mdc', s.values, color, { avg, axes: true, labels: s.labels, valStrs: s.values.map(v => Math.round(v) + ' / ' + it.max) })}</div>
+      <div class="ms-lower">${scheduleCard}${insightsCard}
         <div class="ms-card ms-stats">${msStat('Average', avg + '/' + it.max)}${msStat('Lowest', min + '/' + it.max)}${msStat('Highest', max + '/' + it.max)}</div>
         <div class="ms-card"><div class="ms-card-t">Scale Progression</div>
           <div class="jrny">${prog.map((v, i) => (i ? '<span class="jr-arr">→</span>' : '') + `<span class="jr-step ${i === prog.length - 1 ? 'cur' : ''}">${v}/${it.max}</span>`).join('')}</div></div>
@@ -892,7 +1220,7 @@ function metricSheetInner(q) {
     const maxC = Math.max(1, ...Object.values(dist)), freq = Object.entries(dist).sort((a, b) => b[1] - a[1])[0][0];
     const PAL = ['#FA6140', '#E4B819', '#7BC96A', '#37BD69'], col = o => PAL[Math.round(it.options.indexOf(o) / Math.max(1, it.options.length - 1) * 3)];
     return `<div class="ms-white">${flt}</div>
-      <div class="ms-lower">
+      <div class="ms-lower">${scheduleCard}${insightsCard}
         <div class="ms-card ms-stats">${msStat('Current', it.value)}${msStat('Most Frequent', freq)}${msStat('Records', vals.length)}</div>
         <div class="ms-card"><div class="ms-card-t">Distribution</div>
           ${it.options.map(o => `<div class="bd-row"><div class="bd-top"><span>${o}</span><b>${dist[o]}×</b></div><div class="bd-bar"><i style="width:${Math.round(dist[o] / maxC * 100)}%;background:${col(o)}"></i></div></div>`).join('')}</div>
@@ -909,7 +1237,7 @@ function metricSheetInner(q) {
         <div class="ms-latest-q">“${latest.text}”</div>
         <div class="ms-latest-by">— ${latest.by}</div>
       </div></div>
-    <div class="ms-lower">
+    <div class="ms-lower">${scheduleCard}${insightsCard}
       <div class="ms-card" data-searchbox><div class="ms-card-t">All Observations · ${notes.length}</div>${listSearch('.md-note', 'Search observations')}
         <div class="md-timeline">${notes.map(n => `<div class="md-note"><span class="md-note-dot"></span><div class="md-note-body"><div class="mn-m">${n.date} · ${n.by}</div><div class="mn-q">${n.text}</div></div></div>`).join('')}</div><div class="ls-empty">No matching observations</div></div>
     </div>`;

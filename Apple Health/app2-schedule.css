@@ -14,8 +14,8 @@
 .sch-role-seg button.active { background: #fff; color: var(--on-primary-cont); box-shadow: var(--shadow-seg); }
 
 /* ---- Assessment Calendar (lightweight, in-module) ----------------------- */
-.sch-cal-card { background: #fff; border: 1px solid var(--neutral-05); border-radius: var(--r-lg);
-  box-shadow: var(--shadow-stat); padding: 14px 14px 16px; margin-bottom: 16px; }
+.sch-cal-card { background: #fff; border-radius: var(--r-lg);
+  padding: 14px 14px 16px; margin-bottom: 16px; border: 0; box-shadow: none; }
 .sch-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .sch-cal-title { font-size: 16px; font-weight: 700; color: var(--neutral-primary); }
 .sch-cal-nav-wrap { display: flex; gap: 6px; }
@@ -65,7 +65,7 @@
 
 /* ---- Scheduled plan card ------------------------------------------------- */
 .sch-plan { display: flex; flex-direction: column; gap: 11px; width: 100%; text-align: left; cursor: pointer;
-  background: #fff; border: 1px solid var(--neutral-05); border-radius: 16px; box-shadow: 0 1px 3px rgba(20,61,46,.05);
+  background: #fff; border-radius: 16px; border: 0; box-shadow: none;
   padding: 15px 16px; font-family: var(--font); }
 .sch-plan:active { transform: translateY(1px); }
 .sch-plan-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -147,8 +147,8 @@
 .sch-day { padding: 16px 16px 26px; background: #EFF5F2; }
 .sch-day-sub { font-size: 13px; font-weight: 500; color: var(--neutral-secondary); margin-bottom: 14px; }
 .sch-day-list { display: flex; flex-direction: column; gap: 12px; }
-.sch-day-plan { background: #fff; border: 1px solid var(--neutral-05);
-  border-radius: 14px; box-shadow: 0 1px 3px rgba(20,61,46,.05); padding: 14px 15px; display: flex; flex-direction: column; gap: 10px; }
+.sch-day-plan { background: #fff;
+  border-radius: 14px; padding: 14px 15px; display: flex; flex-direction: column; gap: 10px; }
 .sch-dp-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .sch-dp-cat { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--neutral-primary); }
 .sch-dp-time { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 500; color: var(--neutral-secondary); white-space: nowrap; }

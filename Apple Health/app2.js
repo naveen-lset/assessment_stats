@@ -27,10 +27,21 @@ const I2 = {
 const SCREENS2 = {};
 const NAV = { stack: ['amOverview'], params: {} };
 
+let LAST_RENDER_KEY = null;
 function render2() {
   const key = NAV.stack[NAV.stack.length - 1];
   const fn = SCREENS2[key] || SCREENS2.amOverview;
+  // Re-rendering the same screen (filter/tab/toggle change) rebuilds .scroll and
+  // would jump back to the top. Preserve the scroll position in that case; on a
+  // real navigation to a different screen, start at the top.
+  const prev = document.querySelector('#viewport .scroll');
+  const savedTop = (prev && key === LAST_RENDER_KEY) ? prev.scrollTop : 0;
   document.getElementById('viewport').innerHTML = fn(NAV.params[key] || {});
+  if (savedTop) {
+    const next = document.querySelector('#viewport .scroll');
+    if (next) next.scrollTop = savedTop;
+  }
+  LAST_RENDER_KEY = key;
   if (document.getElementById('assessSvg')) requestAnimationFrame(mountAssessChart);
 }
 function go2(key, params) {
@@ -211,60 +222,117 @@ function smoothPath2(pts) {
   }
   return d;
 }
-function assessChartSVG(filterKey, prevColor) {
-  prevColor = prevColor || '#8479F9';
-  const bk = ASSESS[filterKey].buckets;
-  const vals = bk.map(b => b.count), prev = bk.map(b => b.prev);
-  const w = 326, h = 152, pl = 22, pr = 8, pt = 12, pb = 28, iw = w - pl - pr, ih = h - pt - pb;
-  const max = Math.max(...vals, ...prev, 1);
-  const niceTop = Math.max(5, Math.ceil(max * 1.12 / 5) * 5);
-  const n = vals.length, slot = iw / n, bw = Math.min(22, slot * 0.5);
-  const X = i => pl + slot * i + slot / 2, Y = v => pt + (1 - v / niceTop) * ih;
+/* activity series for a filter + assessment category ('All' = every assessment).
+   Category series are a deterministic, weighted subset of the totals. */
+const ACT_CAT_W = { 'Physical Health': 0.30, 'Behaviour': 0.22, 'Environment': 0.16, 'Mental Domain': 0.14, 'Nutrition': 0.18 };
+const ACT_CAT_COLOR = { 'Physical Health': '#FA6140', 'Behaviour': '#8479F9', 'Environment': '#00AFD6', 'Mental Domain': '#E4A11B', 'Nutrition': '#37BD69' };
+function actVals(filterKey, cat) {
+  const bk = ASSESS[filterKey].buckets, axis = bk.map(b => b.axis), full = bk.map(b => b.full);
+  if (!cat || cat === 'All') return { vals: bk.map(b => b.count), prev: bk.map(b => b.prev), axis, full, breakdown: bk.map(b => b.breakdown) };
+  const wt = ACT_CAT_W[cat] || 0.2, seed = cat.length * 7;
+  const vals = bk.map((b, i) => Math.max(0, Math.round(b.count * wt * (0.85 + 0.3 * (((seed + i * 13) % 10) / 10)))));
+  const prev = bk.map((b, i) => Math.max(0, Math.round(b.prev * wt * (0.80 + 0.3 * (((seed + i * 7) % 10) / 10)))));
+  return { vals, prev, axis, full, breakdown: vals.map(v => [{ type: cat, n: v }]) };
+}
+/* Apple-Fitness-style dual chart: cumulative trend line (current vs previous)
+   on top + per-bucket bars with an average line below; scrubbable marker.
+   Geometry is stashed on window.__AC for the scrub/tap interactions. */
+function assessChartSVG(filterKey, cat) {
+  cat = cat || 'All';
+  const GREEN = '#37BD69', GHOST = '#DFE8E3';
+  const d = actVals(filterKey, cat);
+  const vals = d.vals, prev = d.prev, axis = d.axis, full = d.full, breakdown = d.breakdown;
+  const n = vals.length, cur = n - 1;
 
+  const w = 340, pl = 8, pr = 28, pt = 16, pb = 26, iw = w - pl - pr, h = 184, ih = h - pt - pb;
+  const slot = iw / n, X = i => pl + slot * i + slot / 2;
+  const bwC = Math.min(18, slot * 0.5), bwP = Math.min(26, slot * 0.72);
+  const max = Math.max(...vals, ...prev, 1), niceTop = Math.max(4, Math.ceil(max * 1.18 / 4) * 4);
+  const base = pt + ih, Y = v => pt + (1 - v / niceTop) * ih;
+  const avg = vals.reduce((s, v) => s + v, 0) / n;
+
+  // gridlines + single count axis on the right (0 / mid / top)
   let grid = '';
-  for (let g = 0; g <= 4; g++) {
-    const val = niceTop * g / 4, y = pt + (1 - g / 4) * ih;
-    grid += `<line x1="${pl}" y1="${y.toFixed(1)}" x2="${w - pr}" y2="${y.toFixed(1)}" stroke="rgba(0,0,0,0.06)" stroke-width="1"/>`
-          + `<text class="ac-ylab" x="${pl - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${Math.round(val)}</text>`;
-  }
+  [0, niceTop / 2, niceTop].forEach(val => {
+    const y = Y(val);
+    grid += `<line x1="${pl}" y1="${y.toFixed(1)}" x2="${w - pr}" y2="${y.toFixed(1)}" stroke="rgba(0,0,0,0.05)" stroke-width="1"/>`
+          + `<text class="ac-ylab" x="${w - 4}" y="${(y + 3).toFixed(1)}" text-anchor="end">${Math.round(val)}</text>`;
+  });
+  // previous-period ghost bars (behind) — the "vs last period" comparison
+  let ghost = '';
+  prev.forEach((v, i) => {
+    const bh = (v / niceTop) * ih, x = X(i) - bwP / 2, y = base - bh;
+    ghost += `<rect class="ac-ghost" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bwP.toFixed(1)}" height="${Math.max(0, bh).toFixed(1)}" rx="5" fill="${GHOST}"/>`;
+  });
+  // average line (dashed) + label
+  const ay = Y(avg);
+  const avgLine = `<line x1="${pl}" y1="${ay.toFixed(1)}" x2="${w - pr}" y2="${ay.toFixed(1)}" stroke="${GREEN}" stroke-width="1.3" stroke-dasharray="4 4" opacity=".7"/>`
+    + `<text x="${w - 4}" y="${(ay - 5).toFixed(1)}" text-anchor="end" class="ac-avglab">avg ${Math.round(avg)}</text>`;
+  // current-period bars (front), latest emphasised
   let bars = '';
   vals.forEach((v, i) => {
-    const bh = (v / niceTop) * ih, x = X(i) - bw / 2, y = pt + ih - bh, y0 = (pt + ih).toFixed(1);
-    bars += `<rect class="ac-bar" data-i="${i}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="5" fill="url(#acbar)">`
-          + `<animate attributeName="height" values="0;${bh.toFixed(1)}" dur="0.55s" begin="${(i * 0.05).toFixed(2)}s" fill="freeze" calcMode="spline" keySplines="0.33 0 0.2 1" keyTimes="0;1"/>`
-          + `<animate attributeName="y" values="${y0};${y.toFixed(1)}" dur="0.55s" begin="${(i * 0.05).toFixed(2)}s" fill="freeze" calcMode="spline" keySplines="0.33 0 0.2 1" keyTimes="0;1"/></rect>`;
+    const bh = (v / niceTop) * ih, x = X(i) - bwC / 2, y = base - bh, fill = i === cur ? GREEN : 'url(#acbar)';
+    bars += `<rect class="ac-bar" data-i="${i}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bwC.toFixed(1)}" height="${Math.max(0, bh).toFixed(1)}" rx="5" fill="${fill}">`
+          + `<animate attributeName="height" values="0;${Math.max(0, bh).toFixed(1)}" dur="0.5s" begin="${(i * 0.04).toFixed(2)}s" fill="freeze" calcMode="spline" keySplines="0.33 0 0.2 1" keyTimes="0;1"/>`
+          + `<animate attributeName="y" values="${base};${y.toFixed(1)}" dur="0.5s" begin="${(i * 0.04).toFixed(2)}s" fill="freeze" calcMode="spline" keySplines="0.33 0 0.2 1" keyTimes="0;1"/></rect>`;
   });
-  const pls = prev.map((v, i) => [X(i), Y(v)]);
-  const prevPath = `<path class="ac-prev" d="${smoothPath2(pls)}" fill="none" stroke="${prevColor}" stroke-width="2" stroke-dasharray="4 4"/>`
-    + pls.map(p => `<circle class="ac-prevdot" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.6" fill="${prevColor}"/>`).join('');
-  const labels = bk.map((b, i) => `<text class="ac-xlab" x="${X(i).toFixed(1)}" y="${h - 9}" text-anchor="middle">${b.axis}</text>`).join('');
-  let hit = '';
-  vals.forEach((v, i) => { hit += `<rect class="ac-hit" x="${(X(i) - slot / 2).toFixed(1)}" y="${pt}" width="${slot.toFixed(1)}" height="${ih}" fill="transparent" onclick="showAssessTip(event,${i})"/>`; });
+  const labels = axis.map((ax, i) => `<text class="ac-xlab ${i === cur ? 'cur' : ''}" data-i="${i}" x="${X(i).toFixed(1)}" y="${h - 7}" text-anchor="middle">${ax}</text>`).join('');
+  const overlay = `<rect id="acScrubArea" x="${pl}" y="${pt}" width="${iw}" height="${ih}" fill="transparent" style="cursor:pointer;touch-action:none" onpointerdown="assessTap(event)" onpointermove="assessScrub(event)" onpointerleave="assessScrubEnd()"/>`;
+
+  window.__AC = { w, h, xs: vals.map((_, i) => +X(i).toFixed(1)), topY: vals.map(v => +Y(v).toFixed(1)), prevTop: prev.map(v => +Y(v).toFixed(1)), vals, prev, full, axis, breakdown, cat, filter: filterKey, cur };
 
   return `<svg id="assessSvg" class="ac-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
-    <defs><linearGradient id="acbar" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#3FD07E"/><stop offset="1" stop-color="#37BD69"/>
-    </linearGradient></defs>
-    ${grid}${bars}${prevPath}${labels}${hit}
-  </svg>
-  <div class="ac-legend"><span class="lg"><i class="sq"></i>This period</span><span class="lg"><i class="ln"></i>Previous</span></div>`;
+    <defs><linearGradient id="acbar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#63D293"/><stop offset="1" stop-color="#41C074"/></linearGradient></defs>
+    ${grid}${ghost}${avgLine}${bars}${labels}${overlay}
+  </svg>`;
 }
 
-/* premium entrance: bars grow via SVG <animate>; previous line + dots fade in */
+/* premium entrance: bars grow (SVG animate) · green line draws on · grey line +
+   marker fade in */
 function mountAssessChart() {
   const svg = document.getElementById('assessSvg'); if (!svg) return;
-  const prev = svg.querySelector('.ac-prev'), pdots = svg.querySelectorAll('.ac-prevdot');
+  const prev = svg.querySelector('.ac-prev');
   if (prev) {
     prev.style.transition = 'none'; prev.style.opacity = '0';
     void prev.getBoundingClientRect();
-    prev.style.transition = 'opacity 500ms ease 450ms'; prev.style.opacity = '.9';
+    prev.style.transition = 'opacity 500ms ease 420ms'; prev.style.opacity = '.95';
   }
-  pdots.forEach((dt, i) => {
-    dt.style.transition = 'none'; dt.style.opacity = '0';
-    void dt.getBoundingClientRect();
-    dt.style.transition = `opacity 240ms ease ${480 + i * 40}ms`; dt.style.opacity = '1';
-  });
+  const line = svg.querySelector('.ac-line'), fill = svg.querySelector('.ac-cfill');
+  if (line) {
+    const len = line.getTotalLength ? line.getTotalLength() : 700;
+    line.style.transition = 'none'; line.style.strokeDasharray = len; line.style.strokeDashoffset = len;
+    void line.getBoundingClientRect();
+    line.style.transition = 'stroke-dashoffset 850ms cubic-bezier(.33,0,.2,1)'; line.style.strokeDashoffset = '0';
+  }
+  if (fill) { fill.style.transition = 'none'; fill.style.opacity = '0'; void fill.getBoundingClientRect(); fill.style.transition = 'opacity 700ms ease 250ms'; fill.style.opacity = '1'; }
+  const mk = svg.querySelector('#acMarker');
+  if (mk) { mk.style.transition = 'none'; mk.style.opacity = '0'; void mk.getBoundingClientRect(); mk.style.transition = 'opacity 300ms ease 650ms'; mk.style.opacity = '1'; }
 }
+/* ---- scrub micro-interaction: hover/drag moves the marker + value bubble ---- */
+function acIdxFromEvent(e) {
+  const C = window.__AC, svg = document.getElementById('assessSvg'); if (!C || !svg) return -1;
+  const r = svg.getBoundingClientRect(), vx = (e.clientX - r.left) / r.width * C.w;
+  let idx = 0, best = 1e9; for (let i = 0; i < C.xs.length; i++) { const dd = Math.abs(C.xs[i] - vx); if (dd < best) { best = dd; idx = i; } }
+  return idx;
+}
+function acBoldLabel(i) { document.querySelectorAll('#assessSvg .ac-xlab').forEach(t => t.classList.toggle('cur', +t.dataset.i === i)); }
+function assessScrub(e) {
+  const C = window.__AC; if (!C) return;
+  const idx = acIdxFromEvent(e); if (idx < 0) return;
+  svgActiveDot(idx); acBoldLabel(idx);
+  const tip = document.getElementById('acScrubTip'), svg = document.getElementById('assessSvg'), card = document.getElementById('assessCard');
+  if (tip && svg && card) {
+    const sr = svg.getBoundingClientRect(), cr = card.getBoundingClientRect();
+    tip.innerHTML = `<b>${C.vals[idx]}</b><i>${C.axis[idx]}</i>`; tip.style.display = 'block';
+    tip.style.left = ((sr.left - cr.left) + C.xs[idx] / C.w * sr.width) + 'px';
+    tip.style.top = ((sr.top - cr.top) + C.topY[idx] / C.h * sr.height - 12) + 'px';
+  }
+}
+function assessScrubEnd() {
+  const C = window.__AC; if (C) { svgActiveDot(-1); acBoldLabel(C.cur); }
+  const tip = document.getElementById('acScrubTip'); if (tip) tip.style.display = 'none';
+}
+function assessTap(e) { const idx = acIdxFromEvent(e); if (idx < 0) return; if (e.stopPropagation) e.stopPropagation(); showAssessTipAt(idx); }
 
 /* filter switch — fade previous chart out, swap, transition new chart in */
 function selectSeg(f) {
@@ -280,24 +348,24 @@ function selectSeg(f) {
   }, 180);
 }
 
-/* lightweight popover anchored to the tapped point (no sheet, no modal) */
-function showAssessTip(e, i) {
-  e.stopPropagation();
-  const b = ASSESS[ASSESS_SEG].buckets[i];
-  const tip = document.getElementById('assessTip'), card = document.getElementById('assessCard');
+/* breakdown popover, anchored to a bucket's point via the stashed geometry */
+function showAssessTipAt(i) {
+  const C = window.__AC; if (!C) return;
+  const tip = document.getElementById('assessTip'), card = document.getElementById('assessCard'), svg = document.getElementById('assessSvg');
+  if (!tip || !card || !svg) return;
+  const bd = C.breakdown[i] || [], cnt = C.vals[i];
   tip.innerHTML =
-    `<div class="tip-day">${b.full}</div>
-     <div class="tip-count">${b.count} Records</div>
-     <div class="tip-list">${b.breakdown.map(x =>
-        `<div class="tip-row"><span><i style="background:${REC_CATS[x.type]}"></i>${x.type}</span><b>${x.n}</b></div>`).join('')}</div>
+    `<div class="tip-day">${C.full[i]}</div>
+     <div class="tip-count">${cnt} Records</div>
+     <div class="tip-list">${bd.map(x =>
+        `<div class="tip-row"><span><i style="background:${REC_CATS[x.type] || ACT_CAT_COLOR[C.cat] || '#37BD69'}"></i>${x.type}</span><b>${x.n}</b></div>`).join('')}</div>
      <button class="tip-link" onclick="openRecords(${i})">View Details →</button>`;
   tip.style.display = 'block'; tip.style.opacity = '0';
-  const dot = e.target.getBoundingClientRect(), cr = card.getBoundingClientRect();
-  const cx = dot.left - cr.left + dot.width / 2, tw = tip.offsetWidth, th = tip.offsetHeight;
+  const sr = svg.getBoundingClientRect(), cr = card.getBoundingClientRect();
+  const cx = (sr.left - cr.left) + C.xs[i] / C.w * sr.width, cy = (sr.top - cr.top) + C.topY[i] / C.h * sr.height;
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
   const left = Math.max(8, Math.min(cx - tw / 2, cr.width - tw - 8));
-  let top = (dot.top - cr.top) - th - 12;
-  const below = top < 4;
-  if (below) top = (dot.top - cr.top) + 16;
+  let top = cy - th - 14; const below = top < 4; if (below) top = cy + 18;
   tip.classList.toggle('below', below);
   tip.style.left = left + 'px'; tip.style.top = top + 'px';
   tip.style.setProperty('--caret', (cx - left) + 'px');
@@ -305,6 +373,7 @@ function showAssessTip(e, i) {
   requestAnimationFrame(() => { tip.style.opacity = '1'; tip.style.transform = 'translateY(0)'; });
   ACTIVE_TIP = true;
 }
+function showAssessTip(e, i) { if (e && e.stopPropagation) e.stopPropagation(); showAssessTipAt(i); }
 function hideAssessTip() {
   const t = document.getElementById('assessTip');
   if (t) { t.style.display = 'none'; t.style.transform = 'translateY(4px)'; }
