@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "build:agentation": "esbuild \"Apple Health/agentation/entry.jsx\" --bundle --format=iife --outfile=\"Apple Health/agentation/agentation.bundle.js\" --jsx=automatic --define:process.env.NODE_ENV='\"development\"' --minify"
+  },
+  "devDependencies": {
+    "agentation": "^3.0.2",
+    "esbuild": "^0.28.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Antz Assessment — Report Wireframes</title>
+<style>
+  :root{
+    --ink:#2b2f33; --line:#b9c0c4; --line2:#d6dbde; --bg:#eef1f3;
+    --skel:#cfd5d9; --skel2:#dde2e5; --note:#7a8a93; --frame:#fff;
+    --accent:#37bd69; --warn:#e4b819; --crit:#e93353;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);
+    padding:32px 20px 80px;}
+  h1{font-size:22px;font-weight:800;letter-spacing:-.3px;margin:0 0 4px;}
+  .lede{color:var(--note);font-size:13px;margin:0 0 28px;max-width:680px;line-height:1.5;}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin:0 0 30px;font-size:11.5px;color:var(--note);}
+  .legend b{color:var(--ink);}
+  .legend .sw{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:5px;}
+
+  .group{font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;
+    color:var(--note);margin:34px 0 16px;display:flex;align-items:center;gap:10px;}
+  .group::after{content:"";flex:1;height:1px;background:var(--line2);}
+
+  .gallery{display:flex;flex-wrap:wrap;gap:26px;}
+
+  /* phone frame */
+  .phone{width:300px;background:var(--frame);border:2px solid var(--ink);border-radius:26px;
+    padding:10px 0 0;box-shadow:0 10px 30px rgba(0,0,0,.10);overflow:hidden;}
+  .notch{width:90px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 10px;}
+  .scr{padding:0 14px 16px;}
+  .caption{font-size:12px;font-weight:700;text-align:center;padding:9px 6px 0;color:var(--ink);}
+  .capsub{font-size:10.5px;color:var(--note);text-align:center;padding:1px 10px 12px;line-height:1.4;}
+
+  /* wireframe atoms */
+  .nav{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px;}
+  .nav .back{width:22px;height:22px;border:1.5px solid var(--line);border-radius:6px;}
+  .ttl{height:13px;border-radius:3px;background:var(--ink);}
+  .ttl.lg{height:17px;}
+  .sub{height:8px;border-radius:3px;background:var(--skel);margin-top:6px;}
+  .bar{height:9px;border-radius:3px;background:var(--skel);}
+  .bar.dk{background:var(--skel2);}
+  .bar.w40{width:40%;}.bar.w50{width:50%;}.bar.w60{width:60%;}.bar.w70{width:70%;}
+  .bar.w80{width:80%;}.bar.w90{width:90%;}.bar.w30{width:30%;}.bar.w25{width:25%;}
+  .row{display:flex;gap:7px;align-items:center;}
+  .stack{display:flex;flex-direction:column;gap:6px;}
+  .gap{height:10px;}.gap.sm{height:6px;}.gap.lg{height:16px;}
+
+  .card{border:1.5px dashed var(--line);border-radius:12px;padding:11px;margin-bottom:10px;background:#fbfcfc;}
+  .card.solid{border-style:solid;border-color:var(--line2);}
+  .tile{width:34px;height:34px;border-radius:9px;background:var(--skel);flex:0 0 auto;}
+  .dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;}
+  .dot.ok{background:var(--accent);}.dot.warn{background:var(--warn);}.dot.crit{background:var(--crit);}
+  .pill{font-size:9px;font-weight:800;letter-spacing:.4px;padding:3px 7px;border-radius:20px;
+    border:1px solid var(--line);color:var(--note);background:#fff;}
+  .pill.crit{color:var(--crit);border-color:var(--crit);}
+  .pill.warn{color:#a07f0a;border-color:var(--warn);}
+  .pill.ok{color:#2a8f50;border-color:var(--accent);}
+
+  /* big number / KPI */
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .kpi{border:1.5px solid var(--line2);border-radius:11px;padding:10px;}
+  .kpi .num{height:20px;width:60%;border-radius:4px;background:var(--ink);}
+  .kpi .lbl{height:7px;width:80%;border-radius:3px;background:var(--skel);margin-top:7px;}
+
+  /* chart placeholders */
+  .chart{height:74px;border:1.5px dashed var(--line);border-radius:10px;position:relative;
+    overflow:hidden;background:repeating-linear-gradient(90deg,transparent,transparent 28px,var(--line2) 28px,var(--line2) 29px);}
+  .chart::before{content:"";position:absolute;left:8px;right:8px;bottom:12px;height:1px;background:var(--line);}
+  .chart .ln{position:absolute;left:6px;right:6px;top:46%;height:2px;background:var(--note);
+    clip-path:polygon(0 60%,15% 40%,30% 65%,45% 30%,60% 50%,75% 20%,90% 35%,100% 15%,100% 100%,0 100%);
+    background:var(--skel);height:38px;top:auto;bottom:13px;}
+  .donut{width:58px;height:58px;border-radius:50%;flex:0 0 auto;
+    background:conic-gradient(var(--accent) 0 62%,var(--warn) 62% 84%,var(--crit) 84% 100%);
+    -webkit-mask:radial-gradient(circle 17px at center,transparent 98%,#000 100%);
+            mask:radial-gradient(circle 17px at center,transparent 98%,#000 100%);}
+  .bars{display:flex;align-items:flex-end;gap:6px;height:74px;padding:6px 4px 0;border:1.5px dashed var(--line);border-radius:10px;}
+  .bars i{flex:1;background:var(--skel);border-radius:3px 3px 0 0;display:block;}
+
+  /* table / league */
+  .trow{display:flex;align-items:center;gap:9px;padding:9px 4px;border-bottom:1px solid var(--line2);}
+  .trow:last-child{border-bottom:0;}
+  .rank{width:18px;height:18px;border-radius:5px;background:var(--skel);font-size:9px;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;flex:0 0 auto;}
+
+  /* annotation callouts */
+  .note{font-size:10px;color:var(--note);font-style:italic;margin:2px 0 0;}
+  .anno{font-family:var(--mono);font-size:10px;color:#b15;background:#fff;border:1px dashed #e2b;
+    border-radius:6px;padding:2px 6px;display:inline-block;}
+
+  .segbar{display:flex;gap:0;border:1.5px solid var(--line2);border-radius:9px;overflow:hidden;}
+  .segbar span{flex:1;text-align:center;font-size:9px;color:var(--note);padding:6px 0;border-right:1px solid var(--line2);}
+  .segbar span:last-child{border-right:0;}
+  .segbar span.on{background:var(--ink);color:#fff;font-weight:700;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+  .libtile{border:1.5px dashed var(--line);border-radius:11px;padding:10px;background:#fbfcfc;}
+  .libtile .tile{margin-bottom:8px;}
+
+  .exprow{display:flex;gap:8px;margin-top:12px;}
+  .btn{flex:1;height:34px;border-radius:9px;border:1.5px solid var(--ink);
+    display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--ink);}
+  .btn.fill{background:var(--ink);color:#fff;}
+</style>
+</head>
+<body>
+  <h1>Antz Assessment — Report Wireframes</h1>
+  <p class="lede">Low-fidelity layouts for the reporting module. Grey blocks = text/data placeholders,
+  dashed boxes = chart/region placeholders. Reflects the <b>no-approval</b> model — events are
+  Created · Submitted · Modified · Exported only. Organised by audience.</p>
+
+  <div class="legend">
+    <span><span class="sw" style="background:var(--skel)"></span>data placeholder</span>
+    <span><span class="sw" style="background:#fff;border:1px dashed var(--line)"></span>chart / region</span>
+    <span><span class="sw" style="background:var(--accent)"></span>good</span>
+    <span><span class="sw" style="background:var(--warn)"></span>watch</span>
+    <span><span class="sw" style="background:var(--crit)"></span>critical</span>
+    <span><b>pink mono</b> = annotation</span>
+  </div>
+
+  <!-- ============ ENTRY ============ -->
+  <div class="group">Entry · Report Library</div>
+  <div class="gallery">
+
+    <!-- Report Library -->
+    <div>
+    <div class="phone"><div class="notch"></div><div class="scr">
+      <div class="nav"><div class="back"></div><div class="ttl lg" style="width:120px"></div><div style="width:22px"></div></div>
+      <div class="sub w60" style="margin-bottom:14px"></div>
+      <div class="row" style="justify-content:space-between;margin-bottom:10px">
+        <div class="bar dk w40" style="height:11px"></div><div class="pill">7 types</div></div>
+      <div class="grid2">
+        <div class="libtile"><div class="tile"></div><div class="bar w80"></div><div class="gap sm"></div><div class="bar w60" style="height:7px"></div></div>
+        <div class="libtile"><div class="tile"></div><div class="bar w70"></div><div class="gap sm"></div><div class="bar w90" style="height:7px"></div></div>
+        <div class="libtile"><div class="tile"></div><div class="bar w60"></div><div class="gap sm"></div><div class="bar w80" style="height:7px"></div></div>
+        <div class="libtile"><div class="tile"></div><div class="bar w80"></div><div class="gap sm"></div><div class="bar w50" style="height:7px"></div></div>
+        <div class="libtile"><div class="tile"></div><div class="bar w50"></div><div class="gap sm"></div><div class="bar w70" style="height:7px"></div></div>
+        <div class="libtile"><div class="tile"></div><div class="bar w70"></div><div class="gap sm"></div><div class="bar w60" style="height:7px"></div></div>
+      </div>
+      <div class="gap lg"></div>
+      <div class="bar dk w50" style="height:11px;margin-bottom:10px"></div>
+      <div class="card solid"><div class="row"><div class="tile"></div><div class="stack" style="flex:1"><div class="bar w70"></div><div class="bar w40" style="height:7px"></div></div><div class="back"></div></div></div>
+      <div class="card solid"><div class="row"><div class="tile"></div><div class="stack" style="flex:1"><div class="bar w60"></div><div class="bar w50" style="height:7px"></div></div><div class="back"></div></div></div>
+    </div></div>
+    <div class="caption">Report Library</div>
+    <div class="capsub">Pick a report → tap-through to configure. Recent reports listed below.</div>
+    </div>
+
+    <!-- Configure sheet -->
+    <div>
+    <div class="phone"><div class="notch"></div><div class="scr">
+      <div style="height:70px"></div>
+      <div style="border:1.5px solid var(--line2);border-radius:18px 18px 0 0;margin:0 -14px -16px;padding:14px;background:#fbfcfc">
+        <div style="width:36px;height:4px;border-radius:3px;background:var(--line);margin:0 auto 14px"></div>
+        <div class="row" style="margin-bottom:14px"><div class="tile" style="width:42px;height:42px"></div>
+          <div class="stack" style="flex:1"><div class="bar w70" style="height:13px"></div><div class="bar w40" style="height:8px"></div></div></div>
+        <div class="bar w40" style="height:8px;margin-bottom:8px"></div>
+        <div class="segbar" style="margin-bottom:16px"><span>7D</span><span class="on">30D</span><span>Qtr</span><span>Year</span><span>YTD</span><span>All</span></div>
+        <div class="bar w40" style="height:8px;margin-bottom:8px"></div>
+        <div class="row" style="flex-wrap:wrap;gap:7px;margin-bottom:18px">
+          <div class="pill ok">All Sites</div><div class="pill">By Domain</div><div class="pill">By Species</div><div class="pill">Critical only</div></div>
+        <div class="exprow" style="margin-top:0"><div class="btn fill">Export PDF</div><div class="btn">Export CSV</div></div>
+      </div>
+    </div></div>
+    <div class="caption">Configure &amp; Export sheet</div>
+    <div class="capsub">Date range + scope chips → PDF (boss/audit) or CSV (analyst).</div>
+    </div>
+  </div>
+
+  <!-- ============ DOCTOR ============ -->
+  <div class="group">🩺 Doctor · clinical depth</div>
+  <div class="gallery">
+
+    <!-- Clinical Attention Queue -->
+    <div>
+    <div class="phone"><div class="notch"></div><div class="scr">
+      <div class="nav"><div class="back"></div><div class="ttl" style="width:150px"></div><div style="width:22px"></div></div>
+      <div class="sub w50" style="margin-bottom:8px"></div>
+      <span class="anno">ranked: welfare↓ + overdue + critical finding</span>
+      <div class="gap"></div>
+      <div class="card"><div class="row"><span class="rank" style="background:var(--crit)">1</span><div class="tile"></div>
+        <div class="stack" style="flex:1"><div class="bar w70"></div><div class="row"><span class="dot crit"></span><div class="bar w50" style="height:7px"></div></div></div>
+        <span class="pill crit">−18</span></div></div>
+      <div class="card"><div class="row"><span class="rank" style="background:var(--crit)">2</span><div class="tile"></div>
+        <div class="stack" style="flex:1"><div class="bar w60"></div><div class="row"><span class="dot crit"></span><div class="bar w40" style="height:7px"></div></div></div>
+        <span class="pill crit">−12</span></div></div>
+      <div class="card"><div class="row"><span class="rank" style="background:var(--warn)">3</span><div class="tile"></div>
+        <div class="stack" style="flex:1"><div class="bar w80"></div><div class="row"><span class="dot warn"></span><div class="bar w50" style="height:7px"></div></div></div>
+        <span class="pill warn">overdue</span></div></div>
+      <div class="card"><div class="row"><span class="rank" style="background:var(--warn)">4</span><div class="tile"></div>
+        <div class="stack" style="flex:1"><div class="bar w60"></div><div class="row"><span class="dot warn"></span><div class="bar w40" style="height:7px"></div></div></div>
+        <span class="pill warn">−6</span></div></div>
+      <div class="card"><div class="row"><span class="rank">5</span><div class="tile"></div>
+        <div class="stack" style="flex:1"><div class="bar w70"></div><div class="row"><span class="dot ok"></span><div class="bar w50" style="height:7px"></div></div></div>
+        <span class="pill">watch</span></div></div>
+    </div></div>
+    <div class="caption">Clinical Attention Queue ⭐</div>
+    <div class="capsub">D1 — "Where do I intervene first today?" Each row shows the reason.</div>
+    </div>
+
+    <!-- Animal Assessment Report -->
+    <div>
+    <div class="phone"><div class="notch"></div><div class="scr">
+      <div class="nav"><div class="back"></div><div class="ttl" style="width:130px"></div><div class="back"></div></div>
+      <div class="row" style="margin:6px 0 14px"><div class="tile" style="width:48px;height:48px;border-radius:12px"></div>
+        <div class="stack" style="flex:1"><div class="bar w70" style="height:12px"></div><div class="bar w50" style="height:8px"></div>
+        <div class="row"><span class="pill ok">Stable</span><span class="pill">ID #</span></div></div></div>
+      <span class="anno">Welfare index vs baseline + species norm</span>
+      <div class="gap sm"></div>
+      <div class="chart"><div class="ln"></div></div>
+      <div class="gap"></div>
+      <div class="bar dk w50" style="height:10px;margin-bottom:8px"></div>
+      <div class="row" style="gap:9px;margin-bottom:12px">
+        <div class="donut"></div>
+        <div class="stack" style="flex:1;gap:7px">
+          <div class="row"><span class="dot ok"></span><div class="bar w80" style="height:7px"></div></div>
+          <div class="row"><span class="dot ok"></span><div class="bar w60" style="height:7px"></div></div>
+          <div class="row"><span class="dot warn"></span><div class="bar w70" style="height:7px"></div></div>
+          <div class="row"><span class="dot ok"></span><div class="bar w50" style="height:7px"></div></div>
+          <div class="row"><span class="dot crit"></span><div class="bar w40" style="height:7px"></div></div>
+        </div></div>
+      <div class="bar dk w60" style="height:10px;margin-bottom:8px"></div>
+      <span class="anno">Five-Domain breakdown + findings &amp; notes</span>
+      <div class="gap sm"></div>
+      <div class="card solid"><div class="stack"><div class="bar w90" style="height:7px"></div><div class="bar w70" style="height:7px"></div></div></div>
+      <div class="exprow"><div class="btn fill">Export PDF</div><div class="btn">CSV</div></div>
+    </div></div>
+    <div class="caption">Animal Assessment Report</div>
+    <div class="capsub">D2 — full history, trend vs baseline, Five-Domain split, findings.</div>
+    </div>
+  </div>
+
+  <!-- ============ ADMIN ============ -->
+  <div class="group">⚙️ Admin · process &amp; people</div>
+  <div class="gallery">
+
+    <!-- Compliance / Coverage -->
+    <div>
+    <div class="phone"><div class="notch"></div><div class="scr">
+      <div class="nav"><div class="back"></div><div class="ttl" style="width:140px"></div><div style="width:22px"></div></div>
+      <div class="sub w50" style="margin-bottom:12px"></div>
+      <div class="kpis" style="margin-bottom:12px">
+        <div class="kpi"><div class="num"></div><div class="lbl"></div></div>
+        <div class="kpi"><div class="num" style="background:var(--warn)"></div><div class="lbl"></div></div>
+        <div class="kpi"><div class="num" style="background:var(--crit)"></div><div class="lbl"></div></div>
+        <div class="kpi"><div class="num" style="background:var(--accent)"></div><div class="lbl"></div></div>
+      </div>
+      <span class="anno">completion % · overdue · coverage gaps</span>
+      <div class="gap"></div>
+      <div class="bar dk w60" style="height:10px;margin-bottom:8px"></div>
+      <div class="bars"><i style="height:80%"></i><i style="height:65%"></i><i style="height:90%"></i><i style="height:45%"></i><i style="height:72%"></i><i style="height:88%"></i></div>
+      <div class="gap"></div>
+      <div class="bar dk w50" style="height:10px;margin-bottom:8px"></div>
+      <div class="card"><div class="row"><div class="stack" style="flex:1"><div class="bar w70" style="height:8px"></div><div class="bar w40" style="height:6px"></div></div><span class="pill ok">94%</span></div></div>
+      <div class="card"><div class="row"><div class="stack" style="flex:1"><div class="bar w60" style="height:8px"></div><div class="bar w50" style="height:6px"></div></div><span class="pill warn">71%</span></div></div>
+      <div class="card"><div class="row"><div class="stack" style="flex:1"><div class="bar w80" style="height:8px"></div><div class="bar w40" style="height:6px"></div></div><span class="pill crit">52%</span></div></div>
+    </div></div>
+    <div class="caption">Compliance &amp; Coverage</div>
+    <div class="capsub">D3 — "Are required assessments being done, on time?" Per site/species/team.</div>
+    </div>
+
+    <!-- Data Quality -->
+    <div>
+    <div class="phone"><div class="notch"></div><div class="scr">
+      <div class="nav"><div class="back"></div><div class="ttl" style="width:120px"></div><div style="width:22px"></div></div>
+      <div class="sub w60" style="margin-bottom:10px"></div>
+      <span class="anno">replaces the missing approval gate</span>
+      <div class="gap"></div>
+      <div class="kpis" style="margin-bottom:12px">
+        <div class="kpi"><div class="num" style="background:var(--crit)"></div><div class="lbl"></div><div class="bar w90" style="height:6px;margin-top:5px"></div></div>
+        <div class="kpi"><div class="num" style="background:var(--warn)"></div><div class="lbl"></div><div class="bar w70" style="height:6px;margin-top:5px"></div></div>
+      </div>
+      <div class="bar dk w70" style="height:10px;margin-bottom:8px"></div>
+      <div class="card"><div class="row"><span class="dot crit"></span><div class="stack" style="flex:1"><div class="bar w80" style="height:8px"></div><div class="bar w50" style="height:6px"></div></div><span class="pill crit">missing</span></div></div>
+      <div class="card"><div class="row"><span class="dot warn"></span><div class="stack" style="flex:1"><div class="bar w70" style="height:8px"></div><div class="bar w40" style="height:6px"></div></div><span class="pill warn">late</span></div></div>
+      <div class="card"><div class="row"><span class="dot warn"></span><div class="stack" style="flex:1"><div class="bar w60" style="height:8px"></div><div class="bar w50" style="height:6px"></div></div><span class="pill warn">low-evidence</span></div></div>
+      <div class="card"><div class="row"><span class="dot crit"></span><div class="stack" style="flex:1"><div class="bar w80" style="height:8px"></div><div class="bar w40" style="height:6px"></div></div><span class="pill crit">missing</span></div></div>
+      <div class="exprow"><div class="btn">Reassign</div><div class="btn fill">Export CSV</div></div>
+    </div></div>
+    <div class="caption">Data Quality Report ⭐</div>
+    <div class="capsub">Catches missing fields / late / low-evidence — since no reviewer does.</div>
+    </div>
+
+    <!-- Assessment Performance -->
+    <div>
+    <div class="phone"><div class="notch"></div><div class="scr">
+      <div class="nav"><div class="back"></div><div class="ttl" style="width:150px"></div><div style="width:22px"></div></div>
+      <div class="sub w50" style="margin-bottom:8px"></div>
+      <span class="anno">throughput · timeliness · completeness (NO pass-rate)</span>
+      <div class="gap"></div>
+      <div class="bars"><i style="height:60%"></i><i style="height:85%"></i><i style="height:70%"></i><i style="height:95%"></i><i style="height:50%"></i></div>
+      <div class="gap"></div>
+      <div class="bar dk w50" style="height:10px;margin-bottom:8px"></div>
+      <div class="trow"><span class="rank" style="background:var(--accent)">1</span><div class="tile" style="width:28px;height:28px;border-radius:50%"></div><div class="stack" style="flex:1"><div class="bar w60" style="height:8px"></div><div class="bar w40" style="height:6px"></div></div><span class="pill ok">on-time</span></div>
+      <div class="trow"><span class="rank">2</span><div class="tile" style="width:28px;height:28px;border-radius:50%"></div><div class="stack" style="flex:1"><div class="bar w50" style="height:8px"></div><div class="bar w40" style="height:6px"></div></div><span class="pill ok">on-time</span></div>
+      <div class="trow"><span class="rank">3</span><div class="tile" style="width:28px;height:28px;border-radius:50%"></div><div class="stack" style="flex:1"><div class="bar w70" style="height:8px"></div><div class="bar w40" style="height:6px"></div></div><span class="pill warn">delays</span></div>
+      <div class="trow"><span class="rank">4</span><div class="tile" style="width:28px;height:28px;border-radius:50%"></div><div class="stack" style="flex:1"><div class="bar w60" style="height:8px"></div><div class="bar w40" style="height:6px"></div></div><span class="pill warn">incomplete</span></div>
+    </div></div>
+    <div class="caption">Assessment Performance</div>
+    <div class="capsub">D8 — reframed for no-approval: volume + timeliness + completeness.</div>
+    </div>
+  </div>
+
+  <!-- ============ BOSS ============ -->
+  <div class="group">👔 Boss · steering the org</div>
+  <div class="gallery">
+
+    <!-- Executive Summary one-pager -->
+    <div>
+    <div class="phone"><div class="notch"></div><div class="scr">
+      <div class="nav"><div class="back"></div><div class="ttl" style="width:140px"></div><div class="back"></div></div>
+      <div class="sub w40" style="margin-bottom:12px"></div>
+      <span class="anno">5 headline KPIs · auto-generated monthly</span>
+      <div class="gap sm"></div>
+      <div class="kpis" style="margin-bottom:8px">
+        <div class="kpi"><div class="num" style="background:var(--accent)"></div><div class="lbl"></div></div>
+        <div class="kpi"><div class="num"></div><div class="lbl"></div></div>
+        <div class="kpi"><div class="num" style="background:var(--warn)"></div><div class="lbl"></div></div>
+        <div class="kpi"><div class="num" style="background:var(--accent)"></div><div class="lbl"></div></div>
+      </div>
+      <div class="gap"></div>
+      <div class="bar dk w40" style="height:10px;margin-bottom:8px"></div>
+      <span class="anno" style="border-color:var(--crit);color:var(--crit)">Top 3 risks</span>
+      <div class="gap sm"></div>
+      <div class="card"><div class="row"><span class="dot crit"></span><div class="bar w80" style="height:8px"></div></div></div>
+      <div class="card"><div class="row"><span class="dot crit"></span><div class="bar w70" style="height:8px"></div></div></div>
+      <div class="card"><div class="row"><span class="dot warn"></span><div class="bar w60" style="height:8px"></div></div></div>
+      <div class="bar dk w40" style="height:10px;margin:6px 0 8px"></div>
+      <span class="anno" style="border-color:var(--accent);color:#2a8f50">Top 3 wins</span>
+      <div class="gap sm"></div>
+      <div class="card"><div class="row"><span class="dot ok"></span><div class="bar w70" style="height:8px"></div></div></div>
+      <div class="card"><div class="row"><span class="dot ok"></span><div class="bar w80" style="height:8px"></div></div></div>
+    </div></div>
+    <div class="caption">Executive Summary ⭐</div>
+    <div class="capsub">"Just tell me what matters." Everything below drills down from here.</div>
+    </div>
+
+    <!-- Site League Table -->
+    <div>
+    <div class="phone"><div class="notch"></div><div class="scr">
+      <div class="nav"><div class="back"></div><div class="ttl" style="width:120px"></div><div style="width:22px"></div></div>
+      <div class="sub w50" style="margin-bottom:10px"></div>
+      <div class="segbar" style="margin-bottom:12px"><span class="on">Welfare</span><span>Coverage</span><span>Risk</span></div>
+      <span class="anno">site-vs-site ranking · tap to drill in</span>
+      <div class="gap sm"></div>
+      <div class="trow"><span class="rank" style="background:var(--accent)">1</span><div class="tile" style="width:30px;height:30px"></div><div class="stack" style="flex:1"><div class="bar w50" style="height:8px"></div><div class="bar w70" style="height:6px"></div></div><div class="bar w25" style="height:14px;background:var(--ink)"></div></div>
+      <div class="trow"><span class="rank" style="background:var(--accent)">2</span><div class="tile" style="width:30px;height:30px"></div><div class="stack" style="flex:1"><div class="bar w60" style="height:8px"></div><div class="bar w60" style="height:6px"></div></div><div class="bar w25" style="height:14px;background:var(--ink)"></div></div>
+      <div class="trow"><span class="rank">3</span><div class="tile" style="width:30px;height:30px"></div><div class="stack" style="flex:1"><div class="bar w50" style="height:8px"></div><div class="bar w50" style="height:6px"></div></div><div class="bar w25" style="height:14px;background:var(--skel)"></div></div>
+      <div class="trow"><span class="rank" style="background:var(--warn)">4</span><div class="tile" style="width:30px;height:30px"></div><div class="stack" style="flex:1"><div class="bar w60" style="height:8px"></div><div class="bar w40" style="height:6px"></div></div><div class="bar w25" style="height:14px;background:var(--warn)"></div></div>
+      <div class="trow"><span class="rank" style="background:var(--crit)">5</span><div class="tile" style="width:30px;height:30px"></div><div class="stack" style="flex:1"><div class="bar w50" style="height:8px"></div><div class="bar w30" style="height:6px"></div></div><div class="bar w25" style="height:14px;background:var(--crit)"></div></div>
+      <div class="exprow"><div class="btn fill">Export PDF</div><div class="btn">CSV</div></div>
+    </div></div>
+    <div class="caption">Site League Table</div>
+    <div class="capsub">D5 — which sites need attention / are best practice.</div>
+    </div>
+
+    <!-- Compliance Scorecard -->
+    <div>
+    <div class="phone"><div class="notch"></div><div class="scr">
+      <div class="nav"><div class="back"></div><div class="ttl" style="width:140px"></div><div style="width:22px"></div></div>
+      <div class="sub w50" style="margin-bottom:12px"></div>
+      <div class="row" style="gap:12px;margin-bottom:14px">
+        <div class="donut" style="width:74px;height:74px"></div>
+        <div class="stack" style="flex:1;gap:8px">
+          <div class="bar w70" style="height:18px;background:var(--ink)"></div>
+          <div class="bar w50" style="height:7px"></div>
+          <span class="anno">score per standard</span>
+        </div></div>
+      <div class="bar dk w70" style="height:10px;margin-bottom:8px"></div>
+      <span class="anno">+ evidence trail for sign-off / audit</span>
+      <div class="gap sm"></div>
+      <div class="card"><div class="row"><span class="dot ok"></span><div class="bar w70" style="height:8px"></div><span class="pill ok">pass</span></div></div>
+      <div class="card"><div class="row"><span class="dot ok"></span><div class="bar w60" style="height:8px"></div><span class="pill ok">pass</span></div></div>
+      <div class="card"><div class="row"><span class="dot warn"></span><div class="bar w80" style="height:8px"></div><span class="pill warn">gap</span></div></div>
+      <div class="card"><div class="row"><span class="dot ok"></span><div class="bar w50" style="height:8px"></div><span class="pill ok">pass</span></div></div>
+      <div class="exprow"><div class="btn fill">Export evidence PDF</div></div>
+    </div></div>
+    <div class="caption">Compliance Scorecard</div>
+    <div class="capsub">D6 — audit-ready score per standard + immutable evidence trail.</div>
+    </div>
+  </div>
+
+</body>
+</html>

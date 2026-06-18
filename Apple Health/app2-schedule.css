@@ -1,0 +1,187 @@
+/* ===========================================================================
+   Antz Welfare — Index 2 · Assessment Planning (Schedule) styles
+   Extends styles2.css. Reuses its tokens, radii, shadows and card patterns so
+   Schedule is visually indistinguishable from the rest of the module.
+   Layout: access toggle · calendar · CTA · upcoming plan cards + bottom sheets.
+   =========================================================================== */
+
+/* ---- Access (permission) toggle — demo affordance ----------------------- */
+.sch-role { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.sch-role-l { font-size: 12.5px; font-weight: 600; color: var(--neutral-secondary); }
+.sch-role-seg { display: inline-flex; background: var(--neutral-05); border-radius: 10px; padding: 3px; }
+.sch-role-seg button { border: 0; background: none; cursor: pointer; font-family: var(--font);
+  font-size: 12.5px; font-weight: 600; color: var(--neutral-secondary); padding: 6px 13px; border-radius: 8px; }
+.sch-role-seg button.active { background: #fff; color: var(--on-primary-cont); box-shadow: var(--shadow-seg); }
+
+/* ---- Assessment Calendar (lightweight, in-module) ----------------------- */
+.sch-cal-card { background: #fff; border: 1px solid var(--neutral-05); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-stat); padding: 14px 14px 16px; margin-bottom: 16px; }
+.sch-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.sch-cal-title { font-size: 16px; font-weight: 700; color: var(--neutral-primary); }
+.sch-cal-nav-wrap { display: flex; gap: 6px; }
+.sch-cal-nav { width: 32px; height: 32px; border: 0; background: var(--neutral-05); border-radius: 9px;
+  color: var(--on-surface-variant); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.sch-cal-nav svg { width: 18px; height: 18px; }
+.sch-cal-nav.flip svg { transform: rotate(180deg); }
+.sch-cal-dow { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 6px; }
+.sch-cal-dow span { text-align: center; font-size: 11px; font-weight: 600; color: var(--neutral-secondary); }
+.sch-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.sch-cell { position: relative; aspect-ratio: 1 / 1; border: 0; background: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  border-radius: 10px; font-family: var(--font); }
+.sch-cell.empty { visibility: hidden; pointer-events: none; }
+.sch-cell-n { font-size: 13px; font-weight: 500; color: var(--neutral-primary); }
+.sch-cell.has .sch-cell-n { font-weight: 600; }
+.sch-cell.today { background: var(--display-primary); }
+.sch-cell.today .sch-cell-n { color: var(--on-surface-green); font-weight: 700; }
+.sch-cell:active { background: rgba(0,0,0,.05); }
+.sch-cell-dots { display: flex; gap: 3px; height: 5px; align-items: center; }
+.sch-cell-dots i { width: 5px; height: 5px; border-radius: 50%; }
+.sch-cal-legend { display: flex; flex-wrap: wrap; gap: 10px 14px; margin-top: 14px; padding-top: 13px; border-top: 1px solid rgba(0,0,0,.06); }
+.sch-lg { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 500; color: var(--neutral-secondary); }
+.sch-lg i { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ---- Primary CTA --------------------------------------------------------- */
+.sch-cta { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%;
+  border: 0; cursor: pointer; font-family: var(--font); font-size: 15px; font-weight: 600;
+  color: #fff; background: var(--on-surface-green); border-radius: var(--r-lg); padding: 14px 0;
+  box-shadow: var(--shadow-seg); margin-bottom: 18px; }
+.sch-cta svg { width: 19px; height: 19px; }
+.sch-cta:active { transform: translateY(1px); }
+.sch-cta.disabled { background: #B7C7C1; box-shadow: none; cursor: not-allowed; }
+
+/* ---- Section intro ------------------------------------------------------- */
+.sch-intro { margin-bottom: 4px; scroll-margin-top: 56px; }
+.sch-intro-t { font-size: 17px; font-weight: 700; color: var(--neutral-primary); letter-spacing: -.3px; }
+.sch-intro-s { font-size: 13px; font-weight: 500; color: var(--neutral-secondary); margin-top: 2px; }
+
+/* ---- Time-bucket groups (Today / Tomorrow / This Week / Upcoming) -------- */
+.sch-grp { margin-top: 18px; }
+.sch-grp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 11px; padding-left: 2px; }
+.sch-grp-label { font-size: 14px; font-weight: 700; color: var(--on-secondary-cont); }
+.sch-grp-n { font-size: 11px; font-weight: 700; color: var(--neutral-secondary); background: var(--neutral-05);
+  border-radius: 100px; min-width: 20px; text-align: center; padding: 2px 7px; }
+.sch-grp-items { display: flex; flex-direction: column; gap: 11px; }
+
+/* ---- Scheduled plan card ------------------------------------------------- */
+.sch-plan { display: flex; flex-direction: column; gap: 11px; width: 100%; text-align: left; cursor: pointer;
+  background: #fff; border: 1px solid var(--neutral-05); border-radius: 16px; box-shadow: 0 1px 3px rgba(20,61,46,.05);
+  padding: 15px 16px; font-family: var(--font); }
+.sch-plan:active { transform: translateY(1px); }
+.sch-plan-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.sch-plan-cat { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--neutral-primary); }
+.sch-cat-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--cat, #7A8684); flex: 0 0 auto; }
+.sch-plan-date { font-size: 12.5px; font-weight: 600; color: var(--on-secondary-cont); white-space: nowrap; }
+.sch-plan-types { display: flex; flex-wrap: wrap; gap: 7px; }
+.sch-tchip { font-size: 12px; font-weight: 500; color: var(--on-surface-variant); background: var(--display-primary);
+  border-radius: 8px; padding: 5px 10px; }
+.sch-plan-foot { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600;
+  color: var(--cat, #00838A); border-top: 1px solid rgba(0,0,0,.05); padding-top: 11px; }
+.sch-plan-foot svg { width: 15px; height: 15px; flex: 0 0 auto; }
+
+/* ---- Empty state --------------------------------------------------------- */
+.sch-empty { text-align: center; padding: 46px 26px; }
+.sch-empty svg { width: 44px; height: 44px; color: #AFC0BA; }
+.sch-empty-t { font-size: 15px; font-weight: 700; color: var(--neutral-primary); margin-top: 12px; }
+.sch-empty-s { font-size: 13px; font-weight: 500; color: var(--neutral-secondary); margin-top: 4px; line-height: 1.45; }
+
+/* ===========================================================================
+   CREATE / EDIT FORM (bottom sheet) — reuses .ms-head / .ms-title / .ms-x
+   =========================================================================== */
+.sch-form { padding: 16px 16px 24px; background: #EFF5F2; }
+.sch-fld { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.sch-fld:last-of-type { margin-bottom: 0; }
+.sch-lbl { font-size: 13px; font-weight: 600; color: var(--on-secondary-cont); }
+.sch-opt { font-weight: 400; color: var(--neutral-secondary); }
+.sch-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sch-input { width: 100%; border: 1px solid rgba(0,0,0,0.08); background: #fff; border-radius: 10px;
+  padding: 12px 13px; font-family: var(--font); font-size: 14px; color: var(--neutral-primary); outline: none; }
+.sch-input:focus { border-color: var(--on-surface-green); }
+.sch-area { resize: none; line-height: 1.45; }
+.sch-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.sch-chip { display: inline-flex; align-items: center; cursor: pointer; white-space: nowrap;
+  font-family: var(--font); font-size: 13px; font-weight: 500; padding: 9px 13px; border-radius: 100px;
+  border: 1px solid rgba(0,0,0,0.08); background: #fff; color: var(--on-surface-variant); }
+.sch-chip.active { background: var(--on-surface-green); color: #fff; border-color: var(--on-surface-green); }
+.sch-save { margin-top: 6px; }
+
+/* category dropdown (native select) */
+.sch-select-wrap { position: relative; }
+.sch-select { width: 100%; appearance: none; -webkit-appearance: none; border: 1px solid rgba(0,0,0,0.08);
+  background: #fff; border-radius: 10px; padding: 12px 38px 12px 13px; font-family: var(--font);
+  font-size: 14px; color: var(--neutral-primary); outline: none; cursor: pointer; }
+.sch-select.ph { color: var(--neutral-secondary); }
+.sch-select:focus { border-color: var(--on-surface-green); }
+.sch-select-chev { position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+  pointer-events: none; color: var(--neutral-secondary); display: flex; }
+.sch-select-chev svg { width: 18px; height: 18px; }
+
+/* assessment-types multi-select dropdown (custom) */
+.sch-dd { position: relative; }
+.sch-dd-btn { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  cursor: pointer; border: 1px solid rgba(0,0,0,0.08); background: #fff; border-radius: 10px;
+  padding: 12px 13px; font-family: var(--font); font-size: 14px; color: var(--neutral-primary); text-align: left; }
+.sch-dd-btn.ph .sch-dd-val { color: var(--neutral-secondary); }
+.sch-dd-btn.disabled { background: #F1F5F3; cursor: not-allowed; }
+.sch-dd-btn.disabled .sch-dd-val { color: var(--neutral-secondary); }
+.sch-dd-val { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sch-dd-chev { flex: 0 0 auto; color: var(--neutral-secondary); display: flex; transition: transform .2s; }
+.sch-dd-chev svg { width: 18px; height: 18px; }
+.sch-dd.open .sch-dd-chev { transform: rotate(180deg); }
+.sch-dd-panel { margin-top: 8px; background: #fff; border: 1px solid var(--neutral-05); border-radius: 12px;
+  box-shadow: var(--shadow-stat); overflow: hidden; }
+.sch-dd-opt { width: 100%; display: flex; align-items: center; gap: 11px; cursor: pointer; border: 0;
+  background: none; border-bottom: 1px solid rgba(0,0,0,.05); padding: 12px 14px; font-family: var(--font);
+  font-size: 14px; font-weight: 500; color: var(--neutral-primary); text-align: left; }
+.sch-dd-opt:last-child { border-bottom: 0; }
+.sch-dd-opt.on { background: var(--display-primary); }
+.sch-dd-box { width: 21px; height: 21px; border-radius: 6px; border: 1.5px solid #C9D6D1; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center; color: #fff; }
+.sch-dd-box svg { width: 13px; height: 13px; }
+.sch-dd-opt.on .sch-dd-box { background: var(--cat); border-color: var(--cat); }
+.sch-dd-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+
+/* ===========================================================================
+   CALENDAR-DATE BOTTOM SHEET
+   =========================================================================== */
+.sch-day { padding: 16px 16px 26px; background: #EFF5F2; }
+.sch-day-sub { font-size: 13px; font-weight: 500; color: var(--neutral-secondary); margin-bottom: 14px; }
+.sch-day-list { display: flex; flex-direction: column; gap: 12px; }
+.sch-day-plan { background: #fff; border: 1px solid var(--neutral-05);
+  border-radius: 14px; box-shadow: 0 1px 3px rgba(20,61,46,.05); padding: 14px 15px; display: flex; flex-direction: column; gap: 10px; }
+.sch-dp-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.sch-dp-cat { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--neutral-primary); }
+.sch-dp-time { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 500; color: var(--neutral-secondary); white-space: nowrap; }
+.sch-dp-time svg { width: 14px; height: 14px; }
+.sch-dp-foot { font-size: 12px; font-weight: 600; color: var(--cat, #00838A); }
+.sch-dp-actions { display: flex; gap: 9px; padding-top: 11px; border-top: 1px solid rgba(0,0,0,.05); }
+.sch-day-empty { text-align: center; padding: 30px 20px 22px; }
+.sch-day-empty svg { width: 42px; height: 42px; color: #AFC0BA; }
+.sch-day-add { margin-top: 16px; margin-bottom: 0; }
+
+.sch-ghost { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer;
+  font-family: var(--font); font-size: 14px; font-weight: 600; border-radius: 12px; padding: 11px 0;
+  border: 1.5px solid var(--neutral-05); background: #fff; color: var(--on-secondary-cont); }
+.sch-ghost svg { width: 17px; height: 17px; }
+.sch-ghost.danger { color: #E93353; border-color: rgba(233,51,83,.25); }
+
+/* ===========================================================================
+   OVERVIEW-TAB "Upcoming Assessments" container
+   =========================================================================== */
+.ov-up-card { margin-top: 0; }
+.ov-up-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.ov-up-title { font-size: 15px; font-weight: 600; color: var(--neutral-primary); }
+.ov-up-list { display: flex; flex-direction: column; }
+.ov-up-row { display: flex; align-items: center; gap: 12px; padding: 13px 0; cursor: pointer;
+  border-bottom: 1px solid rgba(0,0,0,.05); }
+.ov-up-row:last-child { border-bottom: 0; }
+.ov-up-row .sch-cat-dot { width: 9px; height: 9px; }
+.ov-up-body { flex: 1; min-width: 0; }
+.ov-up-type { font-size: 14px; font-weight: 600; color: var(--neutral-primary); }
+.ov-up-meta { font-size: 12px; font-weight: 400; color: var(--neutral-secondary); margin-top: 3px; }
+.ov-up-chev { display: flex; flex: 0 0 auto; color: #B8C4C0; }
+.ov-up-chev svg { width: 16px; height: 16px; }
+.ov-up-all { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; border: 0;
+  background: none; font-family: var(--font); font-size: 14px; font-weight: 600; color: var(--on-surface-green);
+  padding: 12px 0 2px; cursor: pointer; }
+.ov-up-all svg { width: 16px; height: 16px; }

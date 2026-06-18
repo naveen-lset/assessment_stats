@@ -1,0 +1,15 @@
+/* ===========================================================================
+   Antz Welfare — Index 2 · Assessment Highlights styles (Apple-Health feel)
+   Generous spacing, plain-language hierarchy. Namespaced .ah-* so nothing
+   collides with the existing kit. Lives on the standard .wcard surface.
+   =========================================================================== */
+.ah-list { display: flex; flex-direction: column; gap: 13px; margin-top: 14px; }
+.ah-row { display: flex; align-items: flex-start; gap: 12px; }
+.ah-ic { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; font-size: 14px; font-weight: 700; line-height: 1; }
+.ah-up { background: #E1F9ED; color: #1b7a44; }
+.ah-down { background: #FCE7EA; color: #c2410c; }
+.ah-stable { background: #EEF3F1; color: #7A8684; }
+.ah-text { font-size: 14.5px; font-weight: 500; line-height: 1.4; color: var(--on-surface-variant); padding-top: 1px; }
+.ah-foot { margin-top: 16px; padding-top: 13px; border-top: 1px solid rgba(0,0,0,.06);
+  font-size: 13px; font-weight: 500; color: var(--neutral-secondary); }
