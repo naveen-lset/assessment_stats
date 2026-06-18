@@ -75,6 +75,14 @@ html, body {
 }
 .statusbar .sb-right { display: flex; gap: 7px; align-items: center; }
 
+/* ---- TEMP: hide phone frame + header text (delete this block to restore) -- */
+.stage { padding: 0; }
+.stage-head { display: none; }
+.notch, .statusbar { display: none; }
+.phone { box-shadow: none; border-radius: 0; background: #fff; }
+.pg-head-plain { padding-top: 16px; }
+/* --------------------------------------------------------------------------- */
+
 .viewport { position: absolute; inset: 0; overflow: hidden; }
 
 .screen { position: absolute; inset: 0; display: none; flex-direction: column; background: var(--bg); }
@@ -580,6 +588,16 @@ html, body {
 .md-note:first-of-type { border-top: 0; }
 .md-note .mn-m { font-size: 12px; color: var(--neutral-secondary); font-weight: 600; margin-bottom: 4px; }
 .md-note .mn-q { font-size: 14px; line-height: 1.5; color: var(--on-surface-variant); font-weight: 500; }
+/* TEXT detail sheet — featured latest note + observation timeline */
+.ms-latest { background: var(--display-primary); border-radius: 12px; padding: 14px 16px; }
+.ms-latest-lab { font-size: 12px; font-weight: 700; color: var(--on-surface-green); margin-bottom: 7px; }
+.ms-latest-q { font-size: 15px; line-height: 1.5; font-weight: 500; color: var(--neutral-primary); }
+.ms-latest-by { font-size: 12.5px; font-weight: 500; color: var(--neutral-secondary); margin-top: 8px; }
+.md-timeline { margin-top: 12px; }
+.md-timeline .md-note { display: flex; gap: 12px; padding: 0 0 16px; border-top: 0; position: relative; }
+.md-timeline .md-note:not(:last-child)::before { content: ""; position: absolute; left: 4px; top: 14px; bottom: 0; width: 2px; background: rgba(0,0,0,.07); }
+.md-timeline .md-note-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--on-surface-green); flex: 0 0 auto; margin-top: 3px; }
+.md-timeline .md-note-body { flex: 1; min-width: 0; }
 
 /* =========================================================================
    FIGMA 1:1 CORRECTIONS (get_design_context node 66287:46031)
@@ -786,13 +804,21 @@ html, body {
 
 /* bottom-right visualizations — DISTINCT per response type, each animates in */
 .v2-viz { flex: 0 0 auto; width: 132px; display: flex; align-items: flex-end; justify-content: flex-end; }
-.v2-area { width: 132px; height: 48px; display: block; }                 /* numeric → area trend line */
-.v2-bars { width: 132px; height: 48px; display: block; }                 /* scale → bars */
+.v2-area { width: 132px; height: 48px; display: block; }                 /* numeric → area / line */
+.v2-bars { width: 132px; height: 48px; display: block; }                 /* scale/columns → bars */
+.v2-lolli { width: 132px; height: 48px; display: block; }                /* scale → lollipop */
+.v2-dots { width: 132px; height: 48px; display: block; }                 /* scale → dot track */
 .v2-dist { width: 132px; display: flex; flex-direction: column; gap: 6px; } /* list → distribution */
 .v2-dist-bar { height: 8px; border-radius: 100px; background: #EEF1F3; overflow: hidden; }
 .v2-dist-bar i { display: block; height: 100%; border-radius: 100px; }
 .v2-chips { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }  /* text → chips */
 .v2-chip { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 100px; background: #F0F4F2; color: #44544A; white-space: nowrap; }
+/* TEXT cards: no chart — a real latest-note preview instead */
+.v2-card-text .v2-foot { padding-top: 12px; }
+.v2-note-preview { margin-top: 12px; background: #F5F8F6; border-radius: 10px; padding: 11px 13px;
+  font-size: 13px; font-weight: 500; line-height: 1.45; color: #44544A; font-style: italic;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  animation: v2fade .5s ease both; }
 
 /* --- graph entrance animations (auto-play whenever the Detailed view renders) --- */
 @keyframes v2draw   { from { stroke-dashoffset: 380; } to { stroke-dashoffset: 0; } }
@@ -803,7 +829,8 @@ html, body {
 .v2-area .v2-line { stroke-dasharray: 380; animation: v2draw .8s cubic-bezier(.33,0,.2,1) forwards; }
 .v2-area .v2-fill { animation: v2fade .8s ease both; }
 .v2-area .v2-dot  { animation: v2fade .3s ease .55s both; }
-.v2-bars rect { transform-box: fill-box; transform-origin: center bottom; animation: v2barGrow .5s cubic-bezier(.2,.8,.2,1) both; }
+.v2-bars rect, .v2-lolli rect { transform-box: fill-box; transform-origin: center bottom; animation: v2barGrow .5s cubic-bezier(.2,.8,.2,1) both; }
+.v2-lolli circle, .v2-dots circle { animation: v2fade .4s ease both; }
 .v2-dist-bar i { transform-origin: left center; animation: v2distGrow .55s cubic-bezier(.2,.8,.2,1) both; }
 .v2-dist-bar:nth-child(2) i { animation-delay: .08s; }
 .v2-dist-bar:nth-child(3) i { animation-delay: .16s; }
@@ -811,6 +838,6 @@ html, body {
 .v2-chips .v2-chip:nth-child(2) { animation-delay: .08s; }
 .v2-chips .v2-chip:nth-child(3) { animation-delay: .16s; }
 @media (prefers-reduced-motion: reduce) {
-  .v2-area .v2-line, .v2-area .v2-fill, .v2-area .v2-dot, .v2-bars rect, .v2-dist-bar i, .v2-chips .v2-chip { animation: none; }
+  .v2-area .v2-line, .v2-area .v2-fill, .v2-area .v2-dot, .v2-bars rect, .v2-lolli rect, .v2-lolli circle, .v2-dots circle, .v2-dist-bar i, .v2-chips .v2-chip { animation: none; }
   .v2-area .v2-line { stroke-dasharray: none; }
 }

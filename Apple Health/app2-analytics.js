@@ -121,8 +121,24 @@ const CATALOGUE = [
 ];
 const CAT_COLOR = {}; CATALOGUE.forEach(c => CAT_COLOR[c.cat] = c.color);
 const CAT_DOMAINS = ['All', ...CATALOGUE.map(c => c.cat)];
-const TYPE_INDEX = {};      // q → { ...type, cat, color }
-CATALOGUE.forEach(c => c.types.forEach(ty => { TYPE_INDEX[ty.q] = { ...ty, cat: c.cat, color: c.color }; }));
+const TYPE_INDEX = {};      // q → { ...type, cat, catColor, color, viz }
+/* per-type accent colour + chart style so EVERY card looks distinct.
+   numeric rotates area/line/columns · scale rotates bars/lollipop/dots. */
+const VIZ_PALETTE = ['#FA6140', '#F59E0B', '#E0457B', '#37BD69', '#00AFD6', '#6C7BF7', '#14B8A6', '#8B5CF6', '#EAB308', '#3E8EED', '#EF5DA8', '#0EA5A4'];
+const NUM_VARIANTS = ['area', 'line', 'col'];
+const SCALE_VARIANTS = ['bars', 'lolli', 'dots'];
+(() => {
+  let ci = 0, ni = 0, si = 0;
+  CATALOGUE.forEach(c => c.types.forEach(ty => {
+    const color = VIZ_PALETTE[ci++ % VIZ_PALETTE.length];
+    let viz = null;
+    if (ty.rt === 'numeric') viz = NUM_VARIANTS[ni++ % NUM_VARIANTS.length];
+    else if (ty.rt === 'scale') viz = SCALE_VARIANTS[si++ % SCALE_VARIANTS.length];
+    else if (ty.rt === 'list') viz = 'dist';
+    else viz = 'chips';
+    TYPE_INDEX[ty.q] = { ...ty, cat: c.cat, catColor: c.color, color, viz };
+  }));
+})();
 function catType(q) { return TYPE_INDEX[q]; }
 
 /* 8 shared sessions (newest first) — reuse HISTORY meta so dates feel real */
@@ -339,6 +355,29 @@ function v2Area(values, color, id) {
     <path class="v2-fill" d="${area}" fill="url(#${id})"/><path class="v2-line" d="${line}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
     <circle class="v2-dot" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3" fill="${color}"/></svg>`;
 }
+/* numeric variant → line with markers (no fill) */
+function v2Line(values, color) {
+  const w = 132, h = 48, pad = 4, iw = w - pad * 2, ih = h - pad * 2;
+  const lo = Math.min(...values), hi = Math.max(...values), rng = (hi - lo) || 1;
+  const X = i => pad + (i / (values.length - 1)) * iw, Y = v => pad + (1 - (v - lo) / rng) * ih;
+  const pts = values.map((v, i) => [X(i), Y(v)]), line = smoothPath2(pts), last = pts[pts.length - 1];
+  const dots = pts.map((p, i) => i === pts.length - 1 ? '' :
+    `<circle class="v2-dot" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.2" fill="#fff" stroke="${color}" stroke-width="1.5"/>`).join('');
+  return `<svg class="v2-area" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <path class="v2-line" d="${line}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dots}<circle class="v2-dot" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.4" fill="${color}"/></svg>`;
+}
+/* numeric variant → recency columns (older lighter, latest full colour) */
+function v2Col(values, color) {
+  const n = values.length, w = 132, h = 48, gap = 4, bw = (w - gap * (n - 1)) / n;
+  const lo = Math.min(...values), hi = Math.max(...values), rng = (hi - lo) || 1;
+  const bars = values.map((v, i) => {
+    const bh = 8 + ((v - lo) / rng) * (h - 8), x = i * (bw + gap), y = h - bh;
+    const op = (0.32 + 0.68 * (i / (n - 1))).toFixed(2);
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${color}" fill-opacity="${op}" style="animation-delay:${(i * 0.05).toFixed(2)}s"/>`;
+  }).join('');
+  return `<svg class="v2-bars" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${bars}</svg>`;
+}
 /* scale → mini bar chart, final (latest) bar accented */
 function v2Bars(values, color) {
   const n = values.length, w = 132, h = 48, gap = 4, bw = (w - gap * (n - 1)) / n;
@@ -350,27 +389,67 @@ function v2Bars(values, color) {
   }).join('');
   return `<svg class="v2-bars" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${bars}</svg>`;
 }
+/* scale variant → lollipop (stem + dot), latest accented */
+function v2Lolli(values, color) {
+  const n = values.length, w = 132, h = 48, gap = 4, bw = (w - gap * (n - 1)) / n;
+  const lo = Math.min(...values), hi = Math.max(...values), rng = (hi - lo) || 1;
+  const out = values.map((v, i) => {
+    const cy = 6 + (1 - (v - lo) / rng) * (h - 12), cx = i * (bw + gap) + bw / 2, lastOne = i === n - 1;
+    const col = lastOne ? color : '#CBD3D7';
+    return `<rect x="${(cx - 1).toFixed(1)}" y="${cy.toFixed(1)}" width="2" height="${(h - cy).toFixed(1)}" rx="1" fill="${col}" style="animation-delay:${(i * 0.05).toFixed(2)}s"/>`
+      + `<circle class="v2-dot" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${lastOne ? 4 : 3}" fill="${col}"/>`;
+  }).join('');
+  return `<svg class="v2-lolli" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${out}</svg>`;
+}
+/* scale variant → dot track on a faint baseline, latest accented */
+function v2Dots(values, color) {
+  const n = values.length, w = 132, h = 48, pad = 8, iw = w - pad * 2;
+  const lo = Math.min(...values), hi = Math.max(...values), rng = (hi - lo) || 1;
+  const X = i => pad + (i / (n - 1)) * iw, Y = v => 8 + (1 - (v - lo) / rng) * (h - 16);
+  const dots = values.map((v, i) => {
+    const lastOne = i === n - 1, col = lastOne ? color : '#CBD3D7';
+    return `<circle class="v2-dot" cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${lastOne ? 4.5 : 3}" fill="${col}" style="animation-delay:${(i * 0.05).toFixed(2)}s"/>`;
+  }).join('');
+  return `<svg class="v2-dots" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <line x1="${pad}" y1="${h - 5}" x2="${w - pad}" y2="${h - 5}" stroke="#EEF1F3" stroke-width="2"/>${dots}</svg>`;
+}
+/* pick the numeric/scale renderer for a type's assigned variant */
+function v2Viz(it, s, color) {
+  if (it.rt === 'numeric') return it.viz === 'line' ? v2Line(s, color) : it.viz === 'col' ? v2Col(s, color) : v2Area(s, color, 'va' + it.q.replace(/\W/g, ''));
+  return it.viz === 'lolli' ? v2Lolli(s, color) : it.viz === 'dots' ? v2Dots(s, color) : v2Bars(s, color);
+}
 
 /* one tappable card per metric — Apple-Health concept: colored icon + title,
    chevron top-right, hero value + insight + small date caption bottom-left,
    a DISTINCT viz per response type bottom-right (numeric→area, scale→bars,
    list→distribution, text→chips). Full analytics open on tap (openMetric). */
 function v2Card(m) {
-  const it = trendItem(m.q), rt = it.rt, last = CAT_SESS[0].date;
+  const it = trendItem(m.q), rt = it.rt, last = CAT_SESS[0].date, color = it.color || m.color;
   const head = `<div class="v2-head">
     <span class="v2-name">${qLabel(m.q)}</span>
     <span class="v2-chev">${I2.chevR}</span></div>`;
-  let val = '', sub = '', viz = '', when = `Last recorded · ${last}`;
+  const when = `Last recorded · ${last}`;
+  // TEXT has no metric to chart — show the latest note itself (content-first, no fake graph)
+  if (rt === 'text') {
+    const latest = catNewest(m.q)[0];
+    return `<div class="v2-card v2-card-text" onclick="openMetric('${m.q}')">${head}
+      <div class="v2-note-preview">“${latest}”</div>
+      <div class="v2-foot"><div class="v2-lead">
+        <span class="v2-val">${CAT_SESS.length}<small>entries</small></span>
+        <div class="v2-sub muted">Tap to read all notes</div>
+        <div class="v2-when">${when}</div></div></div></div>`;
+  }
+  let val = '', sub = '', viz = '';
   if (rt === 'numeric') {
     const s = seriesFor(m.q), cur = s[s.length - 1], prev = s[s.length - 2], d = +(cur - prev).toFixed(1), flat = Math.abs(d) < 0.01, up = d > 0;
     val = `<span class="v2-val">${cur}<small>${it.unit}</small></span>`;
     sub = `<div class="v2-sub ${flat ? 'eq' : up ? 'up' : 'dn'}">${flat ? '→ Stable' : (up ? '↑ +' : '↓ ') + Math.abs(d) + ' ' + it.unit}</div>`;
-    viz = v2Area(s, m.color, 'va' + m.q.replace(/\W/g, ''));
+    viz = v2Viz(it, s, color);
   } else if (rt === 'scale') {
     const s = seriesFor(m.q), cur = s[s.length - 1], prev = s[s.length - 2], d = cur - prev, flat = d === 0, up = d > 0;
     val = `<span class="v2-val">${cur}<small>/ ${it.max}</small></span>`;
     sub = `<div class="v2-sub ${flat ? 'eq' : up ? 'up' : 'dn'}">${flat ? '→ Stable' : up ? '↑ Improved' : '↓ Declined'}</div>`;
-    viz = v2Bars(s, m.color);
+    viz = v2Viz(it, s, color);
   } else if (rt === 'list') {
     const vals = seriesFor(m.q), cur = vals[vals.length - 1];
     const dist = {}; it.options.forEach(o => dist[o] = 0); vals.forEach(v => dist[v]++);
@@ -378,11 +457,7 @@ function v2Card(m) {
     val = `<span class="v2-val text">${cur}</span>`;
     sub = `<div class="v2-sub muted">Most frequent · ${freq}</div>`;
     const rows = it.options.map(o => ({ o, n: dist[o] })).sort((a, b) => b.n - a.n).slice(0, 3);
-    viz = `<div class="v2-dist">${rows.map(r => `<div class="v2-dist-bar"><i style="width:${Math.round(r.n / total * 100)}%;background:${r.o === cur ? m.color : '#C9D2D6'}"></i></div>`).join('')}</div>`;
-  } else {
-    val = `<span class="v2-val">${CAT_SESS.length}<small>notes</small></span>`;
-    sub = `<div class="v2-sub muted">Observation journal</div>`;
-    viz = `<div class="v2-chips">${['Active', 'Eating well', 'Alert'].map(h => `<span class="v2-chip">${h}</span>`).join('')}</div>`;
+    viz = `<div class="v2-dist">${rows.map(r => `<div class="v2-dist-bar"><i style="width:${Math.round(r.n / total * 100)}%;background:${r.o === cur ? color : '#C9D2D6'}"></i></div>`).join('')}</div>`;
   }
   return `<div class="v2-card" onclick="openMetric('${m.q}')">${head}
     <div class="v2-foot"><div class="v2-lead">${val}${sub}<div class="v2-when">${when}</div></div><div class="v2-viz">${viz}</div></div></div>`;
@@ -824,14 +899,19 @@ function metricSheetInner(q) {
         <div class="ms-card" data-searchbox><div class="ms-card-t">${q} History</div>${listSearch('.ms-row')}<div class="ms-hist">${msRows(q, v => v, v => col(v) + '22')}</div><div class="ls-empty">No matching entries</div></div>
       </div>`;
   }
+  // TEXT: no chart/filter — feature the latest note, then a searchable timeline of all entries
   const ntext = catNewest(q);
   const notes = CAT_SESS.map((r, i) => ({ by: r.by, date: r.date, time: r.time, text: ntext[i] }));
-  return `<div class="ms-white">${flt}</div>
+  const latest = notes[0];
+  return `<div class="ms-white">
+      <div class="ms-latest">
+        <div class="ms-latest-lab">Latest entry · ${latest.date}</div>
+        <div class="ms-latest-q">“${latest.text}”</div>
+        <div class="ms-latest-by">— ${latest.by}</div>
+      </div></div>
     <div class="ms-lower">
-      <div class="ms-card"><div class="ms-card-t">Observation Highlights</div>
-        <div class="oh-row">${['Active', 'Eating Well', 'Social', 'Alert', 'Playful'].map(h => `<span class="oh-c">✦ ${h}</span>`).join('')}</div></div>
-      <div class="ms-card" data-searchbox><div class="ms-card-t">All Observations</div>${listSearch('.md-note', 'Search observations')}
-        ${notes.map(n => `<div class="md-note"><div class="mn-m">${n.by} · ${n.date} · ${n.time}</div><div class="mn-q">"${n.text}"</div></div>`).join('')}<div class="ls-empty">No matching observations</div></div>
+      <div class="ms-card" data-searchbox><div class="ms-card-t">All Observations · ${notes.length}</div>${listSearch('.md-note', 'Search observations')}
+        <div class="md-timeline">${notes.map(n => `<div class="md-note"><span class="md-note-dot"></span><div class="md-note-body"><div class="mn-m">${n.date} · ${n.by}</div><div class="mn-q">${n.text}</div></div></div>`).join('')}</div><div class="ls-empty">No matching observations</div></div>
     </div>`;
 }
 function metricSheetHTML(q) {
