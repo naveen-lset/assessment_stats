@@ -575,7 +575,7 @@ function v2HeroCard(m) {
     <div class="v2-hero-top"><span class="v2-hero-val">${cur}<small>${u}</small></span><span class="v2-sub ${flat ? 'eq' : up ? 'up' : 'dn'}">${flat ? '→ Stable' : (up ? '↑ +' : '↓ ') + Math.abs(d) + ' ' + u}</span></div>
     <div class="v2-hero-chart">${v2HeroChart(s, color, 'vh' + m.q.replace(/\W/g, ''))}</div>
     <div class="v2-hero-stats">${stats.map(([l, v]) => `<div class="v2-hs"><div class="v2-hs-l">${l}</div><div class="v2-hs-v">${v}</div></div>`).join('')}</div>
-    <div class="v2-when">Last recorded · ${CAT_SESS[0].date}</div>
+    <div class="v2-when">${CAT_SESS[0].date}</div>
   </div>`;
 }
 
@@ -588,7 +588,7 @@ function v2Card(m) {
   const head = `<div class="v2-head">
     <span class="v2-name">${qLabel(m.q)}</span>
     <span class="v2-chev">${I2.chevR}</span></div>`;
-  const when = `Last recorded · ${last}`;
+  const when = `${last}`;
   // TEXT has no metric to chart — show the latest note itself (content-first, no fake graph)
   if (rt === 'text') {
     const latest = catNewest(m.q)[0];

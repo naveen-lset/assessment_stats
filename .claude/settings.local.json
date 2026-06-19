@@ -1,12 +1,13 @@
 {
-  "enabledMcpjsonServers": [
-    "agentation"
-  ],
   "permissions": {
     "allow": [
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(curl -s -o phviz.png \"https://www.figma.com/api/mcp/asset/9e6995ac-c911-44d4-aa05-6eab400614f1\")"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "agentation"
+  ]
 }
