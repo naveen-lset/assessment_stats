@@ -25,7 +25,7 @@ const I2 = {
 
 /* ------------------------------------------------------------- ROUTER ----- */
 const SCREENS2 = {};
-const NAV = { stack: ['amOverview'], params: {} };
+const NAV = { stack: ['assessLanding'], params: {} };
 
 let LAST_RENDER_KEY = null;
 function render2() {
@@ -445,10 +445,10 @@ SCREENS2.amOverview = () => {
   if (AM_TAB === 'overview') {
     body = `${infoCard}${identifiers}${enclosure}`;
   } else if (AM_TAB === 'assessment') {
-    // Assessment summary on top → Upcoming Assessments → assessment-type containers
+    // Upcoming Assessments on top → assessment-type containers (47 Types bar + cards)
     const upcoming = (typeof overviewUpcomingContainer === 'function') ? overviewUpcomingContainer() : '';
     const types = (typeof assessTypeContainers === 'function') ? assessTypeContainers() : '';
-    body = `${assessSummaryContainer()}${upcoming}${types}`;
+    body = `${upcoming}${types}`;
   } else {
     body = `<div style="padding:48px 16px;text-align:center;color:var(--neutral-secondary);font-size:14px">
          ${TABS.find(t => t.key === AM_TAB).label} — coming soon</div>`;
@@ -458,6 +458,21 @@ SCREENS2.amOverview = () => {
     ${heroHeader(a)}
     ${tabsBar(TABS, AM_TAB, 'setAmTab')}
     <div class="body">${body}</div>
+    <div style="height:24px"></div>
+  </div></div>`;
+};
+
+/* ===========================================================================
+   LANDING — assessment cards as the app's main page (no profile hero/tabs).
+   Search + category chips + metric cards (each with its Insights container).
+   Upcoming Assessments stays on top.
+   =========================================================================== */
+SCREENS2.assessLanding = () => {
+  const upcoming = (typeof overviewUpcomingContainer === 'function') ? overviewUpcomingContainer() : '';
+  const types = (typeof assessTypeContainers === 'function') ? assessTypeContainers() : '';
+  return `<div class="screen active"><div class="scroll prof-scroll assess-landing">
+    ${heroHeader(ANIMAL)}
+    <div class="body" style="padding-top:14px">${upcoming}${types}</div>
     <div style="height:24px"></div>
   </div></div>`;
 };

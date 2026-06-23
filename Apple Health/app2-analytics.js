@@ -216,64 +216,25 @@ function catNewest(q) { return catChron(q).slice().reverse(); }
 const ATC_REL = ['57 Mins ago', '3h ago', 'Yesterday', '7 Days ago', '30 Days ago', '60 Days ago', '90 Days ago', '120 Days ago'];
 const ATC_PLUS = '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
 
-function assessTypeCard(q) {
-  const t = catType(q); if (!t) return '';
-  const newest = catNewest(q);          // newest-first values
-  let bodyHTML = '';
-  if (t.rt === 'numeric') {
-    bodyHTML = `<div class="atc-nums">${newest.slice(0, 3).map((v, i) =>
-      `<div class="atc-col ${i === 0 ? 'cur' : ''}">
-         <div class="atc-val">${v}<small>${t.unit}</small></div>
-         <div class="atc-rel">${ATC_REL[i]}</div>
-       </div>`).join('')}</div>`;
-  } else if (t.rt === 'scale') {
-    bodyHTML = `<div class="atc-single">
-      <span class="atc-big">${newest[0]}</span><span class="atc-unit">/ ${t.max}</span>
-      <span class="atc-rel2">${ATC_REL[0]}</span></div>`;
-  } else if (t.rt === 'list') {
-    bodyHTML = `<div class="atc-single">
-      <span class="atc-word">${newest[0]}</span>
-      <span class="atc-rel2">${ATC_REL[0]}</span></div>`;
-  } else {                              // text
-    bodyHTML = `<div class="atc-note">${newest[0]}<div class="atc-rel2">${ATC_REL[0]}</div></div>`;
-  }
-  return `<div class="atc-card" onclick="openMetric('${q}')">
-    <div class="atc-head" style="--cat:${t.catColor}">
-      <div class="atc-htext">
-        <div class="atc-type">${q} <span class="atc-chev">${I2.chevR}</span></div>
-        <div class="atc-cat">${t.cat}</div>
-      </div>
-      <button class="atc-add" onclick="event.stopPropagation()" aria-label="Add ${q}">${ATC_PLUS}</button>
-    </div>
-    <div class="atc-body">${bodyHTML}</div>
-  </div>`;
-}
-
+/* Assessment-tab type list — same clean metric cards as the analytics Detailed
+   view (v2HeroCard / v2Card: big value + trend chart + Previous/Average/Min/Max).
+   Search + category chips on top. Cards are tappable — tapping opens the regular
+   "See More Data" bottom sheet (openMetric), which is where the Insights show. */
 function assessTypeContainers() {
-  const cat = (typeof AM_ACAT !== 'undefined') ? AM_ACAT : 'All';
-  const cats = cat === 'All' ? CATALOGUE : CATALOGUE.filter(c => c.cat === cat);
-  const totalTypes = CATALOGUE.reduce((s, c) => s + c.types.length, 0);
-  const chips =
-    `<button class="atc-chip ${cat === 'All' ? 'active' : ''}" onclick="setAmACat('All')">All</button>` +
-    CATALOGUE.map(c =>
-      `<button class="atc-chip ${c.cat === cat ? 'active' : ''}" onclick="setAmACat('${c.cat}')">
-         <i style="background:${c.color}"></i>${c.cat} (${c.types.length})</button>`).join('');
-  const showLabels = cat === 'All';
+  const dom = (typeof AM_ACAT !== 'undefined') ? AM_ACAT : 'All';
+  const metricSearch = `<div class="hist-search v2-search"><span class="hs-box">${I2.search}<input class="hs-in" type="text" placeholder="Search" oninput="searchFilter(this,'.v2-card')"></span></div>`;
+  const domChips = `<div class="tchip-row v2-doms">${CAT_DOMAINS.map(d =>
+    `<button class="tchip ${d === dom ? 'active' : ''}" onclick="setAmACat('${d}')">${d}</button>`).join('')}</div>`;
+  const cats = dom === 'All' ? CATALOGUE : CATALOGUE.filter(c => c.cat === dom);
+  const showLabels = dom === 'All';
   const cards = cats.map(c =>
-    (showLabels ? `<div class="atc-catlabel">${c.cat}</div>` : '') +
-    c.types.map(ty => assessTypeCard(ty.q)).join('')
+    (showLabels ? `<div class="v2-catlabel">${c.cat}</div>` : '') +
+    c.types.map(ty => {
+      const t = catType(ty.q);
+      return (t.hero ? v2HeroCard : v2Card)({ q: ty.q, color: t.color }, { tap: true, add: true });
+    }).join('')
   ).join('');
-  return `<div class="atc-wrap">
-    <div class="atc-bar">
-      <div class="atc-count">${totalTypes} Types</div>
-      <div class="atc-tools">
-        <button class="atc-tool" aria-label="Search types">${I2.search}</button>
-        <button class="atc-tool" aria-label="Add type">${ATC_PLUS}</button>
-      </div>
-    </div>
-    <div class="atc-chips">${chips}</div>
-    <div class="atc-list">${cards}</div>
-  </div>`;
+  return `<div data-searchbox>${metricSearch}${domChips}<div class="v2-list">${cards}</div><div class="ls-empty">No matching metrics</div></div>`;
 }
 
 /* ---- page state (filter context persists across tabs) -------------------- */
@@ -290,7 +251,7 @@ const AA_TABLIST = [
   { key: 'schedule', label: 'Schedule' },
 ];
 let AA_FIELD = 'Weight';        // selected metric in the Assessment Trend card
-let MD_FILTER = 'D';            // D/W/M/6M/Y in the See More Data drill-down
+let MD_FILTER = 'W';            // W/M/6M/Y in the See More Data drill-down (no intraday: an assessment is one scheduled record, not a sensor stream)
 let AA_OV_MODE = 'detailed';    // Overview layout: 'summary' (V1 chip container) | 'detailed' (V2 metric cards)
 function setOvMode(m) { AA_OV_MODE = m; render2(); }
 const TREND_FIELDS = [
@@ -320,7 +281,7 @@ function sheetHost2() {
 function openSheet2(html) { const s = sheetHost2(); s.innerHTML = `<div class="sheet2">${html}</div>`; s.classList.add('open'); }
 function closeSheet2() { const s = document.getElementById('sheet2-scrim'); if (s) { s.classList.remove('open'); s.innerHTML = ''; } }
 /* "See More Data" → bottom sheet (NOT a separate page) */
-function openMetric(q) { MD_FILTER = 'D'; openSheet2(metricSheetHTML(q)); }
+function openMetric(q) { MD_FILTER = 'W'; openSheet2(metricSheetHTML(q)); }
 function setMdFilter(q, f) {
   MD_FILTER = f;
   const host = document.getElementById('mdSheetBody');
@@ -565,13 +526,14 @@ function v2HeroChart(values, color, id) {
     <circle class="v2-dot" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="5" fill="#fff"/><circle class="v2-dot" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.2" fill="${color}"/></svg>`;
 }
 /* prominent hero card (numeric) — big value + wide trend + Previous/Average/Min/Max */
-function v2HeroCard(m) {
+function v2HeroCard(m, opts) {
+  const tap = !opts || opts.tap !== false, add = opts && opts.add;
   const it = trendItem(m.q), color = it.color || m.color, s = seriesFor(m.q), u = it.unit;
   const cur = s[s.length - 1], prev = s[s.length - 2], d = +(cur - prev).toFixed(1), flat = Math.abs(d) < 0.01, up = d > 0;
   const avg = +(s.reduce((a, b) => a + b, 0) / s.length).toFixed(1), min = Math.min(...s), max = Math.max(...s);
   const stats = [['Previous', prev + ' ' + u], ['Average', avg + ' ' + u], ['Min', min + ' ' + u], ['Max', max + ' ' + u]];
-  return `<div class="v2-card v2-hero" onclick="openMetric('${m.q}')">
-    <div class="v2-head"><span class="v2-name">${qLabel(m.q)}</span><span class="v2-chev">${I2.chevR}</span></div>
+  return `<div class="v2-card v2-hero"${tap ? ` onclick="openMetric('${m.q}')"` : ''}>
+    <div class="v2-head"><span class="v2-name">${qLabel(m.q)}</span>${add ? `<button class="v2-add" onclick="event.stopPropagation();openAddEntry('${m.q}')" aria-label="Add ${qLabel(m.q)}">${ATC_PLUS}</button>` : ''}${tap && !add ? `<span class="v2-chev">${I2.chevR}</span>` : ''}</div>
     <div class="v2-hero-top"><span class="v2-hero-val">${cur}<small>${u}</small></span><span class="v2-sub ${flat ? 'eq' : up ? 'up' : 'dn'}">${flat ? '→ Stable' : (up ? '↑ +' : '↓ ') + Math.abs(d) + ' ' + u}</span></div>
     <div class="v2-hero-chart">${v2HeroChart(s, color, 'vh' + m.q.replace(/\W/g, ''))}</div>
     <div class="v2-hero-stats">${stats.map(([l, v]) => `<div class="v2-hs"><div class="v2-hs-l">${l}</div><div class="v2-hs-v">${v}</div></div>`).join('')}</div>
@@ -583,20 +545,22 @@ function v2HeroCard(m) {
    chevron top-right, hero value + insight + small date caption bottom-left,
    a DISTINCT viz per response type bottom-right (numeric→area, scale→bars,
    list→distribution, text→chips). Full analytics open on tap (openMetric). */
-function v2Card(m) {
+function v2Card(m, opts) {
+  const tap = !opts || opts.tap !== false, add = opts && opts.add;
   const it = trendItem(m.q), rt = it.rt, last = CAT_SESS[0].date, color = it.color || m.color;
   const head = `<div class="v2-head">
     <span class="v2-name">${qLabel(m.q)}</span>
-    <span class="v2-chev">${I2.chevR}</span></div>`;
+    ${add ? `<button class="v2-add" onclick="event.stopPropagation();openAddEntry('${m.q}')" aria-label="Add ${qLabel(m.q)}">${ATC_PLUS}</button>` : ''}
+    ${tap && !add ? `<span class="v2-chev">${I2.chevR}</span>` : ''}</div>`;
   const when = `${last}`;
   // TEXT has no metric to chart — show the latest note itself (content-first, no fake graph)
   if (rt === 'text') {
     const latest = catNewest(m.q)[0];
-    return `<div class="v2-card v2-card-text" onclick="openMetric('${m.q}')">${head}
+    return `<div class="v2-card v2-card-text"${tap ? ` onclick="openMetric('${m.q}')"` : ''}>${head}
       <div class="v2-note-preview">“${latest}”</div>
       <div class="v2-foot"><div class="v2-lead">
         <span class="v2-val">${CAT_SESS.length}<small>entries</small></span>
-        <div class="v2-sub muted">Tap to read all notes</div>
+        <div class="v2-sub muted">${tap ? 'Tap to read all notes' : 'Latest note'}</div>
         <div class="v2-when">${when}</div></div></div></div>`;
   }
   let val = '', sub = '', viz = '';
@@ -623,7 +587,7 @@ function v2Card(m) {
       viz = `<div class="v2-dist">${rows.map(r => `<div class="v2-dist-bar"><i style="width:${Math.round(r.n / total * 100)}%;background:${r.o === cur ? color : '#C9D2D6'}"></i></div>`).join('')}</div>`;
     }
   }
-  return `<div class="v2-card" onclick="openMetric('${m.q}')">${head}
+  return `<div class="v2-card"${tap ? ` onclick="openMetric('${m.q}')"` : ''}>${head}
     <div class="v2-foot"><div class="v2-lead">${val}${sub}<div class="v2-when">${when}</div></div><div class="v2-viz">${viz}</div></div></div>`;
 }
 function aaOverview() {
@@ -949,13 +913,13 @@ SCREENS2.assessAnalytics = (p = {}) => {
    Text    → search + highlights + chronological observations
    =========================================================================== */
 const MD_FILT = {
-  D: { n: 30, ends: ['May 10', 'May 24', 'Jun 8'] }, W: { n: 12, ends: ['Mar', 'Apr', 'Jun'] },
+  W: { n: 12, ends: ['Mar', 'Apr', 'Jun'] },
   M: { n: 12, ends: ['Jan', 'Apr', 'Jun'] }, '6M': { n: 26, ends: ['Jan', 'Mar', 'Jun'] }, Y: { n: 12, ends: ['Jul', 'Dec', 'Jun'] },
 };
 function mdSeed(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
 function mdSeries(q, filter) {
   const it = trendItem(q), base = seriesFor(q), isScale = it.rt === 'scale';
-  const cur = base[base.length - 1], prev = base[0], cf = MD_FILT[filter] || MD_FILT.D, n = cf.n, seed = mdSeed(q + filter);
+  const cur = base[base.length - 1], prev = base[0], cf = MD_FILT[filter] || MD_FILT.W, n = cf.n, seed = mdSeed(q + filter);
   const span = isScale ? Math.max(0.9, it.max * 0.12) : Math.max(0.5, Math.abs(cur) * 0.05);
   const vals = [];
   for (let i = 0; i < n; i++) {
@@ -969,7 +933,6 @@ function mdSeries(q, filter) {
 }
 const MD_MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function mdLabels(filter, n) {
-  if (filter === 'D') return Array.from({ length: n }, (_, i) => { const d = 10 + i; return d <= 31 ? 'May ' + d : 'Jun ' + (d - 31); });
   if (filter === 'W' || filter === '6M') return Array.from({ length: n }, (_, i) => 'Week ' + (i + 1));
   return Array.from({ length: n }, (_, i) => MD_MON[(6 + i) % 12]);
 }
@@ -1015,14 +978,14 @@ function lineInteractive(id, values, color, opts) {
   let defs = '', areaEl = '';
   if (opts.area) {
     defs = `<defs><linearGradient id="${id}_g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".18"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>`;
-    areaEl = `<path d="M${pts[0][0].toFixed(1)} ${pt + ih} ${pts.map(p => 'L' + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ')} L${pts[pts.length - 1][0].toFixed(1)} ${pt + ih} Z" fill="url(#${id}_g)"/>`;
+    areaEl = `<path class="lc-area" d="M${pts[0][0].toFixed(1)} ${pt + ih} ${pts.map(p => 'L' + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ')} L${pts[pts.length - 1][0].toFixed(1)} ${pt + ih} Z" fill="url(#${id}_g)"/>`;
   }
   let avgEl = '';
   if (avg != null) { const ay = Y(avg); avgEl = `<line x1="${pl}" y1="${ay.toFixed(1)}" x2="${pl + iw}" y2="${ay.toFixed(1)}" stroke="#A9C3B8" stroke-width="1.2" stroke-dasharray="5 5"/><text x="${pl + 2}" y="${(ay - 6).toFixed(1)}" font-size="11" fill="#5C6B63" font-weight="700">avg ${avg}</text>`; }
   return `<div class="lc-wrap"><div class="lc-tip" id="${id}_tip"></div>
     <svg id="${id}_svg" class="lc-svg" viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
       ${defs}${grid}${areaEl}${avgEl}
-      <path d="${smoothPath2(pts)}" fill="none" stroke="${color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>${xsEl}
+      <path class="lc-line" d="${smoothPath2(pts)}" fill="none" stroke="${color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>${xsEl}
       <line id="${id}_cl" x1="0" y1="${pt}" x2="0" y2="${pt + ih}" stroke="${color}" stroke-width="1.2" stroke-dasharray="3 3" style="opacity:0"/>
       <circle id="${id}_cd" r="5" fill="${color}" stroke="#fff" stroke-width="2.5" style="opacity:0"/>
       <rect x="${pl}" y="${pt}" width="${iw}" height="${ih}" fill="transparent" style="cursor:crosshair"
@@ -1053,7 +1016,7 @@ function mdHist(q, fmt) {
 }
 /* --- sheet building blocks (Figma: white header + white chart section, mint lower w/ white cards) --- */
 function msFlt(q) {
-  return `<div class="segment seg5 ms-flt">${['D', 'W', 'M', '6M', 'Y'].map(f =>
+  return `<div class="segment seg4 ms-flt">${['W', 'M', '6M', 'Y'].map(f =>
     `<button class="seg ${f === MD_FILTER ? 'active' : ''}" onclick="setMdFilter('${q}','${f}')">${f}</button>`).join('')}</div>`;
 }
 function msStat(l, v) { return `<div class="ms-s"><div class="ms-sl">${l}</div><div class="ms-sv">${v}</div></div>`; }
@@ -1065,57 +1028,6 @@ function msRows(q, fmt, colFn) {
     return `<div class="ms-row"><div class="ms-meta"><div class="ms-t">${r.time}</div><div class="ms-d">${r.date}</div><div class="ms-a">${r.by}</div></div>
       <div class="ms-pill" style="${style}">${fmt(v)}</div></div>`;
   }).join('');
-}
-/* ---- DAY view: intraday spot-readings (5–10 records across a single day) ---- */
-function mdDaySeries(q) {
-  const it = trendItem(q), base = seriesFor(q), isScale = it.rt === 'scale';
-  const cur = base[base.length - 1], seed = mdSeed(q + 'D'), ndp = it.dp == null ? 1 : it.dp;
-  const count = 5 + (seed % 6);                         // 5..10 records that day
-  const s0 = 7 * 60, s1 = 20 * 60;                       // 07:00 → 20:00
-  const times = Array.from({ length: count }, (_, i) => {
-    const m = Math.round(s0 + (s1 - s0) * (count === 1 ? 0 : i / (count - 1)));
-    return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-  });
-  const span = isScale ? Math.max(0.8, it.max * 0.12) : Math.max(0.4, Math.abs(cur) * 0.045);
-  const values = times.map((_, i) => {
-    const wob = Math.sin((seed % 7) + i * 1.1) * 0.7 + ((((seed + i * 61) % 100) / 100) - 0.5);
-    const v = cur + wob * span;
-    return isScale ? Math.max(1, Math.min(it.max, Math.round(v))) : +v.toFixed(ndp);
-  });
-  const avg = +(values.reduce((a, b) => a + b, 0) / count).toFixed(isScale ? 1 : ndp);
-  return { values, times, avg, count };
-}
-/* distinct intraday chart — discrete columns over a time-of-day axis (not the trend line) */
-function intradayChart(values, times, color, avg, fmt) {
-  const W = 340, H = 200, pl = 32, pr = 12, pt = 16, pb = 32, iw = W - pl - pr, ih = H - pt - pb;
-  const lo = Math.min(...values, avg), hi = Math.max(...values, avg), pad = (hi - lo || 1) * 0.2, L = lo - pad, rng = (hi + pad - L) || 1;
-  const Y = v => pt + (1 - (v - L) / rng) * ih;
-  const n = values.length, gap = Math.max(6, 16 - n), bw = Math.min(30, (iw - gap * (n - 1)) / n);
-  const x0 = pl + (iw - (bw * n + gap * (n - 1))) / 2;
-  let grid = '';
-  for (let k = 0; k <= 4; k++) {
-    const val = L + rng * k / 4, y = pt + (1 - k / 4) * ih;
-    grid += `<line x1="${pl}" y1="${y.toFixed(1)}" x2="${W - pr}" y2="${y.toFixed(1)}" stroke="#E2E8E5" stroke-width="1"/>`
-      + `<text x="${pl - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="9.5" fill="#7A8684">${rng >= 4 ? Math.round(val) : Math.round(val * 10) / 10}</text>`;
-  }
-  const ay = Y(avg);
-  const bars = values.map((v, i) => {
-    const x = x0 + i * (bw + gap), y = Y(v), h = Math.max(2, pt + ih - y);
-    const vlab = n <= 6 ? `<text x="${(x + bw / 2).toFixed(1)}" y="${(y - 5).toFixed(1)}" text-anchor="middle" font-size="9" fill="#44544A" font-weight="700">${fmt ? fmt(v) : v}</text>` : '';
-    const tlab = (n <= 8 || i % 2 === 0) ? `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="9" fill="#7A8684" font-weight="600">${times[i]}</text>` : '';
-    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${color}"/>${vlab}${tlab}`;
-  }).join('');
-  return `<svg class="md-chart" viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${grid}
-    <line x1="${pl}" y1="${ay.toFixed(1)}" x2="${W - pr}" y2="${ay.toFixed(1)}" stroke="#A9C3B8" stroke-width="1.2" stroke-dasharray="5 5"/>
-    <text x="${(W - pr).toFixed(1)}" y="${(ay - 6).toFixed(1)}" text-anchor="end" font-size="11" fill="#5C6B63" font-weight="700">avg ${avg}</text>
-    ${bars}</svg>`;
-}
-/* DAY history rows — the day's individual readings, keyed by time of day */
-function msDayRows(day, fmt) {
-  const last = day.times.length - 1;
-  return day.times.map((t, i) =>
-    `<div class="ms-row"><div class="ms-meta"><div class="ms-t">${t}</div><div class="ms-d">Today</div><div class="ms-a">${CAT_SESS[i % CAT_SESS.length].by}</div></div>
-      <div class="ms-pill" style="background:${i === last ? '#E1F9ED' : '#EFF5F2'};color:#1F515B">${fmt(day.values[i])}</div></div>`).join('');
 }
 /* ---- Schedule (planning) card — cadence + last/next planned reading + link to
         the Schedule tab. Planning only: NO completion/overdue status. ---- */
@@ -1129,161 +1041,66 @@ function msAddDays(dateStr, days) {
 const MS_CADENCE = { numeric: ['Weekly', 7], scale: ['Fortnightly', 14], list: ['Monthly', 30], text: ['As needed', 0] };
 const MS_REPEAT_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
 const MS_PLUS_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+/* Cadence range chips at the top of the Your Schedule container (30/60/90 days) */
+let MS_SCHED_RANGE = '30D';
+function setSchedRange(q, r) {
+  MS_SCHED_RANGE = r;
+  const host = document.getElementById('mdSheetBody');
+  if (host) host.innerHTML = metricSheetInner(q); else render2();
+}
+const MS_SCHED_RANGES = [['30D', '30 Days'], ['60D', '60 Days'], ['90D', '90 Days']];
 /* "Your Schedule" card (Apple-Sleep style): next assessment + week strip + repeat,
    sourced from the real planning data (SCHEDULE) for this assessment type. */
 function msScheduleCard(q, it) {
   const plans = (typeof SCHEDULE !== 'undefined') ? SCHEDULE.filter(p => p.types && p.types.includes(q)) : [];
-  const plan = plans.length ? plans.slice().sort((a, b) => a.date - b.date)[0] : null;
+  const sorted = plans.slice().sort((a, b) => a.date - b.date);
   const rel = (typeof schRel === 'function') ? schRel : (d => '' + d);
   const repLbl = (typeof schRepeatLabel === 'function') ? schRepeatLabel : (p => p.repeat || '');
-  const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   const head = `<div class="ms-sched-head"><div class="ms-card-t">Your Schedule</div>
-    <button class="ms-sched-link" onclick="closeSheet2();setAaTab('schedule')">Full Schedule ${I2.chevR}</button></div>`;
-  if (plan) {
-    const wd = plan.date.getDay();
-    const strip = DOW.map((d, i) => `<span class="ms-day ${i === wd ? 'on' : ''}">${d}</span>`).join('');
-    const rep = repLbl(plan);
-    return `<div class="ms-card ms-sched">${head}
-      <div class="ms-sched-next">
+    <button class="ms-sched-link" onclick="closeSheet2();setAaTab('schedule')">Schedule ${I2.chevR}</button></div>`;
+  const chips = `<div class="ms-sched-chips">${MS_SCHED_RANGES.map(([v, l]) =>
+    `<button class="msc-chip ${v === MS_SCHED_RANGE ? 'active' : ''}" onclick="setSchedRange('${q}','${v}')">${l}</button>`).join('')}</div>`;
+  // Always offer a Schedule action button…
+  const scheduleBtn = `<button class="ms-sched-btn" onclick="closeSheet2();setAaTab('schedule')">${MS_PLUS_IC}<span>Schedule</span></button>`;
+  // …and under it, list anything already scheduled for this assessment type.
+  let below;
+  if (sorted.length) {
+    const items = sorted.map(p => {
+      const rep = repLbl(p);
+      return `<div class="ms-sched-next">
         <span class="ms-sched-ic">${I2.cal}</span>
-        <div class="ms-sched-next-b"><div class="ms-sched-next-l">Next assessment</div>
-          <div class="ms-sched-next-v">${rel(plan.date)} · ${plan.time}</div></div>
-      </div>
-      <div class="ms-week">${strip}</div>
-      <div class="ms-sched-rep">${MS_REPEAT_IC}<span>${rep === 'One Time' ? 'Does not repeat' : 'Repeats · ' + rep}</span></div>
-    </div>`;
-  }
-  const cad = MS_CADENCE[it.rt] || ['Weekly', 7];
-  return `<div class="ms-card ms-sched">${head}
-    <div class="ms-sched-empty">
-      <div class="ms-sched-empty-t">Not scheduled yet</div>
-      <div class="ms-sched-empty-s">Recommended cadence · ${cad[0]}</div>
-    </div>
-    <button class="ms-sched-btn" onclick="closeSheet2();setAaTab('schedule')">${MS_PLUS_IC}<span>Schedule assessment</span></button>
-  </div>`;
-}
-/* ---- Monthly / Yearly (and any range) Insights card — narrative highlights that
-        adapt to the selected range tab and the metric's response type. ---- */
-const MS_RANGE_LABEL = { D: 'Today', W: 'This Week', M: 'This Month', '6M': 'Last 6 Months', Y: 'This Year' };
-function msInsRow(k, v, color, arrow) {
-  return `<div class="ms-ins"><span class="ms-ins-k">${k}</span><span class="ms-ins-v" style="color:${color || '#44544A'}">${arrow ? `<span class="ar">${arrow}</span>` : ''}${v}</span></div>`;
-}
-/* per-assessment clinical context → drives the "Status" insight (target band).
-   ideal:[lo,hi] · invert: lower-is-better (e.g. stress/aggression/fear). */
-const INSIGHT_META = {
-  // Physical Health
-  'Weight': { ideal: [18, 26] }, 'Temperature': { ideal: [38, 39.2] }, 'Heart Rate': { ideal: [60, 100] },
-  'Body Condition Score': { ideal: [4, 6] }, 'Hydration Status': { ideal: [4, 5] },
-  // Behaviour
-  'Activity Level': { ideal: [6, 10] }, 'Stress Behaviour': { ideal: [1, 2], invert: true }, 'Enrichment Response': { ideal: [4, 5] },
-  // Environment
-  'Ambient Temperature': { ideal: [20, 26] }, 'Humidity': { ideal: [50, 70] }, 'Noise Level': { ideal: [0, 60], invert: true },
-  'Enclosure Cleanliness': { ideal: [4, 5] }, 'Habitat Condition': { ideal: [4, 5] },
-  // Mental Domain
-  'Alertness': { ideal: [4, 5] }, 'Comfort Level': { ideal: [4, 5] }, 'Stress Level': { ideal: [1, 2], invert: true },
-  // Nutrition
-  'Food Intake': { ideal: [700, 1000] }, 'Water Intake': { ideal: [900, 1500] }, 'Feeding Frequency': { ideal: [3, 5] },
-  'Nutritional Status': { ideal: [4, 5] },
-};
-/* status of the latest value vs this assessment's target band */
-function insStatus(q, it, latest) {
-  const m = INSIGHT_META[q]; if (!m || !m.ideal) return null;
-  const [lo, hi] = m.ideal, u = it.rt === 'scale' ? '/' + it.max : (it.unit ? ' ' + it.unit : '');
-  let word, color;
-  if (latest >= lo && latest <= hi) { word = it.rt === 'scale' ? 'Ideal' : 'Normal'; color = '#34A853'; }
-  else if (latest > hi) { word = m.invert ? 'Elevated' : 'Above normal'; color = m.invert ? '#E93353' : '#E0883B'; }
-  else { word = m.invert ? 'Low' : 'Below normal'; color = '#E0883B'; }
-  return { word, color, target: `${lo}–${hi}${u}` };
-}
-/* list status: where the current option sits on its (best-last) scale.
-   target = the best option, so every list reports its goal like numeric bands do. */
-function insListStatus(it, cur) {
-  const i = it.options.indexOf(cur), n = it.options.length; if (i < 0 || n < 2) return null;
-  const f = i / (n - 1), target = it.options[n - 1];
-  if (f >= 0.75) return { word: 'Optimal', color: '#34A853', target };
-  if (f >= 0.5) return { word: 'Good', color: '#34A853', target };
-  if (f >= 0.25) return { word: 'Watch', color: '#E0883B', target };
-  return { word: 'Needs attention', color: '#E93353', target };
-}
-function msInsightsCard(q, it) {
-  const rt = it.rt;
-  let chip = '', rows = '';
-  if (rt === 'numeric' || rt === 'scale') {
-    const isScale = rt === 'scale';
-    let values, labels, n, avg;
-    if (MD_FILTER === 'D') { const day = mdDaySeries(q); values = day.values; labels = day.times; n = day.count; avg = day.avg; }
-    else { const s = mdSeries(q, MD_FILTER); values = isScale ? s.values.map(v => Math.round(v)) : s.values; labels = s.labels; n = values.length; avg = isScale ? +(values.reduce((a, b) => a + b, 0) / n).toFixed(1) : s.avg; }
-    const cur = values[n - 1], first = values[0], delta = +(cur - first).toFixed(1);
-    const min = Math.min(...values), max = Math.max(...values), peakLab = labels[values.indexOf(max)];
-    const u = isScale ? '/' + it.max : ' ' + it.unit, fmt = v => isScale ? v + '/' + it.max : v + ' ' + it.unit;
-    const thr = isScale ? 0.5 : Math.max(0.1, Math.abs(avg) * 0.02);
-    let tWord, tArrow, tColor;
-    if (Math.abs(delta) < thr) { tWord = 'Stable'; tArrow = '→'; tColor = '#8A9499'; }
-    else if (delta > 0) { tWord = 'Rising'; tArrow = '↑'; tColor = '#34A853'; }
-    else { tWord = 'Falling'; tArrow = '↓'; tColor = '#E93353'; }
-    chip = `<span class="ms-range">${MS_RANGE_LABEL[MD_FILTER] || ''}</span>`;
-    const st = insStatus(q, it, cur);
-    rows = (st ? msInsRow('Status', `${st.word} <span style="color:#7A8684;font-weight:500">(target ${st.target})</span>`, st.color) : '')
-      + msInsRow('Trend', `${tWord} <span style="color:#7A8684;font-weight:500">(${delta > 0 ? '+' : ''}${delta}${u} vs start)</span>`, tColor, tArrow)
-      + msInsRow('Range', `${fmt(min)} – ${fmt(max)}`)
-      + msInsRow('Peak', `${fmt(max)} · ${peakLab}`)
-      + msInsRow('Readings', n);
-  } else if (rt === 'list') {
-    const vals = seriesFor(q), dist = {};
-    it.options.forEach(o => dist[o] = 0); vals.forEach(v => { if (dist[v] !== undefined) dist[v]++; });
-    const freq = Object.entries(dist).sort((a, b) => b[1] - a[1])[0];
-    const first = vals[0], cur = vals[vals.length - 1];
-    const lst = insListStatus(it, cur);
-    rows = (lst ? msInsRow('Status', `${lst.word} <span style="color:#7A8684;font-weight:500">(target ${lst.target})</span>`, lst.color) : '')
-      + msInsRow('Current', it.value)
-      + msInsRow('Most frequent', `${freq[0]} (${freq[1]}×)`)
-      + msInsRow('Shift', cur === first ? 'No change' : `${first} → ${cur}`)
-      + msInsRow('Records', vals.length);
+        <div class="ms-sched-next-b"><div class="ms-sched-next-v">${rel(p.date)} · ${p.time}</div>
+          <div class="ms-sched-next-l">${rep === 'One Time' ? 'Does not repeat' : 'Repeats · ' + rep}</div></div>
+      </div>`;
+    }).join('');
+    below = `<div class="ms-sched-list-lab">Scheduled · ${sorted.length}</div>${items}`;
   } else {
-    const contributors = new Set(CAT_SESS.map(s => s.by)).size;
-    rows = msInsRow('Observations', CAT_SESS.length)
-      + msInsRow('Latest', (CAT_SESS[0] || {}).date || '—')
-      + msInsRow('Contributors', contributors + ' keepers');
+    const cad = MS_CADENCE[it.rt] || ['Weekly', 7];
+    below = `<div class="ms-sched-empty">
+      <div class="ms-sched-empty-t">Not scheduled yet</div>
+      <div class="ms-sched-empty-s">Recommended cadence · ${cad[0]}</div></div>`;
   }
-  return `<div class="ms-card ms-ins-card"><div class="ms-card-t">Insights${chip}</div>${rows}</div>`;
+  return `<div class="ms-card ms-sched">${head}${chips}${scheduleBtn}${below}</div>`;
 }
 /* sheet content (filter + type-adaptive body); re-rendered in place on filter change */
 function metricSheetInner(q) {
   const it = trendItem(q), rt = it.rt, flt = msFlt(q);
-  const scheduleCard = msScheduleCard(q, it), insightsCard = msInsightsCard(q, it);
+  const scheduleCard = msScheduleCard(q, it);
   if (rt === 'numeric') {
     const color = it.color || '#FA6140';
-    if (MD_FILTER === 'D') {
-      const day = mdDaySeries(q), min = Math.min(...day.values), max = Math.max(...day.values);
-      return `<div class="ms-white">${flt}<div class="ms-day-note">${day.count} records today · by time of day</div>
-        ${intradayChart(day.values, day.times, color, day.avg, v => v + it.unit)}</div>
-        <div class="ms-lower">${scheduleCard}${insightsCard}
-          <div class="ms-card ms-stats">${msStat('Records', day.count)}${msStat('Average', day.avg + ' ' + it.unit)}${msStat('Min', min + ' ' + it.unit)}${msStat('Max', max + ' ' + it.unit)}</div>
-          <div class="ms-card" data-searchbox><div class="ms-card-t">Today&rsquo;s Records</div>${listSearch('.ms-row')}<div class="ms-hist">${msDayRows(day, v => v + ' ' + it.unit)}</div><div class="ls-empty">No matching entries</div></div>
-        </div>`;
-    }
     const s = mdSeries(q, MD_FILTER), min = Math.min(...s.values), max = Math.max(...s.values);
     return `<div class="ms-white">${flt}${lineInteractive('mdc', s.values, color, { avg: s.avg, axes: true, area: it.viz !== 'line', labels: s.labels, valStrs: s.values.map(v => v + ' ' + it.unit) })}</div>
-      <div class="ms-lower">${scheduleCard}${insightsCard}
+      <div class="ms-lower">${scheduleCard}
         <div class="ms-card ms-stats">${msStat('Average', s.avg + ' ' + it.unit)}${msStat('Minimum', min + ' ' + it.unit)}${msStat('Maximum', max + ' ' + it.unit)}</div>
         <div class="ms-card" data-searchbox><div class="ms-card-t">${q} History</div>${listSearch('.ms-row')}<div class="ms-hist">${msRows(q, v => v + ' ' + it.unit)}</div><div class="ls-empty">No matching entries</div></div>
       </div>`;
   }
   if (rt === 'scale') {
     const color = it.color || '#00AFD6';
-    if (MD_FILTER === 'D') {
-      const day = mdDaySeries(q), min = Math.min(...day.values), max = Math.max(...day.values);
-      return `<div class="ms-white">${flt}<div class="ms-day-note">${day.count} records today · by time of day</div>
-        ${intradayChart(day.values, day.times, color, day.avg, v => v + '/' + it.max)}</div>
-        <div class="ms-lower">${scheduleCard}${insightsCard}
-          <div class="ms-card ms-stats">${msStat('Records', day.count)}${msStat('Average', day.avg + '/' + it.max)}${msStat('Lowest', min + '/' + it.max)}${msStat('Highest', max + '/' + it.max)}</div>
-          <div class="ms-card" data-searchbox><div class="ms-card-t">Today&rsquo;s Records</div>${listSearch('.ms-row')}<div class="ms-hist">${msDayRows(day, v => v + ' / ' + it.max)}</div><div class="ls-empty">No matching entries</div></div>
-        </div>`;
-    }
     const s = mdSeries(q, MD_FILTER), vals = s.values.map(v => Math.round(v)), min = Math.min(...vals), max = Math.max(...vals);
     const avg = +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1), prog = seriesFor(q).slice(-4);
     return `<div class="ms-white">${flt}${lineInteractive('mdc', s.values, color, { avg, axes: true, labels: s.labels, valStrs: s.values.map(v => Math.round(v) + ' / ' + it.max) })}</div>
-      <div class="ms-lower">${scheduleCard}${insightsCard}
+      <div class="ms-lower">${scheduleCard}
         <div class="ms-card ms-stats">${msStat('Average', avg + '/' + it.max)}${msStat('Lowest', min + '/' + it.max)}${msStat('Highest', max + '/' + it.max)}</div>
         <div class="ms-card"><div class="ms-card-t">Scale Progression</div>
           <div class="jrny">${prog.map((v, i) => (i ? '<span class="jr-arr">→</span>' : '') + `<span class="jr-step ${i === prog.length - 1 ? 'cur' : ''}">${v}/${it.max}</span>`).join('')}</div></div>
@@ -1296,7 +1113,7 @@ function metricSheetInner(q) {
     const maxC = Math.max(1, ...Object.values(dist)), freq = Object.entries(dist).sort((a, b) => b[1] - a[1])[0][0];
     const PAL = ['#FA6140', '#E4B819', '#7BC96A', '#37BD69'], col = o => PAL[Math.round(it.options.indexOf(o) / Math.max(1, it.options.length - 1) * 3)];
     return `<div class="ms-white">${flt}</div>
-      <div class="ms-lower">${scheduleCard}${insightsCard}
+      <div class="ms-lower">${scheduleCard}
         <div class="ms-card ms-stats">${msStat('Current', it.value)}${msStat('Most Frequent', freq)}${msStat('Records', vals.length)}</div>
         <div class="ms-card"><div class="ms-card-t">Distribution</div>
           ${it.options.map(o => `<div class="bd-row"><div class="bd-top"><span>${o}</span><b>${dist[o]}×</b></div><div class="bd-bar"><i style="width:${Math.round(dist[o] / maxC * 100)}%;background:${col(o)}"></i></div></div>`).join('')}</div>
@@ -1313,7 +1130,7 @@ function metricSheetInner(q) {
         <div class="ms-latest-q">“${latest.text}”</div>
         <div class="ms-latest-by">— ${latest.by}</div>
       </div></div>
-    <div class="ms-lower">${scheduleCard}${insightsCard}
+    <div class="ms-lower">${scheduleCard}
       <div class="ms-card" data-searchbox><div class="ms-card-t">All Observations · ${notes.length}</div>${listSearch('.md-note', 'Search observations')}
         <div class="md-timeline">${notes.map(n => `<div class="md-note"><span class="md-note-dot"></span><div class="md-note-body"><div class="mn-m">${n.date} · ${n.by}</div><div class="mn-q">${n.text}</div></div></div>`).join('')}</div><div class="ls-empty">No matching observations</div></div>
     </div>`;
@@ -1323,6 +1140,70 @@ function metricSheetHTML(q) {
   return `<div class="ms-head"><div class="ms-title">${title}</div><button class="ms-x" onclick="closeSheet2()">✕</button></div>
     <div id="mdSheetBody">${metricSheetInner(q)}</div>`;
 }
+
+/* ===========================================================================
+   ADD ENTRY bottom sheet — opened from the "+" on an assessment card. The form
+   adapts to the assessment's response type:
+     numeric → value input + unit + notes ·  text → free-text area
+     list    → selectable option cards     ·  scale → numbered scale options
+   =========================================================================== */
+const AE_CLOCK = '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5V12l3 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const AE_CHECK = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const AE_DESC = 'Record a new reading for this assessment. Set the date and time, enter the value, and add any notes for the keeper log.';
+/* optional human labels for a few welfare scales; otherwise the number stands alone */
+const AE_SCALE_LABELS = {
+  'Body Condition Score': ['Emaciated', 'Very Thin', 'Thin', 'Lean', 'Ideal', 'Stout', 'Overweight', 'Obese', 'Severely Obese'],
+  'Hydration Status': ['Severely Dehydrated', 'Dehydrated', 'Mild', 'Adequate', 'Optimal'],
+};
+function aeSelect(el) {
+  const grp = el.parentElement;
+  grp.querySelectorAll('.ae-opt').forEach(o => o.classList.remove('on'));
+  el.classList.add('on');
+}
+function addEntrySheet(q) {
+  const it = catType(q); if (!it) return '';
+  const rt = it.rt, cat = it.cat;
+  const dt = `<div class="ae-dt">
+    <button class="ae-field"><span class="ae-fic">${I2.cal}</span><span>12 Mar 2024</span></button>
+    <button class="ae-field"><span class="ae-fic">${AE_CLOCK}</span><span>04 : 38 PM</span></button>
+  </div>`;
+  let body = '';
+  if (rt === 'numeric') {
+    body = `<div class="ae-numrow">
+        <input class="ae-input" type="text" inputmode="decimal" placeholder="Enter value">
+        <button class="ae-unit">${it.unit}<span class="ae-uchev">${I2.chevDown}</span></button>
+      </div>
+      <button class="ae-notes">Add Notes</button>`;
+  } else if (rt === 'text') {
+    body = `<textarea class="ae-textarea" rows="3" placeholder="Text input"></textarea>`;
+  } else if (rt === 'list') {
+    const cur = catNewest(q)[0];
+    body = `<div class="ae-opts">${it.options.map(o =>
+      `<button class="ae-opt ${o === cur ? 'on' : ''}" onclick="aeSelect(this)">
+         <span class="ae-olab">${o}</span><span class="ae-check">${AE_CHECK}</span></button>`).join('')}</div>`;
+  } else if (rt === 'scale') {
+    const cur = Math.round(catNewest(q)[0]), labs = AE_SCALE_LABELS[q] || [];
+    body = `<div class="ae-opts">${Array.from({ length: it.max }, (_, i) => {
+      const lvl = i + 1, lab = labs[i];
+      return `<button class="ae-opt ae-scale ${lvl === cur ? 'on' : ''}" onclick="aeSelect(this)">
+         <span class="ae-num">${lvl}</span>${lab ? `<span class="ae-olab">${lab}</span>` : ''}<span class="ae-check">${AE_CHECK}</span></button>`;
+    }).join('')}</div>`;
+  }
+  return `<div class="ae-head">
+      <div class="ae-htext"><div class="ae-title">${qLabel(q)}</div><div class="ae-cat">${cat}</div></div>
+      <button class="ae-x" onclick="closeSheet2()">✕</button>
+    </div>
+    <div class="ae-body">
+      <div class="ae-desc">${AE_DESC}</div>
+      ${dt}
+      ${body}
+    </div>
+    <div class="ae-foot">
+      <button class="ae-cancel" onclick="closeSheet2()">Cancel</button>
+      <button class="ae-add" onclick="closeSheet2()">Add Entry</button>
+    </div>`;
+}
+function openAddEntry(q) { openSheet2(addEntrySheet(q)); }
 
 /* ===========================================================================
    SCREEN — Assessment Detail (Information · Q&R · Attachments · Notes · Audit)
