@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asian Elephant Growth Curve — real data</title>
+<style>
+  :root{ --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0B1613;font-family:var(--font);-webkit-font-smoothing:antialiased;
+       padding:26px;display:flex;justify-content:center;align-items:center;min-height:100vh}
+  .card{width:100%;max-width:580px;background:#FFFFFF;border-radius:22px;
+        padding:22px 24px 16px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+  .card-h{display:flex;align-items:baseline;justify-content:space-between}
+  .card-h .t{font-size:16px;font-weight:800;color:#12211C;letter-spacing:-.01em}
+  .card-h .u{font-size:11px;font-weight:600;color:#7A8684}
+  .sub{font-size:11.5px;color:#7A8684;margin-top:3px;margin-bottom:8px}
+  .sub b{color:#44544A;font-weight:600}
+  svg{display:block;width:100%;height:auto}
+  .foot{margin-top:10px;padding-top:9px;border-top:1px solid #EAF0ED;font-size:10px;color:#98A29F;line-height:1.55}
+  .foot b{color:#7A8684;font-weight:600}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="card-h">
+      <div class="t">Asian Elephant — Growth Curve</div>
+      <div class="u">weight by age · kg</div>
+    </div>
+    <div class="sub"><b>Elephas maximus</b> · body mass vs age · reaches adult weight by ~age&nbsp;29</div>
+    <svg id="chart" viewBox="0 0 720 600" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="foot">
+      Real reference data — von Bertalanffy model <b>W = 3055·(1−e<sup>−0.092(t+6.15)</sup>)³</b> ·
+      <b>Sukumar, Joshi &amp; Krishnamurthy (1988)</b>, Proc. Indian Acad. Sci. 97:561–571.
+      Birth ~100 kg (observed). Asymptote ≈ 3,055 kg (female / average; adult males reach 4,000–5,400 kg).
+    </div>
+  </div>
+
+<script>
+// ---------- REAL growth model ----------
+const model = t => 3055 * Math.pow(1 - Math.exp(-0.092*(t+6.15)), 3);
+const AGES = [0,2,5,10,15,20,25,30,40];
+const DATA = AGES.map(t => ({ t, w: t===0 ? 100 : Math.round(model(t)) }));   // age 0 = observed birth wt
+const ADULT_LO = 2700, ADULT_HI = 3055;
+
+// ---------- geometry ----------
+const W=720, H=600, PL=60, PR=86, PT=64, PB=52;
+const x0=PL, x1=W-PR, y0=PT, y1=H-PB;
+const tMax=40, wMax=3400, wStep=800;
+const sx=t=>x0+(x1-x0)*t/tMax;
+const sy=w=>y1-(y1-y0)*w/wMax;
+
+// age reaching adult weight
+let adultAge=0; for(let t=0;t<=tMax;t+=0.05){ if(model(t)>=ADULT_LO){ adultAge=Math.round(t); break; } }
+
+// ---------- smooth path (Catmull-Rom -> Bezier) ----------
+function smooth(P){
+  let d=`M${P[0][0].toFixed(1)} ${P[0][1].toFixed(1)}`;
+  for(let i=0;i<P.length-1;i++){
+    const p0=P[i-1]||P[i], p1=P[i], p2=P[i+1], p3=P[i+2]||P[i+1];
+    const c1x=p1[0]+(p2[0]-p0[0])/6, c1y=p1[1]+(p2[1]-p0[1])/6;
+    const c2x=p2[0]-(p3[0]-p1[0])/6, c2y=p2[1]-(p3[1]-p1[1])/6;
+    d+=` C${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+
+let g='';
+
+g += `<defs>
+  <linearGradient id="mature" gradientUnits="userSpaceOnUse" x1="0" y1="${y0}" x2="0" y2="${y1}">
+    <stop offset="0" stop-color="#1F8A5B"/><stop offset="1" stop-color="#116152"/>
+  </linearGradient>
+  <linearGradient id="wash" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#4FD4AF" stop-opacity=".20"/>
+    <stop offset="1" stop-color="#4FD4AF" stop-opacity="0"/>
+  </linearGradient>
+  <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+    <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0F6E5E" flood-opacity=".16"/>
+  </filter>
+  <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+    <stop offset="0" stop-color="#1F8A5B" stop-opacity=".26"/><stop offset="1" stop-color="#1F8A5B" stop-opacity="0"/>
+  </radialGradient>
+</defs>`;
+
+// ----- adult reference band + label (TOP-LEFT, collision-free) -----
+g += `<rect x="${x0}" y="${sy(ADULT_HI).toFixed(1)}" width="${x1-x0}" height="${(sy(ADULT_LO)-sy(ADULT_HI)).toFixed(1)}" fill="#DCEFE8" opacity=".9"/>`;
+g += `<line x1="${x0}" y1="${sy(ADULT_LO).toFixed(1)}" x2="${x1}" y2="${sy(ADULT_LO).toFixed(1)}" stroke="#7FBFA3" stroke-width="1.2" stroke-dasharray="2 4"/>`;
+g += `<text x="${x0+8}" y="${(sy(ADULT_HI)+16).toFixed(1)}" font-size="10.5" font-weight="800" fill="#1F8A5B" font-family="var(--font)" letter-spacing=".04em">ADULT REFERENCE WEIGHT</text>`;
+g += `<text x="${x0+8}" y="${(sy(ADULT_HI)+30).toFixed(1)}" font-size="10.5" font-weight="600" fill="#4C7A63" font-family="var(--font)">~2,700–3,055 kg</text>`;
+
+// ----- gridlines + y labels -----
+for(let w=0; w<=wMax-200; w+=wStep){
+  const y=sy(w);
+  g += `<line x1="${x0}" y1="${y.toFixed(1)}" x2="${x1}" y2="${y.toFixed(1)}" stroke="#EAF0ED" stroke-width="1"/>`;
+  g += `<text x="${x0-8}" y="${(y+3.5).toFixed(1)}" text-anchor="end" font-size="10.5" font-weight="600" fill="#7A8684" font-family="var(--font)">${w.toLocaleString()}</text>`;
+}
+g += `<text transform="translate(20 ${((y0+y1)/2).toFixed(1)}) rotate(-90)" text-anchor="middle" font-size="11" font-weight="700" fill="#7A8684" font-family="var(--font)">Weight (kg)</text>`;
+
+// ----- x labels (age) -----
+for(let t=0; t<=tMax; t+=5){
+  g += `<text x="${sx(t).toFixed(1)}" y="${(y1+22).toFixed(1)}" text-anchor="middle" font-size="11" fill="#7A8684" font-family="var(--font)">${t}</text>`;
+}
+g += `<text x="${((x0+x1)/2).toFixed(1)}" y="${(y1+42).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="#7A8684" font-family="var(--font)">Age (years)</text>`;
+
+// ----- smooth curve + area -----
+const pts=DATA.map(d=>[sx(d.t),sy(d.w)]);
+const line=smooth(pts);
+g += `<path d="${line} L${pts[pts.length-1][0].toFixed(1)} ${y1} L${pts[0][0].toFixed(1)} ${y1} Z" fill="url(#wash)"/>`;
+g += `<path d="${line}" fill="none" stroke="url(#mature)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" filter="url(#glow)"/>`;
+
+// ----- milestone: reaches adult weight (in open upper-left, leader to the curve) -----
+const mx=sx(adultAge), my=sy(ADULT_LO);
+g += `<circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="20" fill="url(#halo)"/>`;
+g += `<circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="5.5" fill="#1F8A5B" stroke="#fff" stroke-width="2.2"/>`;
+const chipCx=272, chipCy=232, ct=`Reaches adult weight · age ~${adultAge}`, cw=ct.length*6.0+24, cfx=chipCx-cw/2;
+g += `<line x1="${(chipCx+cw/2-4).toFixed(1)}" y1="${chipCy}" x2="${(mx-6).toFixed(1)}" y2="${(my-2).toFixed(1)}" stroke="#1F8A5B" stroke-width="1.3"/>`;
+g += `<rect x="${cfx.toFixed(1)}" y="${(chipCy-13).toFixed(1)}" width="${cw.toFixed(1)}" height="26" rx="13" fill="#1F8A5B"/>`;
+g += `<text x="${chipCx}" y="${(chipCy+4).toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="800" fill="#fff" font-family="var(--font)">${ct}</text>`;
+
+// ----- data points -----
+DATA.forEach((d,i)=>{
+  const px=sx(d.t), py=sy(d.w), ends=(i===0||i===DATA.length-1);
+  g += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${ends?6:4}" fill="#fff" stroke="#177A55" stroke-width="${ends?3:2.2}"/>`;
+});
+
+// ----- birth annotation (bottom-left) -----
+const s0=pts[0];
+g += `<text x="${(s0[0]+14).toFixed(1)}" y="${(s0[1]-16).toFixed(1)}" font-size="13" font-weight="800" fill="#0F6E5E" font-family="var(--font)">~100 kg</text>`;
+g += `<text x="${(s0[0]+14).toFixed(1)}" y="${(s0[1]-3).toFixed(1)}" font-size="10.5" font-weight="600" fill="#6B7A73" font-family="var(--font)">at birth</text>`;
+
+// ----- mature annotation (ABOVE the band, above the final point — clear of the band label) -----
+const sL=pts[pts.length-1];
+g += `<text x="${x1.toFixed(1)}" y="${(y0+30).toFixed(1)}" text-anchor="end" font-size="14" font-weight="800" fill="#1F8A5B" font-family="var(--font)">~${DATA[DATA.length-1].w.toLocaleString()} kg</text>`;
+g += `<text x="${x1.toFixed(1)}" y="${(y0+44).toFixed(1)}" text-anchor="end" font-size="10.5" font-weight="600" fill="#4C7A63" font-family="var(--font)">mature adult (~age 40)</text>`;
+
+// ----- growth-factor bracket (right lane): birth -> mature -----
+const bx=x1+26, bTop=sL[1], bBot=s0[1];
+g += `<line x1="${bx}" y1="${bTop.toFixed(1)}" x2="${bx}" y2="${bBot.toFixed(1)}" stroke="#1F415B" stroke-width="1.4"/>`;
+g += `<line x1="${bx-7}" y1="${bTop.toFixed(1)}" x2="${bx}" y2="${bTop.toFixed(1)}" stroke="#1F415B" stroke-width="1.4"/>`;
+g += `<line x1="${bx-7}" y1="${bBot.toFixed(1)}" x2="${bx}" y2="${bBot.toFixed(1)}" stroke="#1F415B" stroke-width="1.4"/>`;
+g += `<text transform="translate(${bx+15} ${((bTop+bBot)/2).toFixed(1)}) rotate(-90)" text-anchor="middle" font-size="11.5" font-weight="800" fill="#1F415B" font-family="var(--font)">+2,830 kg</text>`;
+
+document.getElementById('chart').innerHTML=g;
+</script>
+</body>
+</html>

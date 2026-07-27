@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asha's Weight Recovery — Antz Assessment</title>
+<style>
+  :root{
+    --bg:#EFF5F2; --surface:#FFFFFF;
+    --teal:#0F6E5E; --green:#1F8A5B; --green-deep:#006D35; --mint:#4FD4AF;
+    --navy:#1F415B; --ink:#12211C; --muted:#7A8684; --variant:#44544A;
+    --amber:#C98A2E; --amber-line:#B87E28;
+    --healthy-fill:#DCEFE8; --danger-fill:#F7EAD1;
+    --grid:#EAF0ED;
+    --r:18px; --shadow:0 4px 22px rgba(20,61,46,.09);
+    --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);font-family:var(--font);color:var(--ink);
+       -webkit-font-smoothing:antialiased;padding:34px;display:flex;justify-content:center}
+  .slide{width:100%;max-width:1120px}
+
+  /* ---------- editorial header ---------- */
+  .head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:22px}
+  .eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green-deep)}
+  h1{font-size:38px;font-weight:800;letter-spacing:-.02em;margin-top:8px;line-height:1.04;color:var(--ink)}
+  .dek{font-size:15px;line-height:1.5;color:var(--variant);margin-top:12px;max-width:760px}
+  .dek b{color:var(--ink);font-weight:700}
+  .verdict{display:inline-flex;align-items:center;gap:9px;background:#E4F6EC;color:var(--green-deep);
+           font-weight:800;font-size:15px;padding:12px 20px;border-radius:999px;white-space:nowrap;
+           box-shadow:0 2px 10px rgba(0,109,53,.12)}
+  .verdict svg{width:18px;height:18px}
+
+  /* ---------- 3 stat tiles ---------- */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+  .stat{background:var(--surface);border-radius:var(--r);padding:20px 22px;box-shadow:var(--shadow);
+        position:relative;overflow:hidden}
+  .stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px}
+  .stat.arr::before{background:var(--amber)}
+  .stat.now::before{background:var(--green)}
+  .stat.st::before{background:var(--green-deep)}
+  .stat .lbl{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+  .stat .val{font-size:30px;font-weight:800;color:var(--navy);margin-top:8px;line-height:1;letter-spacing:-.01em}
+  .stat .val small{font-size:15px;font-weight:600;color:var(--muted)}
+  .stat .tag{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;margin-top:9px}
+  .dot{width:9px;height:9px;border-radius:50%}
+  .tag.amber{color:var(--amber-line)} .tag.amber .dot{background:var(--amber)}
+  .tag.green{color:var(--green-deep)} .tag.green .dot{background:var(--green-deep)}
+
+  /* ---------- chart card ---------- */
+  .card{background:var(--surface);border-radius:var(--r);padding:24px 26px 18px;box-shadow:var(--shadow)}
+  .card-h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+  .card-h .t{font-size:16px;font-weight:800;color:var(--ink)}
+  .card-h .u{font-size:12px;font-weight:600;color:var(--muted)}
+  svg{display:block;width:100%;height:auto}
+  .g-axis{font-size:12px;fill:var(--muted);font-family:var(--font)}
+  .g-ylab{font-size:11.5px;fill:var(--muted);font-weight:600}
+  .g-ytitle{font-size:12px;fill:var(--muted);font-weight:700}
+  .g-zone{font-size:12px;font-weight:700;font-family:var(--font)}
+  .g-tag-v{font-size:15px;font-weight:800;font-family:var(--font)}
+  .g-tag-s{font-size:11.5px;font-weight:600;font-family:var(--font)}
+
+  .foot{display:flex;justify-content:space-between;gap:14px;margin-top:16px;
+        padding-top:14px;border-top:1px solid var(--grid);font-size:12px;color:var(--muted);flex-wrap:wrap}
+  .foot b{color:var(--variant);font-weight:700}
+</style>
+</head>
+<body>
+<div class="slide">
+
+  <div class="head">
+    <div>
+      <div class="eyebrow">Assessment Analytics · Physical Health</div>
+      <h1>Asha's Weight Recovery</h1>
+      <div class="dek">A rescued Asian elephant (<i>Elephas maximus</i>) climbed <b>+1,300 kg — a 55% gain</b>
+        — from a dangerously underweight arrival in 2019 up into the <b>healthy range</b>, year after year.</div>
+    </div>
+    <div class="verdict">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M3 17l6-6 4 4 8-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 7h4v4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Improving · Healthy
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat arr">
+      <div class="lbl">On arrival · 2019</div>
+      <div class="val">2,350<small> kg</small></div>
+      <div class="tag amber"><span class="dot"></span>Dangerously underweight</div>
+    </div>
+    <div class="stat now">
+      <div class="lbl">Latest · 2026</div>
+      <div class="val">3,650<small> kg</small></div>
+      <div class="tag green"><span class="dot"></span>▲ +1,300 kg (+55%)</div>
+    </div>
+    <div class="stat st">
+      <div class="lbl">Status</div>
+      <div class="val">Healthy</div>
+      <div class="tag green"><span class="dot"></span>In healthy range since 2023</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h">
+      <div class="t">The climb into the healthy range</div>
+      <div class="u">Annual mean weight · 2019–2026 · kg</div>
+    </div>
+    <svg id="chart" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="foot">
+      <span>Response type <b>Numeric Value</b> · Scoring <b>Monitored</b> — judged vs the healthy range, not scored 0–100.</span>
+      <span>n = <b>96</b> weighings · Source <b>Antz Assessment records</b> · Reached healthy range <b>2023</b></span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ---------- data ----------
+const DATA = [
+  {y:2019, w:2350}, {y:2020, w:2540}, {y:2021, w:2760}, {y:2022, w:2980},
+  {y:2023, w:3180}, {y:2024, w:3360}, {y:2025, w:3520}, {y:2026, w:3650}
+];
+const HEALTHY_LO = 3000, HEALTHY_HI = 4200;
+
+// ---------- geometry ----------
+const W=1000, H=500, PL=74, PR=96, PT=56, PB=48;
+const x0=PL, x1=W-PR, y0=PT, y1=H-PB;
+const yMin=2000, yMax=4400, yStep=400;
+const n = DATA.length;
+const sx = i => x0 + (x1-x0) * i/(n-1);
+const sy = v => y1 - (y1-y0) * (v-yMin)/(yMax-yMin);
+
+// true crossing of HEALTHY_LO (3000) between 2022(2980) and 2023(3180)
+let ci=0; for(let i=0;i<n-1;i++){ if(DATA[i].w<HEALTHY_LO && DATA[i+1].w>=HEALTHY_LO){ ci=i+(HEALTHY_LO-DATA[i].w)/(DATA[i+1].w-DATA[i].w); break; } }
+const cx = sx(ci), cy = sy(HEALTHY_LO);
+
+// hue transition offset (top=high weight=green, bottom=low=amber) at 3000
+const hueOff = (sy(HEALTHY_LO)-y0)/(y1-y0);
+
+let g = '';
+
+// ===== defs: healing hue gradient + glow filter =====
+g += `<defs>
+  <linearGradient id="heal" gradientUnits="userSpaceOnUse" x1="0" y1="${y0}" x2="0" y2="${y1}">
+    <stop offset="0" stop-color="#1F8A5B"/>
+    <stop offset="${(hueOff-0.001).toFixed(4)}" stop-color="#2E9E5F"/>
+    <stop offset="${(hueOff+0.001).toFixed(4)}" stop-color="#D89A3A"/>
+    <stop offset="1" stop-color="#C0832B"/>
+  </linearGradient>
+  <linearGradient id="wash" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#4FD4AF" stop-opacity=".16"/>
+    <stop offset="${hueOff.toFixed(3)}" stop-color="#4FD4AF" stop-opacity=".04"/>
+    <stop offset="1" stop-color="#E4A93B" stop-opacity="0"/>
+  </linearGradient>
+  <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+    <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0F6E5E" flood-opacity=".18"/>
+  </filter>
+  <radialGradient id="burst" cx="50%" cy="50%" r="50%">
+    <stop offset="0" stop-color="#1F8A5B" stop-opacity=".28"/>
+    <stop offset="1" stop-color="#1F8A5B" stop-opacity="0"/>
+  </radialGradient>
+</defs>`;
+
+// ===== emotion-coded zones =====
+// amber underweight floor (2000 -> 3000)
+g += `<rect x="${x0}" y="${cy}" width="${x1-x0}" height="${y1-cy}" fill="#F7EAD1" opacity=".8"/>`;
+// green healthy sky (3000 -> 4200)
+g += `<rect x="${x0}" y="${sy(HEALTHY_HI)}" width="${x1-x0}" height="${cy-sy(HEALTHY_HI)}" fill="#DCEFE8" opacity=".85"/>`;
+// zone labels (tucked into corners, collision-free)
+g += `<text class="g-zone" x="${x1-10}" y="${sy(HEALTHY_HI)+18}" text-anchor="end" fill="#1F8A5B">HEALTHY RANGE · 3,000–4,200 kg</text>`;
+g += `<text class="g-zone" x="${x0+10}" y="${y1-12}" fill="#B87E28">UNDERWEIGHT · below 3,000 kg</text>`;
+// threshold line at 3000
+g += `<line x1="${x0}" y1="${cy}" x2="${x1}" y2="${cy}" stroke="#C99A46" stroke-width="1.5" stroke-dasharray="2 4"/>`;
+
+// ===== y gridlines + labels =====
+for(let v=yMin; v<=yMax; v+=yStep){
+  const y=sy(v);
+  if(v!==HEALTHY_LO) g += `<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="#EAF0ED" stroke-width="1"/>`;
+  g += `<text class="g-ylab" x="${x0-12}" y="${y+4}" text-anchor="end">${v.toLocaleString()}</text>`;
+}
+g += `<text class="g-ytitle" transform="translate(24 ${(y0+y1)/2}) rotate(-90)" text-anchor="middle">Weight (kg)</text>`;
+
+// ===== ribbon: wash + healing line =====
+const pts = DATA.map((d,i)=>[sx(i), sy(d.w)]);
+const lineP = pts.map((p,i)=> (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+const areaP = `M${pts[0][0].toFixed(1)} ${y1} `+ pts.map(p=>'L'+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ') +` L${pts[n-1][0].toFixed(1)} ${y1} Z`;
+g += `<path d="${areaP}" fill="url(#wash)"/>`;
+g += `<path d="${lineP}" fill="none" stroke="url(#heal)" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round" filter="url(#glow)"/>`;
+
+// ===== milestone burst + flag at true crossing (2023) =====
+g += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="26" fill="url(#burst)"/>`;
+// leader from flag down to crossing
+const flagY = cy-58;
+g += `<line x1="${cx.toFixed(1)}" y1="${(cy-8).toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(flagY+14).toFixed(1)}" stroke="#1F8A5B" stroke-width="1.5"/>`;
+g += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="6" fill="#1F8A5B" stroke="#fff" stroke-width="2.5"/>`;
+// flag pill
+const flagTxt="Reached healthy weight · 2023", fw=flagTxt.length*6.6+28, fx=cx-fw/2;
+g += `<rect x="${fx.toFixed(1)}" y="${(flagY-14).toFixed(1)}" width="${fw.toFixed(1)}" height="28" rx="14" fill="#1F8A5B"/>`;
+g += `<text x="${cx.toFixed(1)}" y="${(flagY+5).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="800" fill="#fff" font-family="var(--font)">${flagTxt}</text>`;
+
+// ===== all points; only endpoints tagged =====
+DATA.forEach((d,i)=>{
+  const px=sx(i), py=sy(d.w);
+  g += `<text class="g-axis" x="${px.toFixed(1)}" y="${y1+26}" text-anchor="middle">${d.y}</text>`;
+  const first=i===0, last=i===n-1, healthy=d.w>=HEALTHY_LO;
+  const stroke = healthy?'#1F8A5B':'#C0832B';
+  const r = (first||last)?7:4.5;
+  g += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${r}" fill="#fff" stroke="${stroke}" stroke-width="${(first||last)?3.5:2.5}"/>`;
+});
+
+// start tag (2019) — above-right of the low amber point
+const s0=pts[0];
+g += `<text class="g-tag-v" x="${(s0[0]+16).toFixed(1)}" y="${(s0[1]-22).toFixed(1)}" fill="#B87E28">2,350 kg</text>`;
+g += `<text class="g-tag-s" x="${(s0[0]+16).toFixed(1)}" y="${(s0[1]-7).toFixed(1)}" fill="#8A7A55">arrived underweight</text>`;
+
+// end tag (2026) — above the high green point, anchored right so it stays inside
+const s7=pts[n-1];
+g += `<text class="g-tag-v" x="${(s7[0]).toFixed(1)}" y="${(s7[1]-24).toFixed(1)}" text-anchor="end" fill="#1F8A5B">3,650 kg</text>`;
+g += `<text class="g-tag-s" x="${(s7[0]).toFixed(1)}" y="${(s7[1]-9).toFixed(1)}" text-anchor="end" fill="#4C7A63">healthy &amp; rising</text>`;
+
+// ===== delta bracket (right lane): arrival -> latest, +1,300 kg =====
+const bx=x1+30, bTop=sy(3650), bBot=sy(2350);
+g += `<line x1="${bx}" y1="${bTop.toFixed(1)}" x2="${bx}" y2="${bBot.toFixed(1)}" stroke="#1F415B" stroke-width="1.5"/>`;
+g += `<line x1="${bx-8}" y1="${bTop.toFixed(1)}" x2="${bx}" y2="${bTop.toFixed(1)}" stroke="#1F415B" stroke-width="1.5"/>`;
+g += `<line x1="${bx-8}" y1="${bBot.toFixed(1)}" x2="${bx}" y2="${bBot.toFixed(1)}" stroke="#1F415B" stroke-width="1.5"/>`;
+g += `<text transform="translate(${bx+16} ${((bTop+bBot)/2).toFixed(1)}) rotate(-90)" text-anchor="middle" font-size="13.5" font-weight="800" fill="#1F415B" font-family="var(--font)">+1,300 kg</text>`;
+
+document.getElementById('chart').innerHTML = g;
+</script>
+</body>
+</html>

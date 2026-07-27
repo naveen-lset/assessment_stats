@@ -57,9 +57,24 @@ function back2() {
 /* ------------------------------------------------- REUSABLE COMPONENT KIT -- */
 /* Keep new screens built from THESE helpers so the look stays identical. */
 
-function heroHeader({ photo, name, latin, lines = [], aid }) {
+/* iOS light status bar (9:41 · dynamic island · signal/wifi/battery) — white
+   strip at the top of the hero (Figma node 29:7520). */
+function statusBarLight() {
+  return `<div class="ios-sb">
+    <span class="ios-sb-time">9:41</span>
+    <span class="ios-sb-island"></span>
+    <span class="ios-sb-right">
+      <svg viewBox="0 0 18 12" width="18" height="12"><rect x="0" y="7" width="3" height="5" rx="1" fill="#000"/><rect x="5" y="4.5" width="3" height="7.5" rx="1" fill="#000"/><rect x="10" y="2" width="3" height="10" rx="1" fill="#000"/><rect x="15" y="0" width="3" height="12" rx="1" fill="#000"/></svg>
+      <svg viewBox="0 0 17 12" width="17" height="12"><path d="M8.5 2.6c2.1 0 4 .8 5.4 2.1l1.4-1.5C13.6 1.4 11.2.3 8.5.3S3.4 1.4 1.7 3.2l1.4 1.5C4.5 3.4 6.4 2.6 8.5 2.6z" fill="#000"/><path d="M8.5 6.3c1.2 0 2.2.5 3 1.3l1.4-1.5c-1.1-1.2-2.7-1.9-4.4-1.9s-3.3.7-4.4 1.9l1.4 1.5c.8-.8 1.8-1.3 3-1.3z" fill="#000"/><circle cx="8.5" cy="10.3" r="1.6" fill="#000"/></svg>
+      <span class="ios-sb-batt"><span class="ios-sb-batt-fill"></span></span>
+    </span>
+  </div>`;
+}
+
+function heroHeader({ photo, name, latin, lines = [], aid, statusbar = false }) {
   return `
-  <div class="hero" style="background-image:url('${photo}')">
+  <div class="hero${statusbar ? ' hero-sb' : ''}" style="background-image:url('${photo}')">
+    ${statusbar ? statusBarLight() : ''}
     <div class="appbar">
       <button class="ab-btn ab-back" onclick="back2()">${I2.back}</button>
       <div class="ab-right">
@@ -463,16 +478,26 @@ SCREENS2.amOverview = () => {
 };
 
 /* ===========================================================================
-   LANDING — assessment cards as the app's main page (no profile hero/tabs).
-   Search + category chips + metric cards (each with its Insights container).
-   Upcoming Assessments stays on top.
+   ASSESSMENT LANDING PAGE  (Figma node 29:7518 — animal-profile Assessment tab)
+   Hero + profile tabs (Overview / Assessment* / Medical / …) + sticky "N Types"
+   bar + category chips + catalogue-driven Assessment Cards. Built from the
+   existing kit (heroHeader, tabsBar) + the ascCard/ascListing builders.
    =========================================================================== */
+const ASSESS_ANIMAL = {
+  photo: 'v2-assets/hero-macaw.jpg',
+  name: 'Hyacinth Macaw',
+  latin: 'Anodorhynchus hyacinthinus',
+  lines: ['Enc: C1 enclosure', 'Female • 19y 2m old'],
+  aid: '123451234567890',
+};
 SCREENS2.assessLanding = () => {
-  const upcoming = (typeof overviewUpcomingContainer === 'function') ? overviewUpcomingContainer() : '';
-  const types = (typeof assessTypeContainers === 'function') ? assessTypeContainers() : '';
+  const lst = (typeof ascListing === 'function') ? ascListing() : { bar: '', body: '' };
+  const tabs = (typeof ASC_TABS !== 'undefined') ? tabsBar(ASC_TABS, 'assessment', 'ascTabNoop') : '';
   return `<div class="screen active"><div class="scroll prof-scroll assess-landing">
-    ${heroHeader(ANIMAL)}
-    <div class="body" style="padding-top:14px">${upcoming}${types}</div>
+    ${heroHeader({ ...ASSESS_ANIMAL, statusbar: true })}
+    ${tabs}
+    ${lst.bar}
+    <div class="body asc-page">${lst.body}</div>
     <div style="height:24px"></div>
   </div></div>`;
 };
@@ -555,5 +580,6 @@ SCREENS2.assessAnalytics = (p = {}) => {
 document.addEventListener('DOMContentLoaded', () => {
   const h = location.hash.replace('#', '');
   if (h === 'analytics') { NAV.stack = ['amOverview', 'assessAnalytics']; NAV.params.assessAnalytics = { filter: 'Week' }; }
+  else if (h === 'master') { NAV.stack = ['mstLanding']; }
   render2();
 });

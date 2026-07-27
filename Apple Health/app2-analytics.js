@@ -83,10 +83,12 @@ const OPT = {
   diet:     ['Refused', 'Partial', 'Accepted', 'Eager'],
   supp:     ['None', 'Partial', 'Most', 'Full'],
 };
-/* n=numeric{unit,base,dp} · s=scale{max} · l=list{options} · t=text */
-const n = (unit, base, dp = 1) => ({ rt: 'numeric', unit, base, dp });
-const s = (max) => ({ rt: 'scale', max });
-const l = (options) => ({ rt: 'list', options });
+/* n=numeric{unit,base,dp} · s=scale{max} · l=list{options} · t=text
+   Optional trailing `viz` pins a non-default graph (from that rt's compatible
+   set — see compatibleViz); omit it and the type falls back to defaultViz(rt). */
+const n = (unit, base, dp = 1, viz) => ({ rt: 'numeric', unit, base, dp, ...(viz ? { viz } : {}) });
+const s = (max, viz) => ({ rt: 'scale', max, ...(viz ? { viz } : {}) });
+const l = (options, viz) => ({ rt: 'list', options, ...(viz ? { viz } : {}) });
 const t = () => ({ rt: 'text' });
 const CATALOGUE = [
   { cat: 'Physical Health', color: '#FA6140', types: [
@@ -131,9 +133,36 @@ function shadeHex(hex, amt) {
 }
 /* per-type chart style + a colour that's a SHADE of its category hue
    (harmonious within a category, still distinct per type). */
-const NUM_VARIANTS = ['area', 'line', 'col'];
-const SCALE_VARIANTS = ['bars', 'gauge', 'lolli', 'dots'];   // gauge = circular ring
-const LIST_VARIANTS = ['dist', 'donut'];                     // donut = circular distribution
+/* Compatible graph sets per response type — the FIRST entry is the canonical
+   default (Graph Spec V2026.06.24). This is the single source for both the
+   picker options on the master and the fallback when a type declares no viz.
+   `label` is the human name shown in the master graph picker. */
+const GRAPHS = {
+  numeric: [
+    { viz: 'area',  label: 'Trend area' },
+    { viz: 'line',  label: 'Trend line' },
+    { viz: 'col',   label: 'Recency columns' },
+  ],
+  scale: [
+    { viz: 'bars',  label: 'Bars vs ceiling' },
+    { viz: 'gauge', label: 'Ring gauge' },
+    { viz: 'lolli', label: 'Lollipop' },
+    { viz: 'dots',  label: 'Dot strip' },
+  ],
+  list: [
+    { viz: 'dist',  label: 'Distribution bars' },
+    { viz: 'donut', label: 'Donut' },
+  ],
+  text: [],   // no chart — notes timeline only
+};
+/* the graphs an rt may use (array of {viz,label}); text → [] */
+function compatibleViz(rt) { return GRAPHS[rt] || []; }
+/* the canonical default viz for an rt ('area'/'bars'/'dist'); text → null */
+function defaultViz(rt) { return (GRAPHS[rt] && GRAPHS[rt][0]) ? GRAPHS[rt][0].viz : null; }
+/* display label for a viz key (falls back to the key itself) */
+function vizLabel(viz) { for (const rt in GRAPHS) { const g = GRAPHS[rt].find(x => x.viz === viz); if (g) return g.label; } return viz; }
+/* is `viz` valid for `rt`? (used to clear an override when rt changes) */
+function vizCompatible(rt, viz) { return compatibleViz(rt).some(g => g.viz === viz); }
 const SHADE_STEPS = [0, -0.16, 0.16, -0.30, 0.30, -0.08, 0.42];
 /* Distinct per-metric hues so adjacent graphs never read as the same colour.
    Starts with the 5 brand category colours, then extends with more distinct
@@ -144,17 +173,22 @@ const VIZ_PALETTE = [
   '#84CC16', '#E11D48',
 ];
 const HERO_TYPES = ['Weight'];                               // rendered as a prominent detail card
-(() => {
-  let ni = 0, si = 0, li = 0, gi = 0;
-  CATALOGUE.forEach(c => c.types.forEach((ty, idx) => {
+/* Resolve every catalogue type into TYPE_INDEX. The chart is the type's stored
+   `viz` if it declares one, else the canonical default for its response type
+   (defaultViz) — an explicit, per-type choice, no longer a round-robin.
+   Colours stay round-robin so neighbouring cards never share a hue.
+   Callable again after the master adds/edits a type. */
+function buildTypeIndex() {
+  let gi = 0;
+  for (const k in TYPE_INDEX) delete TYPE_INDEX[k];
+  CATALOGUE.forEach(c => c.types.forEach(ty => {
     const color = VIZ_PALETTE[gi++ % VIZ_PALETTE.length];
-    let viz = 'chips';
-    if (ty.rt === 'numeric') viz = NUM_VARIANTS[ni++ % NUM_VARIANTS.length];
-    else if (ty.rt === 'scale') viz = SCALE_VARIANTS[si++ % SCALE_VARIANTS.length];
-    else if (ty.rt === 'list') viz = LIST_VARIANTS[li++ % LIST_VARIANTS.length];
+    const viz = ty.rt === 'text' ? 'chips'
+      : (vizCompatible(ty.rt, ty.viz) ? ty.viz : defaultViz(ty.rt));
     TYPE_INDEX[ty.q] = { ...ty, cat: c.cat, catColor: c.color, color, viz, hero: HERO_TYPES.includes(ty.q) };
   }));
-})();
+}
+buildTypeIndex();
 function catType(q) { return TYPE_INDEX[q]; }
 
 /* 8 shared sessions (newest first) — reuse HISTORY meta so dates feel real */
@@ -175,7 +209,8 @@ const CAT_NOTES = [
 function catSeed(str) { let h = 7; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0; return h; }
 /* chronological values (oldest→newest, length 8); cached per type */
 const _catCache = {};
-function catChron(q) {
+const USER_ENTRIES = {};   // q -> [{ value, date, time, by, note }] newest-first (user-added readings)
+function catChronBase(q) {
   if (_catCache[q]) return _catCache[q];
   const ty = catType(q); if (!ty) return [];
   const N = CAT_SESS.length, seed = catSeed(q), out = [];
@@ -202,8 +237,18 @@ function catChron(q) {
   }
   return (_catCache[q] = out);
 }
-/* newest-first values aligned to CAT_SESS */
+/* base synthetic series + any user-added readings, appended as the newest values */
+function catChron(q) {
+  const base = catChronBase(q), u = USER_ENTRIES[q];
+  return (u && u.length) ? base.concat(u.slice().reverse().map(e => e.value)) : base;
+}
+/* newest-first values aligned to catSessions(q) */
 function catNewest(q) { return catChron(q).slice().reverse(); }
+/* session meta (date/time/by) aligned to catNewest — user entries lead (newest-first) */
+function catSessions(q) {
+  const u = USER_ENTRIES[q];
+  return (u && u.length) ? u.map(e => ({ date: e.date, time: e.time, by: e.by })).concat(CAT_SESS) : CAT_SESS;
+}
 
 /* ===========================================================================
    ASSESSMENT-TAB TYPE CONTAINERS  (Animal Profile · Assessment tab)
@@ -236,6 +281,132 @@ function assessTypeContainers() {
   ).join('');
   return `<div data-searchbox>${metricSearch}${domChips}<div class="v2-list">${cards}</div><div class="ls-empty">No matching metrics</div></div>`;
 }
+
+/* ===========================================================================
+   ASSESSMENT LANDING PAGE  (Figma node 29:7518 — animal-profile Assessment tab)
+   Faithful port: bordered header (type name + green category + add_circle) over
+   a response-type body. Catalogue-driven — every type renders with its assigned
+   graph; category chips filter. Tapping a card opens the metric sheet.
+   =========================================================================== */
+/* small calendar (recorded-date) icon + plain plus (listing-bar Add, node 36:9299) */
+const ASC_CAL = '<svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="15" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 9.5h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+const ATC_ADD_SQ = '<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+/* The 5 cards shown in the mockup (node 29:7518), with the design's literal
+   values. `body` picks the response-type layout; `note` forces a note-preview
+   body (Eye Condition in the design shows an observation, not a chart). */
+const ASC_MOCK = [
+  { q: 'Weight', cat: 'Physical Health', body: 'numeric', unit: 'kg',
+    value: '20.8', delta: '↓ 0.3 kg', dir: 'dn', vizKind: 'bars',
+    stats: [['Previous', '21.1 kg'], ['Average', '22 kg'], ['Min', '20.8 kg'], ['Max', '23.1 kg']] },
+  { q: 'Eye Condition', cat: 'Physical Health', body: 'note',
+    note: 'Good interaction with the group; condition stable since last check.' },
+  { q: 'Stress Behaviour', cat: 'Behaviour', body: 'scale',
+    value: '5', max: '5', delta: '↑ Improved', dir: 'up', vizKind: 'line' },
+  { q: 'Posture', cat: 'Physical Health', body: 'list', value: 'Good', vizKind: 'bars' },
+  { q: 'Feeding Behaviour', cat: 'Behaviour', body: 'list', value: 'Normal', vizKind: 'line' },
+];
+const ASC_DATE = 'Last tested on 28 Jun 2026';   // design uses this on every card
+
+/* map a series to numbers for the mini charts: numeric/scale pass through,
+   list options → their ordinal index (worst→best) so a line/bar can draw. */
+function numify(s, it) {
+  return s.map(v => {
+    if (typeof v === 'number') return v;
+    const i = it && it.options ? it.options.indexOf(v) : -1;
+    return i >= 0 ? i + 1 : 0;
+  });
+}
+
+/* one Assessment Card — bordered header + per-body content (build-as-is, node 29:7805).
+   `m` is an ASC_MOCK entry; the graph shape is pinned by m.vizKind. */
+function ascCard(m) {
+  const it = catType(m.q) || {};
+  const color = it.color || '#37BD69';
+  const date = `<div class="asc-date">${ASC_CAL}<span>${ASC_DATE}</span></div>`;
+  const head = `<div class="asc-head">
+      <div class="asc-htext"><div class="asc-name">${m.q}</div><div class="asc-cat">${m.cat}</div></div>
+      <button class="asc-add" onclick="event.stopPropagation();openAddEntry('${m.q}')" aria-label="Add ${m.q}">${ATC_PLUS}</button>
+    </div>`;
+
+  // graph — the mock pins the exact chart shape shown in the design (m.vizKind);
+  // series is synthetic. bars → v2Bars, line → v2Line, area → v2Area.
+  const seriesViz = () => {
+    const s = numify(seriesFor(m.q), it);
+    if (m.vizKind === 'line') return v2Line(s, color);
+    if (m.vizKind === 'area') return v2Area(s, color, 'asc' + m.q.replace(/\W/g, ''));
+    return v2Bars(s, color);   // bars-vs-ceiling default
+  };
+
+  let body;
+  if (m.body === 'note') {
+    body = `<div class="asc-body asc-body-note">
+        <div class="asc-note">“${m.note}”</div>
+        ${date}
+      </div>`;
+  } else if (m.body === 'numeric') {
+    body = `<div class="asc-body">
+        <div class="asc-row">
+          <div class="asc-lead">
+            <div class="asc-main"><span class="asc-val">${m.value}<small>${m.unit}</small></span><span class="asc-chg ${m.dir}">${m.delta}</span></div>
+            ${date}
+          </div>
+          <div class="asc-viz">${seriesViz()}</div>
+        </div>
+        <div class="asc-stats">${m.stats.map(([l, v]) => `<div class="asc-hs"><div class="asc-hs-l">${l}</div><div class="asc-hs-v">${v}</div></div>`).join('')}</div>
+      </div>`;
+  } else if (m.body === 'scale') {
+    body = `<div class="asc-body">
+        <div class="asc-row">
+          <div class="asc-lead">
+            <div class="asc-main"><span class="asc-val">${m.value}<small> /${m.max}</small></span><span class="asc-chg ${m.dir}">${m.delta}</span></div>
+            ${date}
+          </div>
+          <div class="asc-viz">${seriesViz()}</div>
+        </div>
+      </div>`;
+  } else { // list
+    body = `<div class="asc-body">
+        <div class="asc-row">
+          <div class="asc-lead">
+            <div class="asc-main"><span class="asc-val text">${m.value}</span></div>
+            ${date}
+          </div>
+          <div class="asc-viz">${seriesViz()}</div>
+        </div>
+      </div>`;
+  }
+  return `<div class="asc-card" onclick="openMetric('${m.q}')">${head}${body}</div>`;
+}
+
+/* Assessment Landing screen content (node 29:7518) — exactly the 5 mockup cards.
+   Chips are visual (design shows All active). "3 Types" per the mockup. */
+function ascListing() {
+  const chips = `<div class="tchip-row v2-doms asc-chips">${CAT_DOMAINS.map(d =>
+    `<button class="tchip ${d === 'All' ? 'active' : ''}" onclick="setAmACat('${d}')">${d}</button>`).join('')}</div>`;
+  const cards = ASC_MOCK.map(ascCard).join('');
+  // sticky "3 Types" bar with add + search icons (design node 36:9296)
+  const bar = `<div class="asc-listbar">
+      <span class="asc-count">3 Types</span>
+      <div class="asc-listicons">
+        <button class="asc-listic" onclick="go2('mstLanding')" aria-label="Add assessment type">${ATC_ADD_SQ}</button>
+        <button class="asc-listic" aria-label="Search">${I2.search}</button>
+      </div>
+    </div>`;
+  return { bar, body: `<div class="asc-body-wrap">${chips}<div class="asc-cards">${cards}</div></div>` };
+}
+
+/* profile Assessment-tab tabs (visual — Assessment is active; others inert) */
+const ASC_TABS = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'assessment', label: 'Assessment' },
+  { key: 'medical', label: 'Medical' },
+  { key: 'enclosures', label: 'Enclosures' },
+  { key: 'records', label: 'Records' },
+  { key: 'diet', label: 'Diet' },
+  { key: 'notes', label: 'Notes' },
+];
+function ascTabNoop() { /* visual only — profile tabs are not wired on this screen */ }
 
 /* ---- page state (filter context persists across tabs) -------------------- */
 /* Only 3 tabs — Analytics + Notes content live as scrollable Overview sections */
@@ -537,7 +708,7 @@ function v2HeroCard(m, opts) {
     <div class="v2-hero-top"><span class="v2-hero-val">${cur}<small>${u}</small></span><span class="v2-sub ${flat ? 'eq' : up ? 'up' : 'dn'}">${flat ? '→ Stable' : (up ? '↑ +' : '↓ ') + Math.abs(d) + ' ' + u}</span></div>
     <div class="v2-hero-chart">${v2HeroChart(s, color, 'vh' + m.q.replace(/\W/g, ''))}</div>
     <div class="v2-hero-stats">${stats.map(([l, v]) => `<div class="v2-hs"><div class="v2-hs-l">${l}</div><div class="v2-hs-v">${v}</div></div>`).join('')}</div>
-    <div class="v2-when">${CAT_SESS[0].date}</div>
+    <div class="v2-when">${catSessions(m.q)[0].date}</div>
   </div>`;
 }
 
@@ -547,7 +718,7 @@ function v2HeroCard(m, opts) {
    list→distribution, text→chips). Full analytics open on tap (openMetric). */
 function v2Card(m, opts) {
   const tap = !opts || opts.tap !== false, add = opts && opts.add;
-  const it = trendItem(m.q), rt = it.rt, last = CAT_SESS[0].date, color = it.color || m.color;
+  const it = trendItem(m.q), rt = it.rt, last = catSessions(m.q)[0].date, color = it.color || m.color;
   const head = `<div class="v2-head">
     <span class="v2-name">${qLabel(m.q)}</span>
     ${add ? `<button class="v2-add" onclick="event.stopPropagation();openAddEntry('${m.q}')" aria-label="Add ${qLabel(m.q)}">${ATC_PLUS}</button>` : ''}
@@ -559,7 +730,7 @@ function v2Card(m, opts) {
     return `<div class="v2-card v2-card-text"${tap ? ` onclick="openMetric('${m.q}')"` : ''}>${head}
       <div class="v2-note-preview">“${latest}”</div>
       <div class="v2-foot"><div class="v2-lead">
-        <span class="v2-val">${CAT_SESS.length}<small>entries</small></span>
+        <span class="v2-val">${catSessions(m.q).length}<small>entries</small></span>
         <div class="v2-sub muted">${tap ? 'Tap to read all notes' : 'Latest note'}</div>
         <div class="v2-when">${when}</div></div></div></div>`;
   }
@@ -1007,7 +1178,7 @@ function mdStats(pairs) {
 }
 function mdHist(q, fmt) {
   const vals = catNewest(q);
-  const rows = CAT_SESS.map((r, i) => {
+  const rows = catSessions(q).map((r, i) => {
     const v = vals[i], bg = i === 0 ? '#37BD69' : (i === 1 ? '#D4EFDF' : '#EEF3F1'), fg = i === 0 ? '#fff' : (i === 1 ? '#1B6B43' : '#44544A');
     return `<div class="md-hrow"><div class="md-meta"><div class="mh-t">${r.time}</div><div class="mh-d">${r.date}</div><div class="mh-a">${r.by}</div></div>
       <div class="md-pill" style="background:${bg};color:${fg}">${fmt(v)}</div></div>`;
@@ -1022,7 +1193,7 @@ function msFlt(q) {
 function msStat(l, v) { return `<div class="ms-s"><div class="ms-sl">${l}</div><div class="ms-sv">${v}</div></div>`; }
 function msRows(q, fmt, colFn) {
   const vals = catNewest(q);
-  return CAT_SESS.map((r, i) => {
+  return catSessions(q).map((r, i) => {
     const v = vals[i];
     const style = colFn ? `background:${colFn(v)};color:#1F515B` : `background:${i < 2 ? '#E1F9ED' : '#EFF5F2'};color:#1F515B`;
     return `<div class="ms-row"><div class="ms-meta"><div class="ms-t">${r.time}</div><div class="ms-d">${r.date}</div><div class="ms-a">${r.by}</div></div>
@@ -1099,7 +1270,15 @@ function metricSheetInner(q) {
     const color = it.color || '#00AFD6';
     const s = mdSeries(q, MD_FILTER), vals = s.values.map(v => Math.round(v)), min = Math.min(...vals), max = Math.max(...vals);
     const avg = +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1), prog = seriesFor(q).slice(-4);
-    return `<div class="ms-white">${flt}${lineInteractive('mdc', s.values, color, { avg, axes: true, labels: s.labels, valStrs: s.values.map(v => Math.round(v) + ' / ' + it.max) })}</div>
+    // Honour the type's assigned graph: bars/lolli/dots/gauge render enlarged in
+    // the white area (mini renderers reused, scaled by .ms-viz); anything else
+    // falls back to the interactive line.
+    const scaleViz = it.viz === 'bars' ? `<div class="ms-viz">${v2Bars(vals, color)}</div>`
+      : it.viz === 'lolli' ? `<div class="ms-viz">${v2Lolli(vals, color)}</div>`
+      : it.viz === 'dots' ? `<div class="ms-viz">${v2Dots(vals, color)}</div>`
+      : it.viz === 'gauge' ? `<div class="ms-viz ms-viz-gauge">${v2Gauge(vals[vals.length - 1], it.max, color)}</div>`
+      : lineInteractive('mdc', s.values, color, { avg, axes: true, labels: s.labels, valStrs: s.values.map(v => Math.round(v) + ' / ' + it.max) });
+    return `<div class="ms-white">${flt}${scaleViz}</div>
       <div class="ms-lower">${scheduleCard}
         <div class="ms-card ms-stats">${msStat('Average', avg + '/' + it.max)}${msStat('Lowest', min + '/' + it.max)}${msStat('Highest', max + '/' + it.max)}</div>
         <div class="ms-card"><div class="ms-card-t">Scale Progression</div>
@@ -1112,7 +1291,10 @@ function metricSheetInner(q) {
     const dist = {}; it.options.forEach(o => dist[o] = 0); vals.forEach(v => dist[v]++);
     const maxC = Math.max(1, ...Object.values(dist)), freq = Object.entries(dist).sort((a, b) => b[1] - a[1])[0][0];
     const PAL = ['#FA6140', '#E4B819', '#7BC96A', '#37BD69'], col = o => PAL[Math.round(it.options.indexOf(o) / Math.max(1, it.options.length - 1) * 3)];
-    return `<div class="ms-white">${flt}</div>
+    // Honour the assigned graph: donut renders enlarged in the white area (the
+    // distribution card below always stays as the numeric breakdown).
+    const listViz = it.viz === 'donut' ? `<div class="ms-viz ms-viz-donut">${v2Donut(it, vals, it.color || '#37BD69')}</div>` : '';
+    return `<div class="ms-white">${flt}${listViz}</div>
       <div class="ms-lower">${scheduleCard}
         <div class="ms-card ms-stats">${msStat('Current', it.value)}${msStat('Most Frequent', freq)}${msStat('Records', vals.length)}</div>
         <div class="ms-card"><div class="ms-card-t">Distribution</div>
@@ -1122,7 +1304,7 @@ function metricSheetInner(q) {
   }
   // TEXT: no chart/filter — feature the latest note, then a searchable timeline of all entries
   const ntext = catNewest(q);
-  const notes = CAT_SESS.map((r, i) => ({ by: r.by, date: r.date, time: r.time, text: ntext[i] }));
+  const notes = catSessions(q).map((r, i) => ({ by: r.by, date: r.date, time: r.time, text: ntext[i] }));
   const latest = notes[0];
   return `<div class="ms-white">
       <div class="ms-latest">
@@ -1155,8 +1337,12 @@ const AE_SCALE_LABELS = {
   'Body Condition Score': ['Emaciated', 'Very Thin', 'Thin', 'Lean', 'Ideal', 'Stout', 'Overweight', 'Obese', 'Severely Obese'],
   'Hydration Status': ['Severely Dehydrated', 'Dehydrated', 'Mild', 'Adequate', 'Optimal'],
 };
+/* selectable unit options per base unit (so the dropdown actually has choices) */
+const AE_UNITS = { 'kg': ['kg', 'g', 'lb'], '°C': ['°C', '°F'], 'g': ['g', 'kg'], 'ml': ['ml', 'L'], '%': ['%'], 'bpm': ['bpm'], 'dB': ['dB'], '/day': ['/day'] };
+function aeUnits(u) { return AE_UNITS[u] || [u]; }
 function aeSelect(el) {
   const grp = el.parentElement;
+  grp.classList.remove('ae-err');
   grp.querySelectorAll('.ae-opt').forEach(o => o.classList.remove('on'));
   el.classList.add('on');
 }
@@ -1164,18 +1350,19 @@ function addEntrySheet(q) {
   const it = catType(q); if (!it) return '';
   const rt = it.rt, cat = it.cat;
   const dt = `<div class="ae-dt">
-    <button class="ae-field"><span class="ae-fic">${I2.cal}</span><span>12 Mar 2024</span></button>
-    <button class="ae-field"><span class="ae-fic">${AE_CLOCK}</span><span>04 : 38 PM</span></button>
+    <label class="ae-field"><span class="ae-fic">${I2.cal}</span><input class="ae-field-in" type="date" value="2024-03-12"></label>
+    <label class="ae-field"><span class="ae-fic">${AE_CLOCK}</span><input class="ae-field-in" type="time" value="16:38"></label>
   </div>`;
   let body = '';
   if (rt === 'numeric') {
+    const units = aeUnits(it.unit);
     body = `<div class="ae-numrow">
-        <input class="ae-input" type="text" inputmode="decimal" placeholder="Enter value">
-        <button class="ae-unit">${it.unit}<span class="ae-uchev">${I2.chevDown}</span></button>
+        <input class="ae-input" type="text" inputmode="decimal" placeholder="Enter value" autofocus oninput="this.classList.remove('ae-err')">
+        <div class="ae-unit-wrap"><select class="ae-unit">${units.map(u => `<option ${u === it.unit ? 'selected' : ''}>${u}</option>`).join('')}</select><span class="ae-uchev">${I2.chevDown}</span></div>
       </div>
-      <button class="ae-notes">Add Notes</button>`;
+      <textarea class="ae-notes" rows="1" placeholder="Add Notes"></textarea>`;
   } else if (rt === 'text') {
-    body = `<textarea class="ae-textarea" rows="3" placeholder="Text input"></textarea>`;
+    body = `<textarea class="ae-textarea" rows="3" placeholder="Text input" oninput="this.classList.remove('ae-err')"></textarea>`;
   } else if (rt === 'list') {
     const cur = catNewest(q)[0];
     body = `<div class="ae-opts">${it.options.map(o =>
@@ -1200,10 +1387,40 @@ function addEntrySheet(q) {
     </div>
     <div class="ae-foot">
       <button class="ae-cancel" onclick="closeSheet2()">Cancel</button>
-      <button class="ae-add" onclick="closeSheet2()">Add Entry</button>
+      <button class="ae-add" onclick="aeSubmit('${q}')">Add Entry</button>
     </div>`;
 }
 function openAddEntry(q) { openSheet2(addEntrySheet(q)); }
+const AE_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function aeFmtDate(v) { if (!v) return CAT_SESS[0].date; const [y, m, d] = v.split('-').map(Number); return d + ' ' + AE_MON[(m || 1) - 1] + ' ' + y; }
+function aeFmtTime(v) { if (!v) return CAT_SESS[0].time; let [h, mi] = v.split(':').map(Number); const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return h + ':' + String(mi).padStart(2, '0') + ' ' + ap; }
+/* commit the Add Entry form → prepend a reading to USER_ENTRIES, then show its History */
+function aeSubmit(q) {
+  const it = catType(q); if (!it) return;
+  const root = document.querySelector('.sheet2'); if (!root) return;
+  const date = aeFmtDate(root.querySelector('input[type=date]') && root.querySelector('input[type=date]').value);
+  const time = aeFmtTime(root.querySelector('input[type=time]') && root.querySelector('input[type=time]').value);
+  let value, note = '';
+  if (it.rt === 'numeric') {
+    const inp = root.querySelector('.ae-input'), n = parseFloat((inp.value || '').trim());
+    if (isNaN(n)) { inp.classList.add('ae-err'); inp.focus(); return; }
+    value = +n.toFixed(it.dp != null ? it.dp : 1);
+    const nt = root.querySelector('.ae-notes'); note = nt ? nt.value.trim() : '';
+  } else if (it.rt === 'scale') {
+    const sel = root.querySelector('.ae-opt.on .ae-num'); if (!sel) { root.querySelector('.ae-opts').classList.add('ae-err'); return; }
+    value = parseInt(sel.textContent, 10);
+  } else if (it.rt === 'list') {
+    const sel = root.querySelector('.ae-opt.on .ae-olab'); if (!sel) { root.querySelector('.ae-opts').classList.add('ae-err'); return; }
+    value = sel.textContent;
+  } else {
+    const ta = root.querySelector('.ae-textarea'), txt = (ta.value || '').trim();
+    if (!txt) { ta.classList.add('ae-err'); ta.focus(); return; }
+    value = txt;
+  }
+  (USER_ENTRIES[q] = USER_ENTRIES[q] || []).unshift({ value, date, time, by: 'You', note });
+  render2();        // refresh the landing so the card's latest value/date update
+  openMetric(q);    // reopen on the metric sheet so the new reading shows at the top of History
+}
 
 /* ===========================================================================
    SCREEN — Assessment Detail (Information · Q&R · Attachments · Notes · Audit)
