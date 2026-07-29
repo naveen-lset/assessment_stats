@@ -104,6 +104,22 @@ body{display:flex;justify-content:center;padding:24px 0;min-height:100vh;}
 .dev-n{font-size:14px;font-weight:500;letter-spacing:.1px;color:var(--tile-val);}
 .dev-m{font-size:12px;font-weight:400;color:var(--name);}
 
+/* environment readings (Overview) — tiles fed from the sensor catalogue */
+.env-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.env-tile{background:var(--bg);border-radius:6px;padding:10px 12px;cursor:pointer;
+  display:flex;flex-direction:column;gap:4px;}
+.env-tile:active{transform:scale(.98);}
+.env-tile:last-child:nth-child(odd){grid-column:1/-1;}
+.env-l{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:400;color:var(--label);
+  line-height:1.2;white-space:nowrap;}
+.env-ic{display:flex;flex:0 0 auto;}
+.env-ic svg{width:14px;height:14px;display:block;}
+.env-t{overflow:hidden;text-overflow:ellipsis;}
+.env-v{font-size:18px;font-weight:700;color:var(--info-val);line-height:1.15;}
+.env-v small{font-size:12px;font-weight:600;color:var(--name);margin-left:2px;}
+.env-c{font-size:11px;font-weight:500;line-height:1.2;}
+.env-c.up{color:var(--green);} .env-c.dn{color:var(--tertiary);} .env-c.eq{color:var(--muted);}
+
 /* ============================================================================
    ASSESSMENT TAB (node 56:546)
    ============================================================================ */
@@ -368,6 +384,13 @@ body{display:flex;justify-content:center;padding:24px 0;min-height:100vh;}
         </div>
         <div class="info-card">
           <div class="dv-head">
+            <span>Environment</span>
+            <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="env-grid" id="envGrid"></div>
+        </div>
+        <div class="info-card">
+          <div class="dv-head">
             <span>Connected Device</span>
             <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
@@ -386,8 +409,6 @@ body{display:flex;justify-content:center;padding:24px 0;min-height:100vh;}
         <button class="chip" data-chip="Humidity" onclick="filterCat('Humidity')">Humidity</button>
         <button class="chip" data-chip="Temperature" onclick="filterCat('Temperature')">Temperature</button>
         <button class="chip" data-chip="Water Quality" onclick="filterCat('Water Quality')">Water Quality</button>
-        <button class="chip" data-chip="Mental Domain" onclick="filterCat('Mental Domain')">Mental Domain</button>
-        <button class="chip" data-chip="Nutrition" onclick="filterCat('Nutrition')">Nutrition</button>
       </div>
       <div class="cards" id="cards"></div>
       <div class="empty" id="empty" style="display:none">No assessment types</div>
@@ -421,45 +442,55 @@ body{display:flex;justify-content:center;padding:24px 0;min-height:100vh;}
   // All numeric (sensor readings). value/unit render the card face; base/dp
   // drive the deterministic detail series; recU labels detail records.
   // viz picks the card-face graph: bars | line | gauge | band | ring | wave | steps
+  // noise = short-term sensor jitter (real units); seas = seasonal swing over a
+  // year (negative = inverse season, e.g. dissolved O2 drops in warm months);
+  // cmin/cmax clamp the series to the metric's physical bounds.
   var TYPES = [
     // Humidity (design cards 56:709 / 58:930)
-    { q:'Humidity Level', cat:'Humidity', value:'68 %', unit:'RH', base:68, dp:0, recU:'%RH', delta:'↑ 2 %RH', dir:'up', ago:'Just now', viz:'bars' },
-    { q:'Dew Point', cat:'Humidity', value:'18.2', unit:'°C', base:18.2, dp:1, recU:'°C', delta:'Normal', dir:'up', ago:'1 min ago', viz:'line' },
+    { q:'Humidity Level', cat:'Humidity', value:'68 %', unit:'RH', base:68, dp:0, recU:'%RH', delta:'↑ 2 %RH', dir:'up', ago:'Just now', viz:'bars', noise:1.6, seas:6, cmin:30, cmax:95 },
+    { q:'Dew Point', cat:'Humidity', value:'18.2', unit:'°C', base:18.2, dp:1, recU:'°C', delta:'Normal', dir:'up', ago:'1 min ago', viz:'line', noise:0.35, seas:1.1 },
     // Temperature
-    { q:'Ambient Temperature', cat:'Temperature', value:'24.6', unit:'°C', base:24.6, dp:1, recU:'°C', delta:'↑ 0.4 °C', dir:'up', ago:'Just now', viz:'line' },
-    { q:'Substrate Temperature', cat:'Temperature', value:'21.8', unit:'°C', base:21.8, dp:1, recU:'°C', delta:'→ Stable', dir:'eq', ago:'5 min ago', viz:'bars' },
+    { q:'Ambient Temperature', cat:'Temperature', value:'24.6', unit:'°C', base:24.6, dp:1, recU:'°C', delta:'↑ 0.4 °C', dir:'up', ago:'Just now', viz:'line', noise:0.5, seas:2.6 },
+    { q:'Substrate Temperature', cat:'Temperature', value:'21.8', unit:'°C', base:21.8, dp:1, recU:'°C', delta:'→ Stable', dir:'eq', ago:'5 min ago', viz:'bars', noise:0.4, seas:1.9 },
     // Water Quality (design cards 58:868 / 58:899)
-    { q:'Water Quality', cat:'Water Quality', value:'92', unit:'/ 100', base:92, dp:0, recU:'/ 100', delta:'Excellent', dir:'up', ago:'10 min ago', viz:'gauge', gmax:100 },
-    { q:'Dissolved Oxygen', cat:'Water Quality', value:'8.2', unit:'mg/L', base:8.2, dp:1, recU:'mg/L', delta:'Healthy', dir:'up', ago:'Just now', viz:'band', bmin:0, bmax:12, blo:6.5, bhi:9.5 },
-    { q:'pH Level', cat:'Water Quality', value:'7.4', unit:'pH', base:7.4, dp:1, recU:'pH', delta:'→ Stable', dir:'eq', ago:'6 min ago', viz:'band', bmin:6, bmax:9, blo:6.8, bhi:7.8 },
-    // Mental Domain
-    { q:'Enrichment Usage', cat:'Mental Domain', value:'63', unit:'%', base:63, dp:0, recU:'%', delta:'↑ 5 %', dir:'up', ago:'12 min ago', viz:'ring' },
-    { q:'Noise Level', cat:'Mental Domain', value:'58', unit:'dB', base:58, dp:0, recU:'dB', delta:'↓ 4 dB', dir:'dn', ago:'2 min ago', viz:'wave' },
-    // Nutrition
-    { q:'Feeder Level', cat:'Nutrition', value:'72', unit:'%', base:72, dp:0, recU:'%', delta:'↓ 6 %', dir:'dn', ago:'8 min ago', viz:'ring' },
-    { q:'Water Consumption', cat:'Nutrition', value:'41', unit:'L', base:41, dp:0, recU:'L', delta:'Normal', dir:'up', ago:'15 min ago', viz:'steps' },
+    { q:'Water Quality', cat:'Water Quality', value:'92', unit:'/ 100', base:92, dp:0, recU:'/ 100', delta:'Excellent', dir:'up', ago:'10 min ago', viz:'gauge', gmax:100, noise:1.8, seas:-3, cmin:0, cmax:100 },
+    { q:'Dissolved Oxygen', cat:'Water Quality', value:'8.2', unit:'mg/L', base:8.2, dp:1, recU:'mg/L', delta:'Healthy', dir:'up', ago:'Just now', viz:'band', bmin:0, bmax:12, blo:6.5, bhi:9.5, noise:0.22, seas:-0.5, cmin:0, cmax:12 },
+    { q:'pH Level', cat:'Water Quality', value:'7.4', unit:'pH', base:7.4, dp:1, recU:'pH', delta:'→ Stable', dir:'eq', ago:'6 min ago', viz:'band', bmin:6, bmax:9, blo:6.8, bhi:7.8, noise:0.08, seas:0.12, cmin:6, cmax:9 },
   ];
-  var CAT_COLOR = { 'Humidity':'#00AFD6','Temperature':'#FA6140','Water Quality':'#37BD69','Mental Domain':'#E4A11B','Nutrition':'#8479F9' };
+  var CAT_COLOR = { 'Humidity':'#00AFD6','Temperature':'#FA6140','Water Quality':'#37BD69' };
   function byQ(q){ for(var i=0;i<TYPES.length;i++) if(TYPES[i].q===q) return TYPES[i]; return null; }
 
-  /* ---- deterministic seeded series per (assessment, range) ------------- */
-  var RANGES = {
-    W:  { n:7,  labels:['Sun','Mon','Tue','Wed','Thr','Fri','Sat'] },
-    M:  { n:5,  labels:['Week 1','Week 2','Week 3','Week 4','Week 5'] },
-    '6M':{ n:6, labels:['Jan','Feb','Mar','Apr','May','Jun'] },
-    Y:  { n:12, labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] }
-  };
+  /* ---- deterministic seeded series per (assessment, range) -------------
+     Shaped to read like real sensor history:
+     - the newest point of EVERY range equals the card's current reading,
+       so Latest, the gauge and the headline stay consistent across W/M/6M/Y
+     - W/M wobble with short-term sensor noise plus a slight drift
+     - 6M/Y follow the seasonal cycle (peak ≈ Jun, trough ≈ Dec) via t.seas
+     - values clamp to the metric's physical bounds (t.cmin / t.cmax)      */
+  var RANGES = { W:{n:7}, M:{n:5}, '6M':{n:6}, Y:{n:12} };
   function hash(str){ var h=7; for(var i=0;i<str.length;i++) h=(h*31+str.charCodeAt(i))>>>0; return h; }
-  // returns {values[], labels[], avg, ymax, ylabels[]}
+  function seasonAt(mi){ return Math.cos((mi-10)/12*2*Math.PI); } // mi: 0=Aug … 11=Jul (chart axes end "now")
+  // returns {values[], avg}
   function seriesFor(q, range){
-    var t=byQ(q), R=RANGES[range]||RANGES.W, n=R.n, seed=hash(q+range), vals=[];
-    var span=Math.max(0.4, Math.abs(t.base)*0.06);
-    for(var i=0;i<n;i++){ var wob=Math.sin((seed%9)+i*0.85)*0.6 + (((seed+i*97)%100)/100-0.5);
-      vals.push(+(t.base + wob*span).toFixed(t.dp)); }
-    var ymax=Math.ceil(Math.max.apply(null,vals)*1.12), ny=5, yl=[];
-    for(var k=ny;k>=0;k--) yl.push(String(Math.round(ymax*k/ny)));
+    var t=byQ(q), n=(RANGES[range]||RANGES.W).n, seed=hash(q+range);
+    var noise=t.noise!=null?t.noise:Math.max(0.4,Math.abs(t.base)*0.03);
+    var seas=t.seas||0;
+    var jitter=range==='W'?1:range==='M'?1.25:1.5;                    // aggregates scatter a bit more
+    var drift=((((seed>>3)%7)-3)/3)*noise*(range==='W'?1.2:range==='M'?2:0);
+    function nz(i){ return Math.sin(seed%9+i*1.7)*0.5+(((seed+i*97)%100)/100-0.5); }
+    function raw(i){
+      var mi=range==='Y'?i:range==='6M'?i+6:11;                       // calendar slot on the Aug→Jul axis
+      return seas*seasonAt(mi)+noise*jitter*nz(i)+drift*(i/(n-1));
+    }
+    var last=raw(n-1), vals=[];
+    for(var i=0;i<n;i++){
+      var v=t.base+raw(i)-last;                                       // anchor: newest point = current reading
+      if(t.cmin!=null) v=Math.max(t.cmin,v);
+      if(t.cmax!=null) v=Math.min(t.cmax,v);
+      vals.push(+v.toFixed(t.dp));
+    }
     var avg=+(vals.reduce(function(a,b){return a+b;},0)/n).toFixed(1);
-    return { values:vals, labels:R.labels, avg:avg, ymax:ymax, ylabels:yl };
+    return { values:vals, avg:avg };
   }
 
   /* ---- mini card-face graph (v2-viz, 132x48) ---------------------------- */
@@ -646,15 +677,15 @@ body{display:flex;justify-content:center;padding:24px 0;min-height:100vh;}
     var ds=[], ls=[], i, d;
     if(range==='W'){
       for(i=6;i>=0;i--){ d=new Date(ANCHOR.getTime()-i*864e5); ds.push(d); ls.push(DYS[d.getDay()]); }
-      return { dates:ds, labels:ls, period:fmtDM(ds[0])+' – '+fmtDM(ds[6])+' '+ds[6].getFullYear() };
+      return { dates:ds, labels:ls, noun:'daily readings', period:fmtDM(ds[0])+' – '+fmtDM(ds[6])+' '+ds[6].getFullYear() };
     }
     if(range==='M'){
       for(i=4;i>=0;i--){ d=new Date(ANCHOR.getTime()-i*7*864e5); ds.push(d); ls.push('W'+(5-i)); }
-      return { dates:ds, labels:ls, period:fmtDM(ds[0])+' – '+fmtDM(ds[4])+' '+ANCHOR.getFullYear() };
+      return { dates:ds, labels:ls, noun:'weekly averages', period:fmtDM(ds[0])+' – '+fmtDM(ds[4])+' '+ANCHOR.getFullYear() };
     }
     var n=range==='6M'?6:12;
     for(i=n-1;i>=0;i--){ d=new Date(2026,6-i,15); ds.push(d); ls.push(MO[d.getMonth()]); }
-    return { dates:ds, labels:ls,
+    return { dates:ds, labels:ls, noun:'monthly averages',
       period:MO[ds[0].getMonth()]+' '+ds[0].getFullYear()+' – '+MO[ds[n-1].getMonth()]+' '+ds[n-1].getFullYear() };
   }
   function caret(dir){
@@ -666,10 +697,11 @@ body{display:flex;justify-content:center;padding:24px 0;min-height:100vh;}
   function summaryHTML(t,d,ax){
     var n=d.values.length, last=d.values[n-1], first=d.values[0];
     var diff=+(last-first).toFixed(t.dp||1), dir=diff>0?'up':diff<0?'dn':'eq';
-    var dtxt=dir==='eq'?'Stable':(Math.abs(diff)+' '+t.recU);
+    var du=t.recU==='/ 100'?(Math.abs(diff)===1?'pt':'pts'):t.recU;
+    var dtxt=dir==='eq'?'Stable':(Math.abs(diff)+' '+du);
     return '<div class="ms-sum"><div><div class="ms-sum-k">Average</div>'
       +'<div class="ms-sum-v"><span id="msSumNum" data-v="'+d.avg+'">'+d.avg+'</span><small>'+t.recU+'</small></div>'
-      +'<div class="ms-sum-p">'+ax.period+' · '+n+' readings</div></div>'
+      +'<div class="ms-sum-p">'+ax.period+' · '+n+' '+ax.noun+'</div></div>'
       +'<span class="ms-delta '+dir+'" title="Change across this period">'+caret(dir)+dtxt+'</span></div>';
   }
   function niceTicks(mn,mx){
@@ -683,7 +715,7 @@ body{display:flex;justify-content:center;padding:24px 0;min-height:100vh;}
   /* line / band / steps → SVG chart with draw-in, grid, avg, min/max callouts.
      opts.zone shades the ideal range (band metrics); opts.step draws a staircase. */
   function detLine(d,t,color,ax,o){
-    var W=358,H=200,L=44,R=10,T=16,B=24, vals=d.values, n=vals.length;
+    var W=358,H=200,L=44,R=10,T=16,B=24, vals=d.values, n=vals.length, CLX=14;
     var lo0=Math.min.apply(null,vals), hi0=Math.max.apply(null,vals);
     if(o.zone){ lo0=Math.min(lo0,t.blo); hi0=Math.max(hi0,t.bhi); }
     var ticks=niceTicks(lo0,hi0);
@@ -713,8 +745,10 @@ body{display:flex;justify-content:center;padding:24px 0;min-height:100vh;}
     var halo='stroke="#fff" stroke-width="3" paint-order="stroke"';
     // min callout flips above its point when it sits at the plot floor (would hit the x labels)
     var mnY=pts[mnI][1]+15>H-B-2 ? pts[mnI][1]-9 : pts[mnI][1]+15;
-    var mm='<text x="'+pts[mxI][0].toFixed(1)+'" y="'+(pts[mxI][1]-9).toFixed(1)+'" text-anchor="middle" font-size="10" font-weight="600" fill="#44544A" '+halo+' style="animation:msFade .35s .75s both">'+mxV+'</text>'
-      +'<text x="'+pts[mnI][0].toFixed(1)+'" y="'+mnY.toFixed(1)+'" text-anchor="middle" font-size="10" font-weight="600" fill="#44544A" '+halo+' style="animation:msFade .35s .75s both">'+mnV+'</text>';
+    // callout x clamps inside the plot so it can't collide with the y-axis labels
+    function clx(x){ return Math.min(Math.max(x,L+CLX),W-R-CLX); }
+    var mm='<text x="'+clx(pts[mxI][0]).toFixed(1)+'" y="'+(pts[mxI][1]-9).toFixed(1)+'" text-anchor="middle" font-size="10" font-weight="600" fill="#44544A" '+halo+' style="animation:msFade .35s .75s both">'+mxV.toFixed(t.dp)+'</text>'
+      +'<text x="'+clx(pts[mnI][0]).toFixed(1)+'" y="'+mnY.toFixed(1)+'" text-anchor="middle" font-size="10" font-weight="600" fill="#44544A" '+halo+' style="animation:msFade .35s .75s both">'+mnV.toFixed(t.dp)+'</text>';
     var xl=ax.labels.map(function(l,i){ if(n>8&&i%2) return '';
       return '<text x="'+X(i).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" font-size="11" fill="#7C828A">'+l+'</text>'; }).join('');
     return '<svg class="ms-lc" viewBox="0 0 '+W+' '+H+'">'
@@ -728,23 +762,36 @@ body{display:flex;justify-content:center;padding:24px 0;min-height:100vh;}
       +'<text x="'+(W-R)+'" y="'+(avgY-6)+'" text-anchor="end" font-size="11" font-weight="700" fill="#000" '+halo+' style="animation:msFade .4s .6s both">Avg '+d.avg+'</text>'
       +dots+mm+xl+'</svg>';
   }
-  /* bars → gradient columns, min..max scaled, staggered grow, avg overlay */
+  /* bars → SVG columns on a real y-axis: same grid + tick labels as the line
+     chart, bars grow from the axis floor, value callouts (≤8 cols), avg overlay */
   function detBars(d,t,color,ax,H){
-    H=H||170;
-    var vals=d.values, n=vals.length;
-    var ticks=niceTicks(Math.min.apply(null,vals),Math.max.apply(null,vals));
-    var hi=ticks[0], lo=ticks[ticks.length-1], gap=n>8?4:10;
-    var cols=vals.map(function(v,i){
-      var pc=Math.round(8+(v-lo)/((hi-lo)||1)*88);
-      return '<div class="db-col"><span class="db-vlab">'+(n<=8?v:'')+'</span>'
-        +'<div class="db-slot"><span class="db-bar" style="height:'+pc+'%;background:linear-gradient(to top,'+color+','+hexA(color,0.35)+');animation-delay:'+(0.05+i*0.05).toFixed(2)+'s"></span></div></div>'; }).join('');
-    var xls=ax.labels.map(function(l,i){ return '<span>'+((n>8&&i%2)?'':l)+'</span>'; }).join('');
-    var normA=(d.avg-lo)/((hi-lo)||1), avgTop=(12+(H-12)*(1-(0.08+normA*0.88))).toFixed(1);
-    return '<div class="db-wrap">'
-      +'<div class="db-cols" style="height:'+H+'px;gap:'+gap+'px">'+cols+'</div>'
-      +'<div class="db-avg" style="top:'+avgTop+'px;animation:msFade .4s .5s both"></div>'
-      +'<div class="db-avg-lab" style="top:'+avgTop+'px;animation:msFade .4s .55s both">Avg '+d.avg+'</div>'
-      +'<div class="db-x" style="gap:'+gap+'px">'+xls+'</div></div>';
+    H=H||190;
+    var W=358,L=44,R=10,T=18,B=24, vals=d.values, n=vals.length;
+    // pad the floor below the min so the smallest bar keeps a visible body
+    var mn=Math.min.apply(null,vals), mx=Math.max.apply(null,vals);
+    var ticks=niceTicks(mn-((mx-mn)*0.25||1),mx);
+    var hi=ticks[0], lo=ticks[ticks.length-1], gid='detb'+t.q.replace(/\W/g,'');
+    var halo='stroke="#fff" stroke-width="3" paint-order="stroke"';
+    function Y(v){ return T+(H-T-B)*(1-(v-lo)/((hi-lo)||1)); }
+    var grid=ticks.map(function(tk){ var y=Y(tk).toFixed(1);
+      return '<line x1="'+L+'" y1="'+y+'" x2="'+(W-R)+'" y2="'+y+'" stroke="#E2E8E5" stroke-dasharray="3 4"/>'
+        +'<text x="'+(L-6)+'" y="'+y+'" text-anchor="end" dominant-baseline="middle" font-size="10" fill="rgba(0,0,0,0.4)">'+tk+'</text>'; }).join('');
+    var slot=(W-L-R)/n, bw=Math.min(24,slot*0.62);
+    var bars=vals.map(function(v,i){
+      var cx=L+slot*i+slot/2, y=Y(v), h=Math.max(2,(H-B)-y);
+      var lab=n<=8?'<text x="'+cx.toFixed(1)+'" y="'+(y-7).toFixed(1)+'" text-anchor="middle" font-size="10" font-weight="600" fill="#44544A" '+halo+' style="animation:msFade .35s '+(0.4+i*0.05).toFixed(2)+'s both">'+v.toFixed(t.dp)+'</text>':'';
+      return '<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="'+Math.min(5,bw/2).toFixed(1)+'" fill="url(#'+gid+')" '
+        +'style="transform-box:fill-box;transform-origin:50% 100%;animation:msGrowY .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:'+(0.05+i*0.04).toFixed(2)+'s"/>'+lab; }).join('');
+    var avgY=Y(d.avg).toFixed(1);
+    var xl=ax.labels.map(function(l,i){ if(n>8&&i%2) return '';
+      return '<text x="'+(L+slot*i+slot/2).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" font-size="11" fill="#7C828A">'+l+'</text>'; }).join('');
+    return '<svg class="ms-lc" viewBox="0 0 '+W+' '+H+'">'
+      +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0" stop-color="'+hexA(color,0.45)+'"/><stop offset="1" stop-color="'+color+'"/></linearGradient></defs>'
+      +grid+bars
+      +'<line x1="'+L+'" y1="'+avgY+'" x2="'+(W-R)+'" y2="'+avgY+'" stroke="#7A8684" stroke-dasharray="5 4" style="animation:msFade .4s .5s both"/>'
+      +'<text x="'+(W-R)+'" y="'+(avgY-6)+'" text-anchor="end" font-size="11" font-weight="700" fill="#000" '+halo+' style="animation:msFade .4s .55s both">Avg '+d.avg+'</text>'
+      +xl+'</svg>';
   }
   /* gauge → zoned score dial with animated value arc (Water Quality) */
   function detGauge(t,d){
@@ -789,23 +836,24 @@ body{display:flex;justify-content:center;padding:24px 0;min-height:100vh;}
       return '<div class="hs" style="animation:msRowIn .4s both;animation-delay:'+(0.12+i*0.05).toFixed(2)+'s"><div class="hs-l">'+p[0]+'</div><div class="hs-v">'+p[1]+'</div></div>'; }).join('')+'</div>';
   }
   function numPairs(t,d){ var v=d.values, u=' '+t.recU;
-    return [['Latest',v[v.length-1]+u],['Min',Math.min.apply(null,v)+u],['Max',Math.max.apply(null,v)+u],['Readings',v.length]]; }
+    function f(x){ return x.toFixed(t.dp); }
+    return [['Latest',f(v[v.length-1])+u],['Min',f(Math.min.apply(null,v))+u],['Max',f(Math.max.apply(null,v))+u],['Readings',v.length]]; }
   /* All Records — real date + time per row, newest first, delta vs previous */
   function recordsSection(q,range){
     var t=byQ(q), d=seriesFor(q,range), ax=axisFor(range), seed=hash(q+range);
     var n=d.values.length, monthly=(range==='6M'||range==='Y'), rows='', k=0, i;
     for(i=n-1;i>=0;i--){
       var dt=ax.dates[i], l1=monthly? MO[dt.getMonth()]+' '+dt.getFullYear() : fmtDM(dt);
-      var tm=TIMES[(seed+i*3)%TIMES.length];
+      var tm=monthly?'monthly avg':range==='M'?'weekly avg':TIMES[(seed+i*3)%TIMES.length];
       var v=d.values[i], pv=i>0?d.values[i-1]:null, delta='';
-      if(pv!=null){ var df=+(v-pv).toFixed(t.dp||1), dr=df>0?'up':df<0?'dn':'eq';
-        delta='<span class="ms-rec-delta '+dr+'">'+(df===0?'±0':(df>0?'+':'')+df)+'</span>'; }
+      if(pv!=null){ var df=+(v-pv).toFixed(t.dp), dr=df>0?'up':df<0?'dn':'eq';
+        delta='<span class="ms-rec-delta '+dr+'">'+(df===0?'±0':(df>0?'+':'')+df.toFixed(t.dp))+'</span>'; }
       rows+='<div class="ms-rec" style="animation:msRowIn .4s both;animation-delay:'+(0.08+k*0.035).toFixed(2)+'s">'
         +'<span class="ms-rec-t"><span class="ms-rec-d1">'+l1+'</span><span class="ms-rec-d2">'+tm+'</span></span>'
-        +'<span class="ms-rec-v"><span class="mv">'+v+' '+t.recU+'</span>'+delta+'</span></div>';
+        +'<span class="ms-rec-v"><span class="mv">'+v.toFixed(t.dp)+' '+t.recU+'</span>'+delta+'</span></div>';
       k++;
     }
-    return '<div class="ms-lower"><div class="ms-lower-t"><span>All Records</span><span class="ms-lower-c">'+n+' readings</span></div><div class="ms-card">'+rows+'</div></div>';
+    return '<div class="ms-lower"><div class="ms-lower-t"><span>All Records</span><span class="ms-lower-c">'+n+' '+ax.noun+'</span></div><div class="ms-card">'+rows+'</div></div>';
   }
   /* sheet shell: header + persistent segment (sliding thumb) + swap hosts */
   function detailSheet(q){
@@ -890,7 +938,45 @@ body{display:flex;justify-content:center;padding:24px 0;min-height:100vh;}
     });
   }
 
+  /* ---- Overview environment tiles (same catalogue as the Assessment cards) */
+  // label = compact display name so it stays on one row; q = catalogue key
+  var ENV_ICONS={
+    thermo:'<svg viewBox="0 0 24 24" fill="none"><path d="M10 4.5a2 2 0 114 0v8.8a4.5 4.5 0 11-4 0V4.5z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="16.8" r="1.7" fill="currentColor"/><path d="M12 15V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    thermoSub:'<svg viewBox="0 0 24 24" fill="none"><path d="M8 5a2 2 0 114 0v8.3a4.2 4.2 0 11-4 0V5z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="10" cy="16.6" r="1.6" fill="currentColor"/><path d="M16.5 9.5H21M16.5 13H21M16.5 16.5H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    drop:'<svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5c3.3 4 5.6 7.1 5.6 10a5.6 5.6 0 11-11.2 0c0-2.9 2.3-6 5.6-10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>',
+    dew:'<svg viewBox="0 0 24 24" fill="none"><path d="M10 6c2.8 3.4 4.7 6 4.7 8.4A4.7 4.7 0 1110 19a4.7 4.7 0 01-4.7-4.6C5.3 12 7.2 9.4 10 6z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="17.8" cy="6.2" r="2.2" stroke="currentColor" stroke-width="1.5"/></svg>',
+    bubbles:'<svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="14.5" r="4.5" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="8" r="2.8" stroke="currentColor" stroke-width="1.6"/><circle cx="17.5" cy="16.5" r="1.6" stroke="currentColor" stroke-width="1.5"/></svg>',
+    flask:'<svg viewBox="0 0 24 24" fill="none"><path d="M10 4h4M11 4v5l-4.8 8.2A2 2 0 007.9 20h8.2a2 2 0 001.7-2.8L13 9V4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.2 14.5h7.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    waves:'<svg viewBox="0 0 24 24" fill="none"><path d="M3.5 9.5c1.4-1.4 2.9-1.4 4.3 0s2.9 1.4 4.3 0 2.9-1.4 4.3 0 2.9 1.4 4.3 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M3.5 15c1.4-1.4 2.9-1.4 4.3 0s2.9 1.4 4.3 0 2.9-1.4 4.3 0 2.9 1.4 4.3 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+  };
+  var ENV_TILES=[
+    { q:'Ambient Temperature',   label:'Ambient Temp',    ic:'thermo' },
+    { q:'Humidity Level',        label:'Humidity Level',  ic:'drop' },
+    { q:'Substrate Temperature', label:'Substrate Temp',  ic:'thermoSub' },
+    { q:'Dew Point',             label:'Dew Point',       ic:'dew' },
+    { q:'Dissolved Oxygen',      label:'Dissolved Oxygen',ic:'bubbles' },
+    { q:'pH Level',              label:'pH Level',        ic:'flask' },
+    { q:'Water Quality',         label:'Water Quality',   ic:'waves' }
+  ];
+  function renderEnv(){
+    var host=document.getElementById('envGrid'); if(!host) return;
+    host.innerHTML=ENV_TILES.map(function(e){
+      var t=byQ(e.q); if(!t) return '';
+      return '<div class="env-tile" data-q="'+e.q+'">'
+        +'<div class="env-l"><span class="env-ic" style="color:'+CAT_COLOR[t.cat]+'">'+ENV_ICONS[e.ic]+'</span><span class="env-t">'+e.label+'</span></div>'
+        +'<div class="env-v">'+t.value+(t.unit?' <small>'+t.unit+'</small>':'')+'</div>'
+        +'<div class="env-c '+t.dir+'">'+t.delta+' · '+t.ago+'</div></div>';
+    }).join('');
+    Array.prototype.forEach.call(host.querySelectorAll('.env-tile'),function(el){
+      el.addEventListener('click',function(){
+        var q=el.getAttribute('data-q');
+        DETAIL_Q=q; DETAIL_RANGE='W'; LAST_SUM=null; openSheet(detailSheet(q)); renderDetail();
+      });
+    });
+  }
+
   renderCards();
+  renderEnv();
   // deep-link support: index4-enclosure.html#overview / #assessment / #species
   var initTab=location.hash.replace('#','');
   switchTab({overview:1,assessment:1,species:1}[initTab] ? initTab : 'assessment');

@@ -7,6 +7,50 @@
 
 ---
 
+## Session — 28–29 Jul 2026 · index4-enclosure category cleanup + realistic W/M/6M/Y graphs — session closed
+
+### What was accomplished
+All work in **`Apple Health/index4-enclosure.html`** only:
+- **Removed Mental Domain + Nutrition from the enclosure Assessment tab** (user: an enclosure is a physical space — only environment/sensor categories belong). Verified against Figma 56:546: the design has only Humidity/Temperature/Water Quality ("3 Types"); those two categories were synthetic filler. Deleted the 2 chips, 4 `TYPES` entries (Enrichment Usage, Noise Level, Feeder Level, Water Consumption), their `CAT_COLOR` entries, and Noise Level from the Overview env tiles (that list was later superseded by the parallel session's `ENV_TILES` — merged cleanly, all 7 tiles resolve against the trimmed catalogue; both script blocks re-pass `node --check` post-merge). Page is now **7 types / 3 categories** (ring/wave/steps viz code now unused but left in).
+- **Rebuilt `seriesFor` for realism** ("Review and make it Real"): the newest point of EVERY range now equals the card's current reading (gauge/Latest/records stay consistent across W/M/6M/Y — previously gauge said 90 while the card said 92). W/M = sensor noise + slight drift; 6M/Y = seasonal cycle (peak ≈ Jun, trough ≈ Dec) via new per-type fields `noise`/`seas` (negative = inverse season, e.g. Dissolved O₂ peaks in winter) with `cmin`/`cmax` physical clamps. Verified numerically in node: all 7 metrics × 4 ranges anchor correctly with sane seasonal peaks.
+- **`detBars` rewritten as an SVG axis chart** (was axis-less HTML columns stretched min→max — an 87/100 score drew as a nearly empty bar): same dashed grid + tick labels as `detLine`, floor padded below the min so the smallest bar keeps a body, value callouts when ≤8 cols, avg dashed overlay, `msGrowY` entrance.
+- **Records/labels realism**: `axisFor` now returns a `noun` — "daily readings" / "weekly averages" / "monthly averages" — used in the summary strip + All Records count; monthly/weekly record rows say "monthly avg"/"weekly avg" instead of a fake clock time; delta chip for `/ 100` prints "pts"/"pt" (was "▼ 3 / 100"); fixed-decimal display via `t.dp` everywhere (records, stat tiles, chart callouts → "8.0 mg/L", "22.0 °C"); line-chart min/max callout x clamped inside the plot (was colliding with y-axis ticks).
+- **Verified visually via headless screenshots** (6 metric×range combos). Harness gotcha: Chrome `--virtual-time-budget` HANGS on this page; working recipe = playwright-cache `chrome-headless-shell` + a driver.html that iframes the page, injects `*{animation:none}`, patches `setTimeout(≤300ms)` to run synchronously, clicks a card / calls `setRange()`, zeroes leftover `stroke-dashoffset`, scrolls the sheet — then plain `--screenshot`. (Headline average captured mid count-up in screenshots is a harness artifact, fine in browser.)
+
+### Open items / next steps
+- [ ] **WIRE THE HYACINTH MACAW DATASET into `index4-assessment.html` (carried, top priority)** — 23 types / 4 categories; the authored data text lives in the 27 Jul session transcript.
+- [ ] `index4-assessment.html` still has the OLD numeric series generator — apply the same realistic treatment (anchor + per-range character) if wanted.
+- [ ] (carried) Species tab placeholder; enclosure back-arrow destination unwired; commit uncommitted `Apple Health/` changes.
+- [x] (resolved for enclosure) card value vs sheet latest mismatch — series are now anchored to the card value.
+
+### How to resume
+1. Server: `cd "/Users/naveen/Downloads/Assessments/Apple Health" && python3 -m http.server 8123` → http://localhost:8123/index4-enclosure.html → Assessment tab → tap any card, hop W/M/6M/Y.
+2. Key code (all in index4-enclosure.html): `TYPES` (noise/seas/cmin/cmax params) → `seriesFor`/`seasonAt` → `axisFor` (noun) → `detBars` (SVG) / `detLine` (callout clamp) → `recordsSection`.
+3. Figma refs: assessment tab 56:546, overview 48:13419, file `fAOcpkMwZPWEkHO3kMvNoy`.
+
+---
+
+## Session — 28–29 Jul 2026 · index4-enclosure Overview Environment card — session closed
+
+> ⚠️ A **parallel session** was editing `index4-enclosure.html` at the same time (it pruned the catalogue to 7 sensors — dropped Mental Domain + Nutrition — and reshaped `seriesFor` with `noise/seas/cmin/cmax` realism params). Both sets of edits merged cleanly on disk; that session may add its own entry above/below this one.
+
+### What was accomplished
+- **Environment card on the Overview tab** of `Apple Health/index4-enclosure.html` (between the info grids and Connected Device): a 2-col `#envGrid` of reading tiles fed from the SAME `TYPES` catalogue as the Assessment cards, so values can't drift. Tap a tile → the type's existing detail sheet (`DETAIL_Q` + `openSheet(detailSheet(q))`).
+- Iterated per agentation feedback: dropped the colored dots → **per-sensor stroke SVG icons** (`ENV_ICONS`: thermometer / thermometer+substrate-layers / droplet / droplet+degree (dew) / bubbles (dissolved O₂) / flask (pH) / waves (water quality)), tinted with `CAT_COLOR`; labels forced to **one row** (compact display labels in `ENV_TILES`, e.g. "Ambient Temp" — full `q` still used for data + sheets).
+- All **7 sensors** shown; odd last tile spans both columns (`.env-tile:last-child:nth-child(odd)`).
+- **Rebuilt the screenshot harness**: `chrome --headless --screenshot` HANGS on index4 pages (agentation bundle blocks the `load` event, `--virtual-time-budget` never starts). Working recipe = `shot.js` with puppeteer-core, `waitUntil:'domcontentloaded'` + 2.5s settle, viewport 430×1500@2x (was in session scratchpad — wiped; trivially rebuildable, and the gotcha is in memory `antz-local-server`).
+
+### Open items / next steps
+- [ ] **Commit** the uncommitted `index4-enclosure.html` changes (Environment card + parallel session's data-realism work) once both sessions settle.
+- [ ] (carried, TOP PRIORITY for index4-assessment) wire in the real **Hyacinth Macaw dataset** — 23 types / 4 categories; approved text lived in the 27 Jul transcript, needs re-authoring or re-paste.
+- [ ] (carried) enclosure Species tab placeholder; enclosure back-arrow destination unanswered; INDEX 2 metric-sheet Comparisons + zone-bands.
+
+### How to resume
+1. Server: `cd "/Users/naveen/Downloads/Assessments/Apple Health" && python3 -m http.server 8123` → http://localhost:8123/index4-enclosure.html#overview
+2. Environment card code: CSS `.env-*` block (after the connected-devices CSS) + `ENV_ICONS`/`ENV_TILES`/`renderEnv()` at the bottom of the main IIFE, called next to `renderCards()`.
+
+---
+
 ## Session — 27 Jul 2026 (later) · index4-assessment interactions, frame, graphs & data — session closed
 
 ### What was accomplished
