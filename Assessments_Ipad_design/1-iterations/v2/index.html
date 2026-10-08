@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Assessments · iPad · v2</title>
+<link rel="stylesheet" href="../../../app/tokens.css">
+<link rel="stylesheet" href="../../../app/type.css">
+<link rel="stylesheet" href="../../../app/components.css">
+<link rel="stylesheet" href="../../../app/modules/hospital.css">
+<link rel="stylesheet" href="../../../app/icons/icons.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app" id="app">
+  <!-- iPadOS status bar, as drawn in the hospital tablet frames -->
+  <div class="statusbar t-body-title" aria-hidden="true">
+    <span class="l"><span class="t-body-title">9:41 AM</span><span class="t-body-medium">Tue Sep 29</span></span>
+    <span class="r"><span class="t-body-title">100%</span><span class="battery"></span></span>
+  </div>
+
+  <div class="view" id="view"></div>
+
+  <nav class="tabnav t-body-medium" id="tabnav" aria-label="Sections">
+    <button data-tab="animals"><span class="ic"><span class="app-icon app-icon--tint i-paw" style="color: var(--on-primary-container)"></span></span><span class="t-body-medium">Animals</span></button>
+    <button data-tab="masters"><span class="ic"><span class="app-icon app-icon--tint i-reason-or-list" style="color: var(--on-primary-container)"></span></span><span class="t-body-medium">Assessment Masters</span></button>
+  </nav>
+
+  <!-- overlays -->
+  <div class="scrim" id="scrim"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+  <div class="pop-scrim" id="popScrim" hidden></div>
+  <div class="pop" id="pop" hidden></div>
+  <div class="viewer" id="viewer" hidden></div>
+  <div class="toast t-body-medium" id="toast" role="status"><span class="app-icon app-icon--20 app-icon--tint i-just-tick-mark" style="color: var(--primary-container)"></span><span id="toastMsg"></span><button class="t-body-title" id="toastUndo" hidden>Undo</button></div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

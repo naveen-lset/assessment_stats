@@ -1,0 +1,31 @@
+/* ==================== MEDICAL MODULE — module-specific components (app) ====================
+   Pieces that only make sense inside the medical module. Promoted from the Medical-Flow-Ipad prototype on Swathi's
+   instruction (2026-09-28: the Existing Medical Records card joins the library; header stays the global Header).
+   Previews link this file AFTER components.css. Every value carries its src (Medical iPad ZCSYvY9mgt7WTfAzo9m7ES). */
+
+/* ---------- Medical record card — src: 20:8405 "Individual Card" (Existing Medical Records 20:8182) ---------- */
+.mf-rec { display: flex; flex-direction: column; width: 100%; border-radius: 8px; background: var(--on-primary); text-align: left; padding: 0; border: 0; font-family: inherit; cursor: pointer; } /* src: 20:8405 "Individual Card" r8 white */
+.mf-rec__title { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); width: 100%; padding: var(--sp-16) var(--sp-16) var(--sp-12); border-bottom: 0.5px solid var(--outline-variant); } /* src: 20:8406 px16 pt16 pb12, border-b 0.5 OutlineVariant */
+.mf-rec__content { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: var(--sp-2); } /* src: 20:8407 gap2 */
+.mf-rec__id { display: flex; align-items: flex-start; gap: var(--sp-4); width: 100%; color: var(--neutral-primary); } /* src: 20:8408 gap4, Antz_Minor_Title black */
+.mf-rec__id .app-icon { width: 16px; height: 16px; }                                                                /* src: 20:8409 Journal Activity Icon 16 */
+.mf-rec__sub { color: var(--on-primary-container); white-space: nowrap; }                                           /* src: 20:8412 Antz_Body_Regular OnPrimaryContainer */
+.mf-rec__chev { display: inline-flex; align-items: center; justify-content: center; width: 6.667px; height: 11.667px; flex: 0 0 auto; } /* src: 20:8413 expand_more 11.667×6.667 rotated -90 */
+.mf-rec__chev img { width: 11.667px; height: 6.667px; transform: rotate(-90deg); display: block; }
+.mf-rec__section { display: flex; align-items: flex-start; gap: var(--sp-16); width: 100%; padding: var(--sp-12) var(--sp-16) var(--sp-16); } /* src: 20:8460 px16 pt12 pb16 gap16 */
+.mf-rec__sub-section { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-8); }          /* src: 20:8414 gap8 */
+.mf-rec__label { color: var(--on-surface-variant); width: 100%; }                                                   /* src: 20:8415 Antz_Body_Regular OnSurfaceVariant (20:8429 "Prescriptions" is Antz_Subtext_Regular 12 → 14 floor, flagged) */
+.mf-rec__tags { display: flex; flex-wrap: wrap; align-items: center; align-content: center; gap: var(--sp-4); width: 100%; overflow: hidden; } /* src: 20:8416 Tag Group gap4 wrap */
+.mf-tag { display: inline-flex; align-items: center; height: 32px; max-width: 100%; padding: var(--sp-8); border-radius: 8px; white-space: nowrap; flex: 0 0 auto; } /* src: 20:8417 "Input" h32 p8 r8, label Antz_Body_Medium in the hue */
+.mf-tag > span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }                                          /* src: 20:8418 text-ellipsis */
+.mf-tag--w202 { width: 202px; }                                                                                     /* src: 20:8417 fixed 202 → label truncates "Adhesion in Endometrial…" */
+.mf-tag--w201 { width: 201px; }                                                                                     /* src: 20:8423 fixed 201 */
+.mf-tag--cyan   { background: var(--secondary-container-a40, rgb(from var(--secondary-container) r g b / 40%)); color: var(--add-primary); } /* src: 20:8417 SecondaryContainer 40% / addPrimary */
+.mf-tag--yellow { background: var(--notes-a50, rgb(from var(--notes) r g b / 50%)); color: var(--moderate-secondary); }                     /* src: 20:8463 notes 50% / moderateSecondary */
+.mf-tag--red    { background: var(--error-container-30); color: var(--error); }                                                           /* src: 20:8423 ErrorContainer 30% / Error */
+.mf-tag--orange { background: var(--tertiary-container-a30, rgb(from var(--tertiary-container) r g b / 30%)); color: var(--tertiary); }     /* src: 20:8425 TertiaryContainer 30% / Tertiary */
+.mf-tag--rx     { gap: var(--sp-4); border-radius: 5px; background: var(--on-background); color: var(--neutral-primary); }                  /* src: 20:8431 OnBackground r5 gap4, Antz_Body_Medium black */
+.mf-rec__more { color: var(--on-surface); white-space: nowrap; }                                                    /* src: 20:8419 "+2" Antz_Subtext_title 12 → 14 floor (t-body-title), OnSurface */
+
+/* ---------- Controlled-substance tag — src: 15:6514 Medical_Control Substance tag (grad-important: Tertiary → Error) ---------- */
+.mf-cs { display: inline-flex; align-items: center; justify-content: center; padding: var(--sp-2); border-radius: 2px; color: var(--on-primary); background: linear-gradient(180deg, var(--tertiary) 0%, var(--error) 100%); } /* src: 15:6514 Medical_Control Substance tag p2 r2, Gradients/important Tertiary→Error, Antz_Subtext_title 12 → 14 floor */

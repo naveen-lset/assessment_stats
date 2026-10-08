@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Library-style components</title>
+<link rel="stylesheet" href="../../../app/tokens.css">
+<link rel="stylesheet" href="../../../app/type.css">
+<link rel="stylesheet" href="../../../app/components.css">
+<link rel="stylesheet" href="../../../app/modules/hospital.css">
+<link rel="stylesheet" href="../../../app/icons/icons.css">
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="touch.css">
+<link rel="stylesheet" href="species.css">
+<style>
+  /* ---------- page shell (overrides the device-centred body from core.css) ---------- */
+  body { display: block; height: auto; padding: 0 !important; background: var(--background); color: var(--on-surface-variant); }
+  .lx { max-width: 1120px; margin: 0 auto; padding: var(--sp-32) var(--sp-24) 96px; display: flex; flex-direction: column; gap: var(--sp-32); }
+  .lx h1, .lx h2, .lx h3 { margin: 0; color: var(--neutral-primary); }
+  .lx p { margin: 0; max-width: 76ch; }
+  .lx code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--on-primary-container); }
+  .lx-top { display: flex; flex-direction: column; gap: var(--sp-8); }
+  .lx-legend { display: flex; gap: var(--sp-8); flex-wrap: wrap; margin-top: var(--sp-8); }
+
+  .lx-sum { width: 100%; border-collapse: collapse; background: var(--on-primary); border-radius: 12px; overflow: hidden; }
+  .lx-sum th { text-align: left; padding: var(--sp-12) var(--sp-16); background: var(--table-header-bg); color: var(--neutral-secondary); }
+  .lx-sum td { padding: var(--sp-12) var(--sp-16); border-top: 1px solid var(--surface-variant-60); vertical-align: top; }
+  .lx-sum a { color: var(--on-primary-container); text-decoration: none; }
+
+  .lx-src { display: inline-flex; align-items: center; padding: 2px var(--sp-8); border-radius: 4px; white-space: nowrap; }
+  .lx-src--app { background: var(--displaybg-secondary); color: var(--on-primary-container); }
+  .lx-src--web { background: var(--secondary-container-a30); color: var(--add-primary); }
+  .lx-verdict { display: inline-flex; align-items: center; padding: var(--sp-4) var(--sp-8); border-radius: 4px; white-space: nowrap; }
+  .lx-verdict--new { background: var(--primary-main-a10); color: var(--on-surface); }
+  .lx-verdict--fix { background: var(--antz-notes-40); color: var(--moderate-secondary); }
+  .lx-verdict--keep { background: var(--outline-18); color: var(--neutral-secondary); }
+
+  .lx-item { display: flex; flex-direction: column; border-radius: 12px; background: var(--on-primary); overflow: hidden; box-shadow: 0 1px 2px var(--neutral-primary-a10); scroll-margin-top: var(--sp-16); }
+  .lx-hd { display: flex; align-items: flex-start; gap: var(--sp-12); padding: var(--sp-20) var(--sp-20) var(--sp-8); }
+  .lx-hd > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .lx-n { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex: 0 0 auto; border-radius: 8px; background: var(--displaybg-primary); color: var(--on-primary-container); }
+  .lx-base { display: flex; align-items: center; gap: var(--sp-8); flex-wrap: wrap; padding: 0 var(--sp-20) var(--sp-16) 64px; }
+  .lx-cmp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border-top: 1px solid var(--surface-variant-60); }
+  .lx-cmp--stack { grid-template-columns: 1fr; }
+  .lx-side { display: flex; flex-direction: column; gap: var(--sp-12); padding: var(--sp-16) var(--sp-20) var(--sp-20); background: var(--background); min-width: 0; }
+  .lx-side + .lx-side { border-left: 1px solid var(--surface-variant-60); }
+  .lx-cmp--stack .lx-side + .lx-side { border-left: 0; border-top: 1px solid var(--surface-variant-60); }
+  .lx-side--new { background: var(--displaybg-primary-a60); }
+  .lx-lbl { color: var(--neutral-secondary); }
+  .lx-side--new .lx-lbl { color: var(--on-surface); }
+  .lx-stage { position: relative; display: flex; flex-direction: column; gap: var(--sp-12); }
+  .lx-row, .lx-stage.lx-row { display: flex; flex-direction: row; align-items: center; gap: var(--sp-12); flex-wrap: wrap; }
+  .lx-why { margin: 0; padding: var(--sp-16) var(--sp-20) var(--sp-20) 44px; display: flex; flex-direction: column; gap: var(--sp-4); border-top: 1px solid var(--surface-variant-60); }
+  .lx-why b { color: var(--neutral-primary); font-weight: 600; }
+  /* "Now" demos are the prototype's own classes, frozen in place */
+  .lx-stage .fab, .lx-stage .toast { position: static; transform: none; opacity: 1; }
+  .lx-stage .pop { position: static; width: 100%; max-width: 280px; }
+
+  /* =====================================================================================================
+     PROPOSED — the library-style versions. Tokens only, type from .t-* classes. Each block names its source.
+     ===================================================================================================== */
+
+  /* 01 Hero — app .app-tag--id (1172:7113) for the footer tags, .app-tag--male for gender, r12 like .app-animal-card (1266:3932) */
+  .lx-hero .ah__card { border-radius: 12px; }
+  .lx-hero .ah__foot { gap: var(--sp-8); }
+  .lx-hero .ah__name { display: inline-flex; align-items: center; gap: var(--sp-8); }
+  .lx-hero .app-tag { height: 24px; }
+
+  /* 02 FAB — web .btn-add (addPrimary, r8, 12/16) floated; one colour for every "add" */
+  .lx-fab { display: inline-flex; align-items: center; gap: var(--sp-8); height: 48px; padding: var(--sp-12) var(--sp-20) var(--sp-12) var(--sp-16); border: 0; border-radius: 8px; background: var(--add-primary); color: var(--on-primary); box-shadow: 0 4px 12px var(--neutral-primary-a30); cursor: pointer; white-space: nowrap; }
+
+  /* 03 Buttons — app tablet .btn 40 high r4: --admit · --revert · --reject (567:38352 / 38354 / 594:65801) */
+  .lx-btns { display: flex; gap: var(--sp-12); padding: var(--sp-16); border-radius: 8px; background: var(--on-primary); border-top: 1px solid var(--surface-variant-60); }
+  .lx-btns .btn { flex: 1; width: auto; }
+  .lx-btns .btn--revert { flex: 0 0 auto; width: auto; padding: var(--sp-8) var(--sp-12) var(--sp-8) var(--sp-8); }
+
+  /* 04 Status tags — app .case-tag geometry (42:1130: r4, 4/8) + web lab legend tones */
+  .lx-tag { display: inline-flex; align-items: center; justify-content: center; padding: var(--sp-4) var(--sp-8); border-radius: 4px; white-space: nowrap; }
+  .lx-tag--ok   { background: var(--primary-18); color: var(--primary-dark); }               /* web chip--soft-green (Completed) */
+  .lx-tag--due  { background: var(--moderate-secondary-10); color: var(--tertiary); }       /* app .app-listing-card__status (Due strip + state) */
+  .lx-tag--over { background: var(--error-container-40); color: var(--error); }             /* app case-tag--planned */
+  .lx-tag--off  { background: var(--outline-18); color: var(--neutral-secondary); }          /* web chip--soft-grey (Pending) */
+  .lx-tag--type { background: var(--displaybg-secondary); color: var(--on-primary-container); } /* app app-tag--id */
+
+  /* 07 KPIs — app .app-tabs--status / .app-tab-status (1218:5268), on a white strip */
+  .lx-kpis { background: var(--on-primary); border-radius: 8px; padding-right: var(--sp-16); overflow-x: auto; }
+
+  /* 08 Stats — app .pcard__note (567:38371: displaybgPrimary 60%, r8, p16, Subtext_title labels) */
+  .lx-note { display: flex; justify-content: space-between; gap: var(--sp-16); padding: var(--sp-16); border-radius: 8px; background: var(--displaybg-primary-a60); }
+  .lx-note > div { flex: 1; display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .lx-note .k { color: var(--on-surface-variant); }
+  .lx-note .v { color: var(--neutral-primary); }
+  .lx-note .v.lo { color: var(--error); }
+
+  /* 09 Records — web .row + .divider (surface-variant-60) and .callout-footer notes colour */
+  .lx-recs { display: flex; flex-direction: column; background: var(--on-primary); border-radius: 8px; padding: 0 var(--sp-16); }
+  .lx-rec { display: flex; align-items: flex-start; gap: var(--sp-12); padding: var(--sp-12) 0; border-bottom: 1px solid var(--surface-variant-60); }
+  .lx-rec:last-child { border-bottom: 0; }
+  .lx-rec__date { flex: 0 0 72px; display: flex; flex-direction: column; gap: 2px; }
+  .lx-rec__date .d { color: var(--on-primary-container); }
+  .lx-rec__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-8); }
+  .lx-rec__val { display: flex; align-items: baseline; gap: var(--sp-4); color: var(--neutral-primary); }
+  .lx-rec__val .u { color: var(--on-primary-container); }
+  .lx-rec__note { display: flex; gap: var(--sp-8); padding: 10px var(--sp-16); border-radius: 8px; background: var(--antz-notes); color: var(--on-surface-variant); }
+  .lx-rec__by { color: var(--neutral-secondary); white-space: nowrap; }
+
+  /* 10 Swipe actions — app button colours: revert (OnPrimaryContainer) · reject (Error) */
+
+  /* 10 Swipe options */
+  .lx-sw2 { position: relative; display: flex; justify-content: flex-end; border-radius: 8px; background: var(--on-primary); overflow: hidden; min-height: 64px; }
+  .lx-sw2__row { position: absolute; left: 0; top: 0; bottom: 0; display: flex; align-items: center; gap: var(--sp-12); padding: 0 var(--sp-16); background: var(--on-primary); box-shadow: 4px 0 12px var(--neutral-primary-a10); border-radius: 0 8px 8px 0; }
+  .lx-sw2__acts { display: flex; align-items: stretch; gap: var(--sp-8); padding: var(--sp-8); }
+  .lx-sw2--a .lx-sw2__row { right: 176px; } .lx-sw2--b .lx-sw2__row { right: 196px; } .lx-sw2--c .lx-sw2__row { right: 112px; }
+  .lx-sw2--a button { width: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-4); border: 0; border-radius: 8px; cursor: pointer; }
+  .lx-sw2 .ed { background: var(--displaybg-secondary); color: var(--on-primary-container); }
+  .lx-sw2 .dl { background: var(--error-container-40); color: var(--error); }
+  .lx-sw2--b .lx-sw2__acts { align-items: center; }
+  .lx-sw2--b .btn { width: auto; gap: var(--sp-4); padding: var(--sp-8) var(--sp-12); }
+  .lx-sw2--b .btn--revert { padding-left: var(--sp-8); }
+  .lx-sw2--c .lx-sw2__acts { align-items: center; }
+  .lx-sw2--c button { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 8px; cursor: pointer; }
+
+
+  /* 11 Number pad — keys = .app-field--filled (56 high, white, OutlineVariant 1); fn keys = .tab-iconbox fill */
+  .lx-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-8); }
+  .lx-pad button { height: 56px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--outline-variant); border-radius: 8px; background: var(--on-primary); color: var(--neutral-primary); cursor: pointer; }
+  .lx-pad button.fn { border-color: transparent; background: var(--displaybg-secondary); color: var(--on-primary-container); }
+  .lx-pad button:active { background: var(--displaybg-primary); }
+
+  /* 12 Slider — .app-switch colours: OutlineVariant track, Primary fill, white knob; focus ring = .app-field--active stroke */
+  .lx-slider { position: relative; height: 32px; margin: 0 var(--sp-12); }
+  .lx-slider .tr { position: absolute; left: 0; right: 0; top: 14px; height: 4px; border-radius: 2px; background: var(--outline-variant); }
+  .lx-slider .fl { position: absolute; top: 14px; height: 4px; border-radius: 2px; background: var(--primary-main); }
+  .lx-slider .kn { position: absolute; top: 4px; width: 24px; height: 24px; margin-left: -12px; border-radius: 50%; background: var(--on-primary); border: 1.5px solid var(--primary-main); box-shadow: 0 2px 1px var(--black-04); }
+  .lx-slider-ends { display: flex; justify-content: space-between; color: var(--neutral-secondary); }
+  .lx-slider-ends span { display: flex; flex-direction: column; }
+  .lx-slider-ends span:last-child { text-align: right; }
+  .lx-slider-ends .t-subtext-title { color: var(--on-surface-variant); }
+
+  /* 13 Stepper — .app-iconbox (44, r8, Background) either side of a .tab-search-height value box */
+  .switch-row > .lx-step { display: flex; flex-direction: row; align-items: center; gap: var(--sp-8); flex: 0 0 auto; }
+  .lx-step .app-iconbox { border: 0; cursor: pointer; background: var(--displaybg-secondary); }
+  .lx-step input { width: 72px; height: 44px; text-align: center; border: 1px solid var(--outline-variant); border-radius: 8px; background: var(--on-primary); color: var(--neutral-primary); outline: 0; }
+
+  /* 14 Menu — listing-card radius 10, rows 48 like .app-radio, dividers surface-variant-60 */
+  .lx-menu { width: 100%; max-width: 280px; display: flex; flex-direction: column; border-radius: 10px; background: var(--on-primary); box-shadow: 0 4px 12px var(--neutral-primary-a10), 0 0 0 1px var(--surface-variant-60); overflow: hidden; }
+  .lx-menu__t { padding: var(--sp-12) var(--sp-16) var(--sp-8); color: var(--neutral-secondary); }
+  .lx-menu button { display: flex; align-items: center; gap: var(--sp-12); height: 48px; padding: 0 var(--sp-16); border: 0; border-top: 1px solid var(--surface-variant-60); background: none; color: var(--on-surface-variant); text-align: left; cursor: pointer; }
+  .lx-menu button:active { background: var(--displaybg-primary); }
+  .lx-menu .danger { color: var(--error); }
+
+  /* 16 Table — web .table pattern (header bg, 16/20 cell padding, divider, hover surface) with app type + photo */
+  .lx-table { width: 100%; border-collapse: collapse; background: var(--on-primary); border-radius: 8px; overflow: hidden; }
+  .lx-table th { text-align: left; padding: var(--sp-12) var(--sp-16); background: var(--table-header-bg); color: var(--on-surface-variant); }
+  .lx-table td { padding: var(--sp-12) var(--sp-16); border-top: 1px solid var(--surface-variant-60); vertical-align: middle; }
+  .lx-table th:first-child, .lx-table td:first-child { padding-left: var(--sp-20); }
+  .lx-table tbody tr:active { background: var(--surface); }
+  .lx-animal { display: flex; align-items: center; gap: var(--sp-12); }
+  .lx-animal .app-profile { width: 52px; height: 52px; }
+  .lx-animal .app-profile .app-photo-badge { left: 2px; top: 2px; }
+  .lx-animal > span:last-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .lx-animal .tag { color: var(--on-primary-container); }
+
+  @media (max-width: 760px) {
+    .lx { padding: var(--sp-20) 16px 64px; }
+    .lx-cmp { grid-template-columns: 1fr; }
+    .lx-side + .lx-side { border-left: 0; border-top: 1px solid var(--surface-variant-60); }
+    .lx-base { padding-left: var(--sp-20); }
+    .lx-sum .hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+<main class="lx">
+
+<header class="lx-top">
+  <span class="t-subtext-title muted">Assessments iPad · v4 prototype</span>
+  <h1 class="t-display-title">The 16 prototype-only parts, in library style</h1>
+  <p class="t-body-regular">These are the parts the prototype built itself, because the library had nothing for them. For each one I found the closest component in the App (iPad) library or the Web library and took its sizes, corners and colours. On the left is how it looks now; on the right is the library-style version. Your picks (last column) are now built into the prototype; Swipe has three new options below.</p>
+  <div class="lx-legend t-subtext-title"><span class="lx-verdict lx-verdict--new">Rebuilt · 10</span><span class="lx-verdict lx-verdict--fix">Small fix · 3</span><span class="lx-verdict lx-verdict--keep">Keep as is · 3</span><span class="lx-src lx-src--app">App library</span><span class="lx-src lx-src--web">Web library</span></div>
+</header>
+
+<table class="lx-sum t-body-regular">
+  <thead><tr><th class="t-subtext-title">#</th><th class="t-subtext-title">Part</th><th class="t-subtext-title">Matched to</th><th class="t-subtext-title hide-sm">Result</th><th class="t-subtext-title">Your pick</th></tr></thead>
+  <tbody>
+    <tr><td>01</td><td><a href="#c01">Animal photo hero</a></td><td>App · .app-tag, .app-animal-card</td><td class="hide-sm"><span class="lx-verdict lx-verdict--fix t-subtext-title">Small fix</span></td><td><span class="lx-verdict lx-verdict--new t-subtext-title">New · built</span></td></tr>
+    <tr><td>02</td><td><a href="#c02">Floating + button</a></td><td>Web · .btn-add</td><td class="hide-sm"><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></td><td><span class="lx-verdict lx-verdict--new t-subtext-title">New · built</span></td></tr>
+    <tr><td>03</td><td><a href="#c03">Big buttons</a></td><td>App · tablet .btn (admit / revert / reject)</td><td class="hide-sm"><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></td><td><span class="lx-verdict lx-verdict--new t-subtext-title">New · built</span></td></tr>
+    <tr><td>04</td><td><a href="#c04">Status pills</a></td><td>App · .case-tag + Web · lab status chips</td><td class="hide-sm"><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></td><td><span class="lx-verdict lx-verdict--new t-subtext-title">Library style · built</span></td></tr>
+    <tr><td>05</td><td><a href="#c05">Trend arrows</a></td><td>App · listing card alert colour</td><td class="hide-sm"><span class="lx-verdict lx-verdict--keep t-subtext-title">Keep</span></td><td><span class="lx-verdict lx-verdict--keep t-subtext-title">New (no change)</span></td></tr>
+    <tr><td>06</td><td><a href="#c06">Chips</a></td><td>App · .app-filter-chip</td><td class="hide-sm"><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></td><td><span class="lx-verdict lx-verdict--new t-subtext-title">New · built</span></td></tr>
+    <tr><td>07</td><td><a href="#c07">KPI strip</a></td><td>App · .app-tabs--status</td><td class="hide-sm"><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></td><td><span class="lx-verdict lx-verdict--new t-subtext-title">Library style · built</span></td></tr>
+    <tr><td>08</td><td><a href="#c08">Stats</a></td><td>App · .pcard__note</td><td class="hide-sm"><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></td><td><span class="lx-verdict lx-verdict--new t-subtext-title">New · built</span></td></tr>
+    <tr><td>09</td><td><a href="#c09">History records</a></td><td>Web · .row, .divider, .callout-footer</td><td class="hide-sm"><span class="lx-verdict lx-verdict--fix t-subtext-title">Small fix</span></td><td><span class="lx-verdict lx-verdict--new t-subtext-title">New · built</span></td></tr>
+    <tr><td>10</td><td><a href="#c10">Swipe Edit / Delete</a></td><td>App · icon box, case tag, buttons</td><td class="hide-sm"><span class="lx-verdict lx-verdict--fix t-subtext-title">3 options</span></td><td><span class="lx-verdict lx-verdict--fix t-subtext-title">Needs more work</span></td></tr>
+    <tr><td>11</td><td><a href="#c11">Number pad</a></td><td>App · .app-field--filled, .tab-iconbox</td><td class="hide-sm"><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></td><td><span class="lx-verdict lx-verdict--keep t-subtext-title">Not picked · unchanged</span></td></tr>
+    <tr><td>12</td><td><a href="#c12">Slider</a></td><td>App · .app-switch, .app-field--active</td><td class="hide-sm"><span class="lx-verdict lx-verdict--fix t-subtext-title">Small fix</span></td><td><span class="lx-verdict lx-verdict--keep t-subtext-title">Old · unchanged</span></td></tr>
+    <tr><td>13</td><td><a href="#c13">Stepper</a></td><td>App · .app-iconbox, .tab-search</td><td class="hide-sm"><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></td><td><span class="lx-verdict lx-verdict--new t-subtext-title">New · built</span></td></tr>
+    <tr><td>14</td><td><a href="#c14">Popover menu</a></td><td>App · .app-listing-card, .app-radio</td><td class="hide-sm"><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></td><td><span class="lx-verdict lx-verdict--new t-subtext-title">New · built</span></td></tr>
+    <tr><td>15</td><td><a href="#c15">Toast with Undo</a></td><td>App · .tab-primary--active colour</td><td class="hide-sm"><span class="lx-verdict lx-verdict--keep t-subtext-title">Keep</span></td><td><span class="lx-verdict lx-verdict--keep t-subtext-title">Not picked · unchanged</span></td></tr>
+    <tr><td>16</td><td><a href="#c16">Animal table</a></td><td>Web · .table + App · .app-profile</td><td class="hide-sm"><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></td><td><span class="lx-verdict lx-verdict--keep t-subtext-title">Old · unchanged</span></td></tr>
+  </tbody>
+</table>
+
+<!-- 01 HERO -->
+<article class="lx-item" id="c01">
+  <header class="lx-hd"><span class="lx-n t-body-title">01</span><div><h3 class="t-minor-title">Animal photo hero</h3><span class="t-subtext-regular muted">Top of the Animal page.</span></div><span class="lx-verdict lx-verdict--fix t-subtext-title">Small fix</span></header>
+  <div class="lx-base t-subtext-regular">Matched to <span class="lx-src lx-src--app">App · .app-tag--id / --male (1172:7106)</span><span class="lx-src lx-src--app">App · .app-animal-card r12 (1266:3932)</span></div>
+  <div class="lx-cmp lx-cmp--stack">
+    <div class="lx-side"><span class="lx-lbl t-subtext-title">NOW</span><div class="lx-stage">
+      <div class="ah"><div class="ah__bg" style="background-image:url(../../../app/sample-cheetah-104.png)"></div>
+        <div class="ah__bar"><button class="ah__ic"><span class="app-icon app-icon--28 app-icon--tint i-back" style="color:var(--on-primary)"></span></button><span class="sp"></span><button class="ah__ic"><span class="app-icon app-icon--28 app-icon--tint i-saved" style="color:var(--on-primary)"></span></button><button class="ah__ic"><span class="app-icon app-icon--28 app-icon--tint i-qr-code" style="color:var(--on-primary)"></span></button><button class="ah__ic"><span class="app-icon app-icon--28 app-icon--tint i-menu-vertical" style="color:var(--on-primary)"></span></button></div>
+        <div class="ah__card"><span class="ah__name t-major-title">Raja</span><span class="t-body-reg-italic">Acinonyx jubatus</span><span class="ah__rows t-body-regular"><span>Species: <b class="t-body-title">Cheetah</b></span><span>Sex: <b class="t-body-title">Male</b></span><span>Site: <b class="t-body-title">North Zone</b></span><span>Encl: <b class="t-body-title">E-12</b></span></span></div>
+        <div class="ah__foot"><span class="ah__pill t-subtext-title">Individual</span><span class="ah__pill ah__pill--ok t-subtext-title">Chipped</span><span class="sp"></span></div>
+      </div>
+    </div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">LIBRARY STYLE</span><div class="lx-stage">
+      <div class="ah lx-hero"><div class="ah__bg" style="background-image:url(../../../app/sample-cheetah-104.png)"></div>
+        <div class="ah__bar"><button class="ah__ic"><span class="app-icon app-icon--28 app-icon--tint i-back" style="color:var(--on-primary)"></span></button><span class="sp"></span><button class="ah__ic"><span class="app-icon app-icon--28 app-icon--tint i-saved" style="color:var(--on-primary)"></span></button><button class="ah__ic"><span class="app-icon app-icon--28 app-icon--tint i-qr-code" style="color:var(--on-primary)"></span></button><button class="ah__ic"><span class="app-icon app-icon--28 app-icon--tint i-menu-vertical" style="color:var(--on-primary)"></span></button></div>
+        <div class="ah__card"><span class="ah__name t-major-title">Raja <span class="app-tag app-tag--male t-small">M</span></span><span class="t-body-reg-italic">Acinonyx jubatus</span><span class="ah__rows t-body-regular"><span>Species: <b class="t-body-title">Cheetah</b></span><span>Sex: <b class="t-body-title">Male</b></span><span>Site: <b class="t-body-title">North Zone</b></span><span>Encl: <b class="t-body-title">E-12</b></span></span></div>
+        <div class="ah__foot"><span class="app-tag app-tag--id t-subtext-title">Individual</span><span class="app-tag app-tag--id t-subtext-title">Chipped</span><span class="sp"></span></div>
+      </div>
+    </div></div>
+  </div>
+  <ul class="lx-why t-body-regular"><li><b>Tags:</b> the round white pills become the library's ID tag (displaybg-secondary on navy text, r5).</li><li><b>Gender:</b> the library's gender tag sits next to the name, as on animal cards.</li><li><b>Info card:</b> corner 14 → 12, the same as the library animal card.</li></ul>
+</article>
+
+<!-- 02 FAB -->
+<article class="lx-item" id="c02">
+  <header class="lx-hd"><span class="lx-n t-body-title">02</span><div><h3 class="t-minor-title">Floating + button</h3><span class="t-subtext-regular muted">+ Add Reading on the Assessment tab; New Assessment Type on Masters.</span></div><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></header>
+  <div class="lx-base t-subtext-regular">Matched to <span class="lx-src lx-src--web">Web · .btn-add (big Add button)</span></div>
+  <div class="lx-cmp">
+    <div class="lx-side"><span class="lx-lbl t-subtext-title">NOW</span><div class="lx-stage lx-row"><button class="fab ad-fab t-body-title"><span class="app-icon app-icon--20 app-icon--tint i-plus" style="color:var(--on-primary)"></span>Add Reading</button><button class="fab t-minor-medium"><span class="app-icon app-icon--tint i-plus" style="color:var(--on-primary)"></span>New Assessment Type</button></div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">LIBRARY STYLE</span><div class="lx-stage lx-row"><button class="lx-fab t-minor-medium"><span class="app-icon app-icon--20 app-icon--tint i-plus" style="color:var(--on-primary)"></span>Add Reading</button><button class="lx-fab t-minor-medium"><span class="app-icon app-icon--20 app-icon--tint i-plus" style="color:var(--on-primary)"></span>New Assessment Type</button></div></div>
+  </div>
+  <ul class="lx-why t-body-regular"><li><b>One colour:</b> today one is Primary green and the other addPrimary blue. Both become addPrimary, the library's "add" colour.</li><li><b>Shape:</b> the round pill becomes r8, like the web Add button; 48 high so it's easy to tap.</li><li><b>Type:</b> both use Minor_Medium.</li></ul>
+</article>
+
+<!-- 03 BUTTONS -->
+<article class="lx-item" id="c03">
+  <header class="lx-hd"><span class="lx-n t-body-title">03</span><div><h3 class="t-minor-title">Big buttons</h3><span class="t-subtext-regular muted">Footers of Add Entry, the side sheet and the type form.</span></div><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></header>
+  <div class="lx-base t-subtext-regular">Matched to <span class="lx-src lx-src--app">App · .btn--admit (567:38354)</span><span class="lx-src lx-src--app">App · .btn--revert (594:65801)</span><span class="lx-src lx-src--app">App · .btn--reject (567:38352)</span></div>
+  <div class="lx-cmp">
+    <div class="lx-side"><span class="lx-lbl t-subtext-title">NOW</span><div class="lx-stage">
+      <div class="lx-row" style="flex-wrap:nowrap"><button class="bigbtn bigbtn--ghost t-minor-medium" style="flex:0 0 auto;padding:0 var(--sp-16)"><span class="app-icon app-icon--20 app-icon--tint i-reset" style="color:var(--on-surface-variant)"></span>Same as last</button><button class="bigbtn bigbtn--primary t-minor-medium">Add Entry</button></div>
+      <div class="lx-row" style="flex-wrap:nowrap"><button class="bigbtn bigbtn--ghost t-minor-medium">Cancel</button><button class="bigbtn bigbtn--navy t-minor-medium">Create assessment</button></div>
+    </div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">LIBRARY STYLE</span><div class="lx-stage">
+      <div class="lx-btns"><button class="btn btn--revert t-body-medium"><span class="app-icon app-icon--16 app-icon--tint i-reset" style="color:var(--on-primary-container)"></span>Same as last</button><button class="btn btn--admit t-body-medium">Add Entry</button></div>
+      <div class="lx-btns"><button class="btn btn--revert t-body-medium" style="flex:1">Cancel</button><button class="btn btn--admit t-body-medium">Create assessment</button></div>
+      <div class="lx-btns"><button class="btn btn--revert t-body-medium" style="flex:1">Keep it</button><button class="btn btn--reject t-body-medium">Delete reading</button></div>
+    </div></div>
+  </div>
+  <ul class="lx-why t-body-regular"><li><b>Size:</b> 56 high, r8 → the library tablet button, 40 high, r4.</li><li><b>Three kinds only:</b> main action = Primary fill · second action = navy outline · delete = red outline. The navy-filled "Create" goes away, so every main action is the same green.</li><li><b>Type:</b> Body_Medium, as in the library buttons.</li></ul>
+</article>
+
+<!-- 04 PILLS -->
+<article class="lx-item" id="c04">
+  <header class="lx-hd"><span class="lx-n t-body-title">04</span><div><h3 class="t-minor-title">Status pills</h3><span class="t-subtext-regular muted">Up to date / Due / Overdue in tables and sheets; Active / Inactive and type on Masters.</span></div><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></header>
+  <div class="lx-base t-subtext-regular">Matched to <span class="lx-src lx-src--app">App · .case-tag (42:1130)</span><span class="lx-src lx-src--web">Web · lab status chips (soft green / grey)</span><span class="lx-src lx-src--app">App · .app-tag--id</span></div>
+  <div class="lx-cmp">
+    <div class="lx-side"><span class="lx-lbl t-subtext-title">NOW</span><div class="lx-stage lx-row"><span class="pill pill--done t-subtext-title">Up to date</span><span class="pill pill--due t-subtext-title">Due</span><span class="pill pill--over t-subtext-title">Overdue</span><span class="pill pill--off t-subtext-title">Inactive</span><span class="pill pill--type t-subtext-title">Number</span></div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">LIBRARY STYLE</span><div class="lx-stage lx-row"><span class="lx-tag lx-tag--ok t-subtext-title">Up to date</span><span class="lx-tag lx-tag--due t-subtext-title">Due</span><span class="lx-tag lx-tag--over t-subtext-title">Overdue</span><span class="lx-tag lx-tag--off t-subtext-title">Inactive</span><span class="lx-tag lx-tag--type t-subtext-title">Number</span></div></div>
+  </div>
+  <ul class="lx-why t-body-regular"><li><b>Shape:</b> round r10 pills → the hospital case tag (r4, 4 / 8 padding).</li><li><b>Colours from the library:</b> Up to date = web "Completed" green · Due = the listing card's own Due strip colours (so a card and a tag look the same) · Overdue = case tag Planned red · Inactive = web "Pending" grey · Type = ID tag.</li></ul>
+</article>
+
+<!-- 05 TREND -->
+<article class="lx-item" id="c05">
+  <header class="lx-hd"><span class="lx-n t-body-title">05</span><div><h3 class="t-minor-title">Trend arrows</h3><span class="t-subtext-regular muted">Change since the last reading, on cards and in the table.</span></div><span class="lx-verdict lx-verdict--keep t-subtext-title">Keep</span></header>
+  <div class="lx-base t-subtext-regular">Matched to <span class="lx-src lx-src--app">App · .app-listing-card .alert (Tertiary)</span></div>
+  <div class="lx-cmp">
+    <div class="lx-side"><span class="lx-lbl t-subtext-title">NOW</span><div class="lx-stage lx-row"><span class="trend trend--up t-subtext-title"><span class="app-icon app-icon--16 app-icon--tint i-dropdown chev-u" style="color:currentColor"></span>1.2%</span><span class="trend trend--down t-subtext-title"><span class="app-icon app-icon--16 app-icon--tint i-dropdown" style="color:currentColor"></span>3.4%</span><span class="trend trend--flat t-subtext-title">No change</span></div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">LIBRARY STYLE</span><div class="lx-stage lx-row"><span class="trend trend--up t-subtext-title"><span class="app-icon app-icon--16 app-icon--tint i-dropdown chev-u" style="color:currentColor"></span>1.2%</span><span class="trend trend--down t-subtext-title"><span class="app-icon app-icon--16 app-icon--tint i-dropdown" style="color:currentColor"></span>3.4%</span><span class="trend trend--flat t-subtext-title">No change</span></div></div>
+  </div>
+  <ul class="lx-why t-body-regular"><li>It already follows the library: the warning colour is Tertiary (like the listing card alert), the icon is the library's 16 px dropdown and the text is Subtext_title. No change.</li></ul>
+</article>
+
+<!-- 06 CHIPS -->
+<article class="lx-item" id="c06">
+  <header class="lx-hd"><span class="lx-n t-body-title">06</span><div><h3 class="t-minor-title">Chips</h3><span class="t-subtext-regular muted">List items and scale steps on an assessment type.</span></div><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></header>
+  <div class="lx-base t-subtext-regular">Matched to <span class="lx-src lx-src--app">App · .app-filter-chip (1147:9274)</span></div>
+  <div class="lx-cmp">
+    <div class="lx-side"><span class="lx-lbl t-subtext-title">NOW</span><div class="lx-stage" style="background:var(--on-primary);padding:var(--sp-12);border-radius:8px"><div class="chips"><span class="chip t-body-regular"><span class="t-body-title">1</span>Emaciated</span><span class="chip t-body-regular"><span class="t-body-title">3</span>Ideal</span><span class="chip t-body-regular"><span class="t-body-title">5</span>Obese</span><span class="chip t-body-regular">Healthy</span></div></div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">LIBRARY STYLE</span><div class="lx-stage"><div class="app-filter-chips" style="flex-wrap:wrap"><span class="app-filter-chip t-subtext-regular" style="background:var(--on-primary)"><span class="t-subtext-title">1</span>Emaciated</span><span class="app-filter-chip t-subtext-regular" style="background:var(--on-primary)"><span class="t-subtext-title">3</span>Ideal</span><span class="app-filter-chip t-subtext-regular" style="background:var(--on-primary)"><span class="t-subtext-title">5</span>Obese</span><span class="app-filter-chip t-subtext-regular" style="background:var(--on-primary)">Healthy</span></div></div></div>
+  </div>
+  <ul class="lx-why t-body-regular"><li><b>Shape:</b> the grey round chip → the library filter chip: white, r8, OutlineVariant line, 8 px padding.</li><li><b>Type:</b> Subtext_Regular, with the score in Subtext_title.</li></ul>
+</article>
+
+<!-- 07 KPIS -->
+<article class="lx-item" id="c07">
+  <header class="lx-hd"><span class="lx-n t-body-title">07</span><div><h3 class="t-minor-title">KPI strip</h3><span class="t-subtext-regular muted">Species › Assessments. Tapping one filters the table.</span></div><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></header>
+  <div class="lx-base t-subtext-regular">Matched to <span class="lx-src lx-src--app">App · .app-tabs--status / .app-tab-status (1218:5268)</span></div>
+  <div class="lx-cmp lx-cmp--stack">
+    <div class="lx-side"><span class="lx-lbl t-subtext-title">NOW</span><div class="lx-stage">
+      <div class="kpis"><div><span class="k t-small">ASSESSED</span><span class="t-major-medium ink">9<span class="t-body-regular muted"> / 12</span></span><span class="sub2 t-small">3 due · every 7 days</span></div><div><span class="k t-small">GAINING</span><span class="t-major-medium up">4</span><span class="sub2 t-small">&gt; 2% in 30 days</span></div><div><span class="k t-small">LOSING</span><span class="t-major-medium down">2</span><span class="sub2 t-small">&gt; 2% in 30 days</span></div><div><span class="k t-small">STABLE</span><span class="t-major-medium ink">3</span><span class="sub2 t-small">within 2%</span></div></div>
+    </div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">LIBRARY STYLE</span><div class="lx-stage">
+      <div class="lx-kpis"><div class="app-tabs--status"><div class="app-tab-status app-tab-status--active"><span class="count t-minor-title">9 / 12</span><span class="t-body-regular">Assessed</span><span class="indicator"></span></div><div class="app-tab-status"><span class="count t-minor-title">4</span><span class="t-body-regular">Gaining</span><span class="indicator"></span></div><div class="app-tab-status"><span class="count t-minor-title">2</span><span class="t-body-regular">Losing</span><span class="indicator"></span></div><div class="app-tab-status"><span class="count t-minor-title">3</span><span class="t-body-regular">Stable</span><span class="indicator"></span></div></div></div>
+    </div></div>
+  </div>
+  <ul class="lx-why t-body-regular"><li><b>It's a filter, so it becomes the library's status tabs:</b> count on top, label under it, and a Tertiary underline on the selected one.</li><li><b>Fewer words:</b> the small grey sub-lines ("&gt; 2% in 30 days") go. That rule moves to the table header.</li><li><b>Type:</b> Minor_Title count + Body_Regular label, as in the library.</li></ul>
+</article>
+
+<!-- 08 STATS -->
+<article class="lx-item" id="c08">
+  <header class="lx-hd"><span class="lx-n t-body-title">08</span><div><h3 class="t-minor-title">Stats</h3><span class="t-subtext-regular muted">Under the graph in the side sheet.</span></div><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></header>
+  <div class="lx-base t-subtext-regular">Matched to <span class="lx-src lx-src--app">App · .pcard__note (567:38371)</span></div>
+  <div class="lx-cmp">
+    <div class="lx-side"><span class="lx-lbl t-subtext-title">NOW</span><div class="lx-stage"><div class="stats" style="background:var(--on-primary);padding:var(--sp-8);border-radius:8px"><div class="stat"><span class="t-subtext-regular muted">Latest</span><span class="v t-minor-title">42.6 kg</span></div><div class="stat"><span class="t-subtext-regular muted">Average</span><span class="v t-minor-title">41.9 kg</span></div><div class="stat"><span class="t-subtext-regular muted">Lowest</span><span class="v lo t-minor-title">39.8 kg</span></div></div></div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">LIBRARY STYLE</span><div class="lx-stage"><div class="lx-note"><div><span class="k t-subtext-title">Latest</span><span class="v t-minor-title">42.6 kg</span></div><div><span class="k t-subtext-title">Average</span><span class="v t-minor-title">41.9 kg</span></div><div><span class="k t-subtext-title">Lowest</span><span class="v lo t-minor-title">39.8 kg</span></div></div></div></div>
+  </div>
+  <ul class="lx-why t-body-regular"><li><b>One box, not three grey tiles:</b> the library's note panel (displaybg-primary 60 %, r8, 16 padding).</li><li><b>Labels:</b> Subtext_title, as the library note uses.</li></ul>
+</article>
+
+<!-- 09 RECORDS -->
+<article class="lx-item" id="c09">
+  <header class="lx-hd"><span class="lx-n t-body-title">09</span><div><h3 class="t-minor-title">History records</h3><span class="t-subtext-regular muted">Readings list in the side sheet.</span></div><span class="lx-verdict lx-verdict--fix t-subtext-title">Small fix</span></header>
+  <div class="lx-base t-subtext-regular">Matched to <span class="lx-src lx-src--web">Web · .row + .divider</span><span class="lx-src lx-src--web">Web · .callout-footer (notes colour)</span></div>
+  <div class="lx-cmp">
+    <div class="lx-side"><span class="lx-lbl t-subtext-title">NOW</span><div class="lx-stage"><div class="records" style="background:var(--on-primary);padding:0 var(--sp-16);border-radius:8px">
+      <div class="rec"><span class="rec__date"><span class="t-body-title navy">29 Sep</span><span class="t-subtext-regular muted">10:20 AM</span></span><span class="rec__body"><span class="rec__val"><span class="t-minor-title">42.6</span><span class="u t-body-regular">kg</span></span><span class="rec__note t-subtext-regular"><span class="app-icon app-icon--16 app-icon--tint i-notes" style="color:var(--on-surface-variant)"></span>Ate well after fasting day.</span></span><span class="rec__by t-subtext-regular">Dr. Rao</span></div>
+      <div class="rec"><span class="rec__date"><span class="t-body-title navy">22 Sep</span><span class="t-subtext-regular muted">9:05 AM</span></span><span class="rec__body"><span class="rec__val"><span class="t-minor-title">42.1</span><span class="u t-body-regular">kg</span></span></span><span class="rec__by t-subtext-regular">Priya K.</span></div>
+    </div></div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">LIBRARY STYLE</span><div class="lx-stage"><div class="lx-recs">
+      <div class="lx-rec"><span class="lx-rec__date"><span class="d t-body-title">29 Sep</span><span class="t-subtext-regular muted">10:20 AM</span></span><span class="lx-rec__body"><span class="lx-rec__val"><span class="t-minor-title">42.6</span><span class="u t-body-regular">kg</span></span><span class="lx-rec__note t-subtext-regular"><span class="app-icon app-icon--16 app-icon--tint i-notes" style="color:var(--moderate-secondary)"></span>Ate well after fasting day.</span></span><span class="lx-rec__by t-subtext-regular">Dr. Rao</span></div>
+      <div class="lx-rec"><span class="lx-rec__date"><span class="d t-body-title">22 Sep</span><span class="t-subtext-regular muted">9:05 AM</span></span><span class="lx-rec__body"><span class="lx-rec__val"><span class="t-minor-title">42.1</span><span class="u t-body-regular">kg</span></span></span><span class="lx-rec__by t-subtext-regular">Priya K.</span></div>
+    </div></div></div>
+  </div>
+  <ul class="lx-why t-body-regular"><li><b>Divider:</b> surface-variant → surface-variant 60 %, the library divider.</li><li><b>Note:</b> the faint 40 % yellow → the full notes colour, r8, 10 / 16 padding, like the web callout. The note icon turns amber to match.</li></ul>
+</article>
+
+<!-- 10 SWIPE -->
+<article class="lx-item" id="c10">
+  <header class="lx-hd"><span class="lx-n t-body-title">10</span><div><h3 class="t-minor-title">Swipe Edit / Delete</h3><span class="t-subtext-regular muted">Swipe a reading left (shown open). You asked for more work here: three options to pick from.</span></div><span class="lx-verdict lx-verdict--fix t-subtext-title">Pick one</span></header>
+  <div class="lx-base t-subtext-regular">Matched to <span class="lx-src lx-src--app">App · .tab-iconbox / .app-tag--id fills</span><span class="lx-src lx-src--app">App · .case-tag--planned (error tint)</span><span class="lx-src lx-src--app">App · .btn--revert / .btn--reject</span></div>
+  <div class="lx-cmp lx-cmp--stack">
+    <div class="lx-side"><span class="lx-lbl t-subtext-title">NOW · solid navy and red blocks</span><div class="lx-stage"><div class="sw" style="border-radius:8px"><div class="sw__acts"><button class="sw__act sw__act--edit t-body-title"><span class="app-icon app-icon--20 app-icon--tint i-pencil" style="color:var(--on-primary)"></span>Edit</button><button class="sw__act sw__act--del t-body-title"><span class="app-icon app-icon--20 app-icon--tint i-delete" style="color:var(--on-primary)"></span>Delete</button></div><div class="sw__row" style="transform:translateX(-176px)"><div class="rec" style="padding-left:192px"><span class="rec__date"><span class="t-body-title navy">22 Sep</span></span><span class="rec__body"><span class="rec__val"><span class="t-minor-title">42.1</span><span class="u t-body-regular">kg</span></span></span></div></div></div></div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">OPTION A · SOFT TINTS (recommended)</span><div class="lx-stage"><div class="lx-sw2 lx-sw2--a"><div class="lx-sw2__acts"><button class="ed t-subtext-title"><span class="app-icon app-icon--20 app-icon--tint i-pencil" style="color:var(--on-primary-container)"></span>Edit</button><button class="dl t-subtext-title"><span class="app-icon app-icon--20 app-icon--tint i-delete" style="color:var(--error)"></span>Delete</button></div><div class="lx-sw2__row"><span class="lx-rec__date"><span class="d t-body-title">22 Sep</span><span class="t-subtext-regular muted">9:05 AM</span></span><span class="lx-rec__val"><span class="t-minor-title">42.1</span><span class="u t-body-regular">kg</span></span></div></div><span class="t-subtext-regular muted">Edit in the icon-box blue, Delete in the error tint used by the Overdue tag. Same calm colours as the rest of the page; red only where it means danger.</span></div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">OPTION B · LIBRARY BUTTONS IN THE TRAY</span><div class="lx-stage"><div class="lx-sw2 lx-sw2--b"><div class="lx-sw2__acts"><button class="btn btn--revert t-body-medium"><span class="app-icon app-icon--20 app-icon--tint i-pencil" style="color:var(--on-primary-container)"></span>Edit</button><button class="btn btn--reject t-body-medium">Delete</button></div><div class="lx-sw2__row"><span class="lx-rec__date"><span class="d t-body-title">22 Sep</span><span class="t-subtext-regular muted">9:05 AM</span></span><span class="lx-rec__val"><span class="t-minor-title">42.1</span><span class="u t-body-regular">kg</span></span></div></div><span class="t-subtext-regular muted">The row slides to show two real library buttons (navy outline, red outline, 40 high, r4). The most "library", but it needs a wider slide.</span></div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">OPTION C · ICON BOXES ONLY</span><div class="lx-stage"><div class="lx-sw2 lx-sw2--c"><div class="lx-sw2__acts"><button class="ed" aria-label="Edit"><span class="app-icon app-icon--20 app-icon--tint i-pencil" style="color:var(--on-primary-container)"></span></button><button class="dl" aria-label="Delete"><span class="app-icon app-icon--20 app-icon--tint i-delete" style="color:var(--error)"></span></button></div><div class="lx-sw2__row"><span class="lx-rec__date"><span class="d t-body-title">22 Sep</span><span class="t-subtext-regular muted">9:05 AM</span></span><span class="lx-rec__val"><span class="t-minor-title">42.1</span><span class="u t-body-regular">kg</span></span></div></div><span class="t-subtext-regular muted">Two 44 icon boxes, no words. The shortest slide, but people have to know the icons.</span></div></div>
+  </div>
+  <ul class="lx-why t-body-regular"><li><b>All three:</b> the row keeps its white card and r8 corner; a long swipe still deletes straight away, with Undo in the toast.</li><li><b>Why change:</b> today's full-height solid navy and red blocks are the loudest thing on the sheet, louder than the reading itself.</li></ul>
+</article>
+
+<!-- 11 NUMPAD -->
+<article class="lx-item" id="c11">
+  <header class="lx-hd"><span class="lx-n t-body-title">11</span><div><h3 class="t-minor-title">Number pad</h3><span class="t-subtext-regular muted">Add Entry for number types, so the system keyboard never covers the sheet.</span></div><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></header>
+  <div class="lx-base t-subtext-regular">Matched to <span class="lx-src lx-src--app">App · .app-field--filled (56 high, OutlineVariant)</span><span class="lx-src lx-src--app">App · .tab-iconbox fill (displaybg-secondary)</span></div>
+  <div class="lx-cmp">
+    <div class="lx-side"><span class="lx-lbl t-subtext-title">NOW</span><div class="lx-stage"><div class="numpad"><button class="numpad__k t-medium-medium">1</button><button class="numpad__k t-medium-medium">2</button><button class="numpad__k t-medium-medium">3</button><button class="numpad__k t-medium-medium">4</button><button class="numpad__k t-medium-medium">5</button><button class="numpad__k t-medium-medium">6</button><button class="numpad__k numpad__k--fn t-medium-medium">.</button><button class="numpad__k t-medium-medium">0</button><button class="numpad__k numpad__k--fn t-medium-medium"><span class="app-icon app-icon--tint i-back" style="color:var(--on-surface-variant)"></span></button></div></div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">LIBRARY STYLE</span><div class="lx-stage"><div class="lx-pad"><button class="t-medium-medium">1</button><button class="t-medium-medium">2</button><button class="t-medium-medium">3</button><button class="t-medium-medium">4</button><button class="t-medium-medium">5</button><button class="t-medium-medium">6</button><button class="fn t-medium-medium">.</button><button class="t-medium-medium">0</button><button class="fn" aria-label="Delete"><span class="app-icon app-icon--tint i-back" style="color:var(--on-primary-container)"></span></button></div></div></div>
+  </div>
+  <ul class="lx-why t-body-regular"><li><b>Keys look like library fields:</b> white, 56 high, OutlineVariant line, no fake shadow; corner r8 like the icon box.</li><li><b>"." and delete</b> take the icon box fill (displaybg-secondary) with navy ink, so they read as tools, not digits.</li></ul>
+</article>
+
+<!-- 12 SLIDER -->
+<article class="lx-item" id="c12">
+  <header class="lx-hd"><span class="lx-n t-body-title">12</span><div><h3 class="t-minor-title">Slider</h3><span class="t-subtext-regular muted">Slider-type readings (e.g. Calm → Agitated).</span></div><span class="lx-verdict lx-verdict--fix t-subtext-title">Small fix</span></header>
+  <div class="lx-base t-subtext-regular">Matched to <span class="lx-src lx-src--app">App · .app-switch (track + white knob)</span><span class="lx-src lx-src--app">App · .app-field--active stroke (Primary 1.5)</span></div>
+  <div class="lx-cmp">
+    <div class="lx-side"><span class="lx-lbl t-subtext-title">NOW</span><div class="lx-stage" style="background:var(--on-primary);padding:var(--sp-16);border-radius:8px"><div class="slider"><div class="slider__track"></div><div class="slider__fill" style="left:0;width:60%"></div><div class="slider__knob" style="left:60%"></div></div><div class="slider__ends t-subtext-regular"><span><span class="t-subtext-title">0</span>Calm</span><span><span class="t-subtext-title">10</span>Agitated</span></div></div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">LIBRARY STYLE</span><div class="lx-stage" style="background:var(--on-primary);padding:var(--sp-16);border-radius:8px"><div class="lx-slider"><div class="tr"></div><div class="fl" style="left:0;width:60%"></div><div class="kn" style="left:60%"></div></div><div class="lx-slider-ends t-subtext-regular"><span><span class="t-subtext-title">0</span>Calm</span><span><span class="t-subtext-title">10</span>Agitated</span></div></div></div>
+  </div>
+  <ul class="lx-why t-body-regular"><li><b>Track:</b> OutlineVariant, the same grey as the switch when it's off.</li><li><b>Knob:</b> white like the switch knob, with the Primary 1.5 line the library uses for an active field, and the library's light 4 % shadow.</li></ul>
+</article>
+
+<!-- 13 STEPPER -->
+<article class="lx-item" id="c13">
+  <header class="lx-hd"><span class="lx-n t-body-title">13</span><div><h3 class="t-minor-title">Stepper</h3><span class="t-subtext-regular muted">"Step" in the assessment type form.</span></div><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></header>
+  <div class="lx-base t-subtext-regular">Matched to <span class="lx-src lx-src--app">App · .app-iconbox 44 r8 (1147:9300)</span><span class="lx-src lx-src--app">App · .tab-search box (44, OutlineVariant, r8)</span></div>
+  <div class="lx-cmp">
+    <div class="lx-side"><span class="lx-lbl t-subtext-title">NOW</span><div class="lx-stage" style="background:var(--on-primary);padding:var(--sp-16);border-radius:8px"><div class="switch-row"><div><span class="t-body-medium navy">Step</span><span class="t-subtext-regular muted">Gap between values</span></div><div class="stepper"><button class="t-minor-title">−</button><input class="t-minor-medium" value="1"><button class="t-minor-title">+</button></div></div></div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">LIBRARY STYLE</span><div class="lx-stage" style="background:var(--on-primary);padding:var(--sp-16);border-radius:8px"><div class="switch-row"><div><span class="t-body-medium navy">Step</span><span class="t-subtext-regular muted">Gap between values</span></div><div class="lx-step"><button class="app-iconbox" aria-label="Decrease"><span class="app-icon app-icon--20 app-icon--tint i-subtract" style="color:var(--on-primary-container)"></span></button><input class="t-minor-medium" value="1" aria-label="Step"><button class="app-iconbox" aria-label="Increase"><span class="app-icon app-icon--20 app-icon--tint i-add" style="color:var(--on-primary-container)"></span></button></div></div></div></div>
+  </div>
+  <ul class="lx-why t-body-regular"><li><b>− and +</b> become library icon boxes (44, r8) with the library's subtract / add icons instead of typed characters.</li><li><b>The value</b> sits in a box the same height and line as the search field.</li></ul>
+</article>
+
+<!-- 14 MENU -->
+<article class="lx-item" id="c14">
+  <header class="lx-hd"><span class="lx-n t-body-title">14</span><div><h3 class="t-minor-title">Popover menu</h3><span class="t-subtext-regular muted">Hold a row, ⋮ menus and pickers.</span></div><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></header>
+  <div class="lx-base t-subtext-regular">Matched to <span class="lx-src lx-src--app">App · .app-listing-card radius 10</span><span class="lx-src lx-src--app">App · .app-radio rows (48)</span><span class="lx-src lx-src--web">Web · .divider</span></div>
+  <div class="lx-cmp">
+    <div class="lx-side"><span class="lx-lbl t-subtext-title">NOW</span><div class="lx-stage"><div class="pop"><span class="pop__title t-subtext-title">Body Weight</span><button class="pop__item t-body-regular"><span class="app-icon app-icon--20 app-icon--tint i-plus" style="color:var(--on-surface-variant)"></span>Add entry</button><button class="pop__item t-body-regular"><span class="app-icon app-icon--20 app-icon--tint i-time" style="color:var(--on-surface-variant)"></span>History</button><button class="pop__item pop__item--danger t-body-regular"><span class="app-icon app-icon--20 app-icon--tint i-delete" style="color:var(--error)"></span>Delete</button></div></div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">LIBRARY STYLE</span><div class="lx-stage"><div class="lx-menu"><span class="lx-menu__t t-subtext-title">Body Weight</span><button class="t-body-medium"><span class="app-icon app-icon--20 app-icon--tint i-add-with-circle" style="color:var(--add-primary)"></span>Add entry</button><button class="t-body-medium"><span class="app-icon app-icon--20 app-icon--tint i-time" style="color:var(--on-surface-variant)"></span>History</button><button class="danger t-body-medium"><span class="app-icon app-icon--20 app-icon--tint i-delete" style="color:var(--error)"></span>Delete</button></div></div></div>
+  </div>
+  <ul class="lx-why t-body-regular"><li><b>Shape:</b> r12 floating card with a heavy 30 % shadow → r10 (the listing card) with a light 10 % shadow and hairline.</li><li><b>Rows:</b> 48 high with dividers, like the library radio list; text Body_Medium.</li><li><b>Add</b> uses the library add-with-circle icon in addPrimary, the same as the + button.</li></ul>
+</article>
+
+<!-- 15 TOAST -->
+<article class="lx-item" id="c15">
+  <header class="lx-hd"><span class="lx-n t-body-title">15</span><div><h3 class="t-minor-title">Toast with Undo</h3><span class="t-subtext-regular muted">Confirms a save or delete.</span></div><span class="lx-verdict lx-verdict--keep t-subtext-title">Keep</span></header>
+  <div class="lx-base t-subtext-regular">Matched to <span class="lx-src lx-src--app">App · .tab-primary--active fill (OnPrimaryContainer)</span></div>
+  <div class="lx-cmp">
+    <div class="lx-side"><span class="lx-lbl t-subtext-title">NOW</span><div class="lx-stage"><div class="toast t-body-medium"><span class="app-icon app-icon--20 app-icon--tint i-just-tick-mark" style="color:var(--primary-container)"></span><span>Body Weight saved</span><button class="t-body-title">Undo</button></div></div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">LIBRARY STYLE</span><div class="lx-stage"><div class="toast t-body-medium"><span class="app-icon app-icon--20 app-icon--tint i-just-tick-mark" style="color:var(--primary-container)"></span><span>Body Weight saved</span><button class="t-body-title">Undo</button></div></div></div>
+  </div>
+  <ul class="lx-why t-body-regular"><li>Already in library terms: the navy is the selected-tab fill, r8 is the library corner, the type is Body_Medium. No change. It goes to Needs Review as a new pattern.</li></ul>
+</article>
+
+<!-- 16 TABLE -->
+<article class="lx-item" id="c16">
+  <header class="lx-hd"><span class="lx-n t-body-title">16</span><div><h3 class="t-minor-title">Animal table</h3><span class="t-subtext-regular muted">Species › Assessments: one row per animal.</span></div><span class="lx-verdict lx-verdict--new t-subtext-title">Rebuilt</span></header>
+  <div class="lx-base t-subtext-regular">Matched to <span class="lx-src lx-src--web">Web · .table (header bg, divider)</span><span class="lx-src lx-src--app">App · .app-profile + .app-photo-badge</span><span class="lx-src lx-src--app">App · .case-tag (status)</span></div>
+  <div class="lx-cmp lx-cmp--stack">
+    <div class="lx-side"><span class="lx-lbl t-subtext-title">NOW</span><div class="lx-stage">
+      <div class="tcard"><div class="trow" style="display:grid;grid-template-columns:1.2fr 1fr auto;align-items:center"><span class="acell"><span class="thumb"><img src="../../../app/sample-cheetah-104.png" alt=""><span class="app-photo-badge app-photo-badge--male t-small">M</span></span><span><span class="t-body-title navy">Raja</span><span class="t-subtext-regular">ANZ-00104</span></span></span><span class="t-body-regular">42.6 kg</span><span class="pct up t-subtext-title">+1.2%</span></div><div class="trow" style="display:grid;grid-template-columns:1.2fr 1fr auto;align-items:center"><span class="acell"><span class="thumb"><img src="../../../app/sample-leopard-84.png" alt=""><span class="app-photo-badge app-photo-badge--female t-small">F</span></span><span><span class="t-body-title navy">Zara</span><span class="t-subtext-regular">ANZ-00084</span></span></span><span class="t-body-regular">—</span><span class="pill pill--due t-subtext-title">Due</span></div></div>
+    </div></div>
+    <div class="lx-side lx-side--new"><span class="lx-lbl t-subtext-title">LIBRARY STYLE</span><div class="lx-stage">
+      <table class="lx-table"><thead><tr><th class="t-subtext-title">Animal</th><th class="t-subtext-title">Latest weight</th><th class="t-subtext-title">Change (30 days)</th><th class="t-subtext-title">Status</th></tr></thead><tbody>
+        <tr><td><span class="lx-animal"><span class="app-profile"><img class="photo" src="../../../app/sample-cheetah-104.png" alt=""><span class="app-photo-badge app-photo-badge--male t-small">M</span></span><span><span class="tag t-body-title">Raja</span><span class="t-body-regular">ANZ-00104</span></span></span></td><td class="t-body-medium">42.6 kg</td><td><span class="trend trend--up t-subtext-title"><span class="app-icon app-icon--16 app-icon--tint i-dropdown chev-u" style="color:currentColor"></span>1.2%</span></td><td><span class="lx-tag lx-tag--ok t-subtext-title">Up to date</span></td></tr>
+        <tr><td><span class="lx-animal"><span class="app-profile"><img class="photo" src="../../../app/sample-leopard-84.png" alt=""><span class="app-photo-badge app-photo-badge--female t-small">F</span></span><span><span class="tag t-body-title">Zara</span><span class="t-body-regular">ANZ-00084</span></span></span></td><td class="t-body-medium">—</td><td class="t-body-regular muted">No readings</td><td><span class="lx-tag lx-tag--due t-subtext-title">Due</span></td></tr>
+      </tbody></table>
+    </div></div>
+  </div>
+  <ul class="lx-why t-body-regular"><li><b>A real header row</b> in the library table-header colour, so each column says what it is (the KPI sub-lines move here).</li><li><b>Photo:</b> the library profile tile (r8) with its gender badge.</li><li><b>Status and change:</b> the new status tags (04) and the trend arrows (05), so the table and the cards say things the same way.</li></ul>
+</article>
+
+</main>
+</body>
+</html>

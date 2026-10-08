@@ -1,0 +1,122 @@
+[
+ {
+  "slug": "enclosure",
+  "name": "Enclosure",
+  "style": "filled",
+  "source": "Animal Care Unit row in Admit Patient, Hospital iPad NcSjVLd98TjNftPuPalL4b 589:43009 (house-with-paw glyph, 24 in a 40 Primary 20% box). Not in the Mobile / Icon / ALL master",
+  "since": "2026-09-21",
+  "fill": "on-surface"
+ },
+ {
+  "slug": "list-view",
+  "name": "List view",
+  "style": "outlined",
+  "source": "View Settings › View type › List View, Hospital iPad NcSjVLd98TjNftPuPalL4b 622:75315 (12px glyph in a 20 box). Not in the master",
+  "since": "2026-09-21",
+  "fill": "on-surface-variant"
+ },
+ {
+  "slug": "panel-view",
+  "name": "Panel view",
+  "style": "outlined",
+  "source": "View Settings › View type › Panel View, Hospital iPad 622:75601 (Noun Project 'template' glyph, 20px). Not in the master",
+  "since": "2026-09-21",
+  "fill": "neutral-secondary"
+ },
+ {
+  "slug": "table-view",
+  "name": "Table view",
+  "style": "outlined",
+  "source": "View Settings › View type › Table View, Hospital iPad NcSjVLd98TjNftPuPalL4b 1006:36745 (Noun Project 'template' glyph, 20px). Not in the master",
+  "since": "2026-09-21",
+  "fill": "on-surface-variant"
+ },
+ {
+  "slug": "weight",
+  "name": "Weight",
+  "style": "filled",
+  "source": "Patient details header animal card, Hospital iPad NcSjVLd98TjNftPuPalL4b 664:78425 (\"Weight icon\", 14, Tertiary). Not in the master",
+  "since": "2026-09-21",
+  "fill": "tertiary"
+ },
+ {
+  "slug": "medical-id",
+  "name": "Medical id",
+  "style": "filled",
+  "source": "Patient details header medical-info tile, Hospital iPad 664:78356 (person + id card, 20). Check the master before drawing anew",
+  "since": "2026-09-21",
+  "fill": "moderate-secondary"
+ },
+ {
+  "slug": "attending-vet",
+  "name": "Attending vet",
+  "style": "filled",
+  "source": "Patient details header medical-info tile, Hospital iPad 664:78370 (20). Check the master before drawing anew",
+  "since": "2026-09-21",
+  "fill": "tertiary"
+ },
+ {
+  "slug": "timeline-view",
+  "name": "Timeline view",
+  "style": "filled",
+  "source": "Monitoring tab view toggle, Hospital iPad NcSjVLd98TjNftPuPalL4b 921:58873 (Noun Project 'timeline view', 16). Not in the master",
+  "since": "2026-09-21",
+  "fill": "on-primary-container"
+ },
+ {
+  "slug": "home",
+  "name": "Home",
+  "style": "filled",
+  "source": "Home tab, Home 88:3492, Medical iPad ZCSYvY9mgt7WTfAzo9m7ES (bottom navigation / search bar, M3 glyph). Not in the Mobile / Icon / ALL master",
+  "since": "2026-09-28",
+  "fill": "on-secondary-container"
+ },
+ {
+  "slug": "widgets",
+  "name": "Widgets (Menu tab)",
+  "style": "outlined",
+  "source": "Menu tab, Home 88:3492, Medical iPad ZCSYvY9mgt7WTfAzo9m7ES (bottom navigation / search bar, M3 glyph). Not in the Mobile / Icon / ALL master",
+  "since": "2026-09-28",
+  "fill": "on-secondary-container"
+ },
+ {
+  "slug": "task-alt",
+  "name": "Task alt",
+  "style": "outlined",
+  "source": "Task tab, Home 88:3492, Medical iPad ZCSYvY9mgt7WTfAzo9m7ES (bottom navigation / search bar, M3 glyph). Not in the Mobile / Icon / ALL master",
+  "since": "2026-09-28",
+  "fill": "on-secondary-container"
+ },
+ {
+  "slug": "account-circle",
+  "name": "Account circle",
+  "style": "outlined",
+  "source": "Profile tab, Home 88:3492, Medical iPad ZCSYvY9mgt7WTfAzo9m7ES (bottom navigation / search bar, M3 glyph). Not in the Mobile / Icon / ALL master",
+  "since": "2026-09-28",
+  "fill": "on-secondary-container"
+ },
+ {
+  "slug": "menu",
+  "name": "Menu (hamburger)",
+  "style": "outlined",
+  "source": "Search bar leading icon, Home 88:3492, Medical iPad ZCSYvY9mgt7WTfAzo9m7ES (bottom navigation / search bar, M3 glyph). Not in the Mobile / Icon / ALL master",
+  "since": "2026-09-28",
+  "fill": "on-surface-variant"
+ },
+ {
+  "slug": "journal-activity",
+  "name": "Journal activity",
+  "style": "filled",
+  "source": "Existing Medical Records card id row (20:8409, Medical iPad ZCSYvY9mgt7WTfAzo9m7ES). Not in the Mobile / Icon / ALL master",
+  "since": "2026-09-28",
+  "fill": "primary"
+ },
+ {
+  "slug": "tabs-menu",
+  "name": "Tabs menu",
+  "style": "filled",
+  "source": "Animal page tab bar › first cell (All tabs), Assessment fAOcpkMwZPWEkHO3kMvNoy 1540:13005 (24px, long top line, two short lines right-aligned). Not in the Mobile / Icon / ALL master",
+  "since": "2026-10-05",
+  "fill": "on-surface-variant"
+ }
+]

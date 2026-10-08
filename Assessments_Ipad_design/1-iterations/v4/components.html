@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Components in the prototype</title>
+<link rel="stylesheet" href="../../../app/tokens.css">
+<link rel="stylesheet" href="../../../app/type.css">
+<link rel="stylesheet" href="../../../app/components.css">
+<link rel="stylesheet" href="../../../app/modules/hospital.css">
+<link rel="stylesheet" href="../../../app/icons/icons.css">
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="touch.css">
+<link rel="stylesheet" href="species.css">
+<style>
+  /* page shell: overrides the device-centred body from core.css */
+  body { display: block; height: auto; padding: 0 !important; background: var(--background); color: var(--on-surface-variant); }
+  .cx { max-width: 1120px; margin: 0 auto; padding: var(--sp-32) var(--sp-24) 96px; display: flex; flex-direction: column; gap: var(--sp-40); }
+  .cx-top { display: flex; flex-direction: column; gap: var(--sp-8); }
+  .cx-top h1, .cx-sec h2 { margin: 0; color: var(--neutral-primary); }
+  .cx-top p, .cx-sec > p { margin: 0; max-width: 72ch; }
+  .cx-count { display: flex; gap: var(--sp-8); flex-wrap: wrap; margin-top: var(--sp-8); }
+  .cx-count span { padding: var(--sp-4) var(--sp-12); border-radius: 16px; background: var(--on-primary); }
+  .cx-sec { display: flex; flex-direction: column; gap: var(--sp-16); }
+  .cx-sec__hd { display: flex; align-items: baseline; gap: var(--sp-12); flex-wrap: wrap; }
+  .cx-tag { padding: 2px var(--sp-8); border-radius: 10px; }
+  .cx-tag--lib { background: var(--primary-main-a10); color: var(--on-surface); }
+  .cx-tag--loc { background: var(--tertiary-container-a30); color: var(--tertiary); }
+  .cx-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-16); }
+  .cx-card { display: flex; flex-direction: column; border-radius: 12px; background: var(--on-primary); overflow: hidden; box-shadow: 0 1px 2px var(--neutral-primary-a10); }
+  .cx-card--wide { grid-column: 1 / -1; }
+  .cx-meta { display: flex; flex-direction: column; gap: 2px; padding: var(--sp-16) var(--sp-20) var(--sp-12); }
+  .cx-meta .t-body-title { color: var(--neutral-primary); }
+  .cx-meta code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--on-primary-container); overflow-wrap: anywhere; }
+  .cx-stage { position: relative; display: flex; flex-direction: column; gap: var(--sp-12); padding: var(--sp-20); background: var(--background); border-top: 1px solid var(--surface-variant); flex: 1; }
+  .cx-stage--white { background: var(--on-primary); }
+  .cx-row { display: flex; align-items: center; gap: var(--sp-12); flex-wrap: wrap; }
+  .cx-stage .fab, .cx-stage .toast { position: static; transform: none; opacity: 1; }
+  .cx-stage .pop { position: static; width: 260px; }
+  .cx-stage .panel { position: static; }
+  .cx-icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: var(--sp-8); }
+  .cx-icons div { display: flex; flex-direction: column; align-items: center; gap: var(--sp-8); padding: var(--sp-16) var(--sp-8); border-radius: 8px; background: var(--on-primary); text-align: center; }
+  .cx-type { display: flex; flex-direction: column; padding: var(--sp-4) var(--sp-20); background: var(--on-primary); border-radius: 12px; }
+  .cx-trow { display: grid; grid-template-columns: 180px minmax(0, 1fr) 260px; gap: var(--sp-24); align-items: center; padding: var(--sp-12) 0; border-bottom: 1px solid var(--surface-variant); }
+  .cx-trow:last-child { border-bottom: 0; }
+  .cx-trow > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .cx-trow .name { color: var(--neutral-primary); }
+  .cx-trow code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--on-primary-container); }
+  .cx-trow .sample { color: var(--on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cx-trow .spec { color: var(--neutral-secondary); }
+  @media (max-width: 760px) { .cx { padding: var(--sp-20) 16px 64px; } .cx-grid { grid-template-columns: 1fr; } .cx-trow { grid-template-columns: 1fr; gap: var(--sp-4); } .cx-trow .sample { white-space: normal; } }
+</style>
+</head>
+<body>
+<main class="cx">
+
+<header class="cx-top">
+  <span class="t-subtext-title muted">Assessments iPad · v4 prototype</span>
+  <h1 class="t-display-title">Components in this design</h1>
+  <p class="t-body-regular">Everything the Animal page and Assessment tab are built from, rendered with the same CSS the prototype loads. Green tags come from the Antz library (<code>app/components.css</code>). Amber tags were built inside the prototype and aren't in the library yet.</p>
+  <div class="cx-count t-body-medium"><span>14 library components</span><span>16 built in the prototype</span><span>26 icons</span><span>16 type styles</span></div>
+</header>
+
+<!-- ============================== LIBRARY ============================== -->
+<section class="cx-sec">
+  <div class="cx-sec__hd"><h2 class="t-major-title">From the library</h2><span class="cx-tag cx-tag--lib t-subtext-title">app/components.css</span></div>
+  <div class="cx-grid">
+
+    <article class="cx-card cx-card--wide">
+      <div class="cx-meta"><span class="t-body-title">Tab row</span><code>.app-tabs · .app-tab · .app-tab--active</code><span class="t-subtext-regular muted">Animal page: sticky tabs under the photo hero. ☰ opens All Tabs.</span></div>
+      <div class="cx-stage cx-stage--white" style="padding:0">
+        <div class="app-tabs ad-tabs"><button class="ad-tabs__all" aria-label="All tabs"><span class="app-icon app-icon--28 app-icon--tint i-list" style="color:var(--on-surface-variant)"></span></button><button class="app-tab t-minor-medium">Overview</button><button class="app-tab t-minor-medium">Taxonomy</button><button class="app-tab t-minor-medium app-tab--active">Assessment</button><button class="app-tab t-minor-medium">Notes</button><button class="app-tab t-minor-medium">Journal</button><button class="app-tab t-minor-medium">Medical</button><button class="app-tab t-minor-medium">Media</button></div>
+      </div>
+    </article>
+
+    <article class="cx-card cx-card--wide">
+      <div class="cx-meta"><span class="t-body-title">Search, icon box and filter chips</span><code>.tab-search · .tab-iconbox · .tab-primary-tabs · .tab-primary · .tab-primary--active</code><span class="t-subtext-regular muted">Assessment tab toolbar: search, ⚙ settings, then chips All · Due · one per category.</span></div>
+      <div class="cx-stage" style="padding:var(--sp-20) 0 var(--sp-12)">
+        <div class="ad-toolbar" style="padding:0">
+          <div class="ad-tools"><label class="tab-search"><span class="app-icon app-icon--20 app-icon--tint i-search" style="color:var(--on-surface-variant)"></span><input class="t-body-medium" placeholder="Search Assessments"></label><button class="tab-iconbox" aria-label="Assessment settings"><span class="app-icon app-icon--tint i-view-settings" style="color:var(--on-surface-variant)"></span></button></div>
+          <div class="tab-primary-tabs ad-chips t-body-medium" style="padding-left:var(--sp-20)"><button class="tab-primary tab-primary--active">All - 8</button><button class="tab-primary">Due - 3</button><button class="tab-primary">Physical Health - 4</button><button class="tab-primary">Behaviour - 2</button><button class="tab-primary">Environment - 2</button></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="cx-card cx-card--wide">
+      <div class="cx-meta"><span class="t-body-title">Listing card</span><code>.app-listing-card · __byline · __body · __details · __status</code><span class="t-subtext-regular muted">One card per assessment. The status strip shows only when it's Due or Overdue.</span></div>
+      <div class="cx-stage">
+        <div class="ad-grid">
+          <button class="app-listing-card ad-card"><span class="app-listing-card__byline t-subtext-regular"><span class="name t-body-title">Body Weight</span><span class="sp"></span>Next 6 Oct<span class="app-icon app-icon--20 app-icon--tint i-dropdown chev-r" style="color:var(--outline)"></span></span><span class="app-listing-card__body"><span class="app-listing-card__details"><span class="ad-val"><span class="t-large-title ink">42.6</span><span class="t-body-regular navy">kg</span></span><span class="ad-meta2 t-subtext-regular">29 Sep · Dr. Rao<span class="trend trend--up t-subtext-title"><span class="app-icon app-icon--16 app-icon--tint i-dropdown chev-u" style="color:currentColor"></span>1.2%</span></span></span></span><span class="ad-pad"></span></button>
+          <button class="app-listing-card ad-card"><span class="app-listing-card__byline t-subtext-regular"><span class="name t-body-title">Body Condition Score</span><span class="sp"></span>Every 14 days<span class="app-icon app-icon--20 app-icon--tint i-dropdown chev-r" style="color:var(--outline)"></span></span><span class="app-listing-card__body"><span class="app-listing-card__details"><span class="ad-val"><span class="t-minor-title ink">3 · Ideal</span></span><span class="ad-meta2 t-subtext-regular">18 Sep · Priya K.</span></span></span><div class="app-listing-card__status"><span class="app-icon app-icon--20 app-icon--tint i-time" style="color:var(--tertiary)"></span><span class="label t-body-regular">Last 18 Sep · 17 days ago</span><span class="state t-subtext-title">Due</span></div></button>
+          <button class="app-listing-card ad-card"><span class="app-listing-card__byline t-subtext-regular"><span class="name t-body-title">Coat Condition</span><span class="sp"></span>Every 7 days<span class="app-icon app-icon--20 app-icon--tint i-dropdown chev-r" style="color:var(--outline)"></span></span><span class="app-listing-card__body"><span class="app-listing-card__details"><span class="ad-val"><span class="t-minor-title ink">Mild shedding</span></span><span class="ad-meta2 t-subtext-regular">12 Sep · Dr. Rao</span></span></span><div class="app-listing-card__status ad-over"><span class="app-icon app-icon--20 app-icon--tint i-time" style="color:var(--error)"></span><span class="label t-body-regular">Last 12 Sep · 23 days ago</span><span class="state t-subtext-title">Overdue</span></div></button>
+          <button class="app-listing-card ad-card"><span class="app-listing-card__byline t-subtext-regular"><span class="name t-body-title">Stereotypic Pacing</span><span class="sp"></span>Every 7 days<span class="app-icon app-icon--20 app-icon--tint i-dropdown chev-r" style="color:var(--outline)"></span></span><span class="app-listing-card__body"><span class="app-listing-card__details"><span class="t-body-regular muted">No readings yet</span><span class="ad-meta2 t-subtext-regular">&nbsp;</span></span></span><div class="app-listing-card__status"><span class="app-icon app-icon--20 app-icon--tint i-time" style="color:var(--tertiary)"></span><span class="label t-body-regular">Never recorded</span><span class="state t-subtext-title">Due</span></div></button>
+        </div>
+      </div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Header</span><code>.app-header · .app-header__title</code><span class="t-subtext-regular muted">Title of the side sheet that opens from a card.</span></div>
+      <div class="cx-stage cx-stage--white" style="padding:0">
+        <div class="app-header ad-sheet__hd"><span class="acard__ic"><span class="app-icon app-icon--20 app-icon--tint i-transfer" style="color:var(--on-primary-container)"></span></span><div class="app-header__title"><span class="title t-medium-medium">Body Weight</span><span class="subtitle t-body-regular">Raja · every 7 days · last 6 days ago</span></div><button class="tab-iconbox" aria-label="Close"><span class="app-icon app-icon--tint i-close" style="color:var(--on-surface-variant)"></span></button></div>
+      </div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Segmented control</span><code>.app-segmented · .app-segment · .app-segment--active</code><span class="t-subtext-regular muted">Graph range in the side sheet; sub-tabs on the Species page.</span></div>
+      <div class="cx-stage">
+        <div class="app-segmented"><button class="app-segment t-subtext-regular">1M</button><button class="app-segment app-segment--active t-subtext-title">3M</button><button class="app-segment t-subtext-regular">6M</button><button class="app-segment t-subtext-regular">1Y</button><button class="app-segment t-subtext-regular">All</button></div>
+      </div>
+    </article>
+
+    <article class="cx-card cx-card--wide">
+      <div class="cx-meta"><span class="t-body-title">Fields</span><code>.app-field · __label · --error · --sm · --area</code><span class="t-subtext-regular muted">Add Entry (value + unit), New Assessment Type form, notes.</span></div>
+      <div class="cx-stage cx-stage--white">
+        <div class="grid2"><label class="app-field"><span class="app-field__label t-subtext-regular">Weight</span><input class="t-minor-medium" value="42.6" inputmode="decimal"></label><label class="app-field"><span class="app-field__label t-subtext-regular">Unit</span><select class="t-minor-medium"><option>kg</option><option>g</option></select><span class="app-icon app-icon--tint i-dropdown" style="color:var(--on-surface-variant)"></span></label></div>
+        <div class="field"><label class="app-field app-field--error"><span class="app-field__label t-subtext-regular">Assessment name</span><input class="t-minor-regular" placeholder="e.g. Eye Condition"></label><span class="field__err t-subtext-regular">Give the assessment a name</span></div>
+        <div class="item-row"><label class="app-field app-field--sm"><input class="t-body-regular" value="Mild shedding"></label><button class="sq sq--del" aria-label="Remove"><span class="app-icon app-icon--tint i-close-with-circle" style="color:var(--error)"></span></button></div>
+        <label class="app-field app-field--area"><span class="app-field__label t-subtext-regular">Description (shown to vets)</span><textarea class="t-minor-regular" rows="2" placeholder="What should the vet look for?"></textarea></label>
+      </div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Radio option</span><code>.app-radio · .app-radio--active</code><span class="t-subtext-regular muted">Pick-one assessments (list and scale types).</span></div>
+      <div class="cx-stage cx-stage--white">
+        <div class="opts opts--2"><button class="app-radio app-radio--active t-minor-regular" style="height:48px"><span class="lbl">Healthy</span><span class="app-icon app-icon--tint i-radio-selected" style="color:var(--primary-container)"></span></button><button class="app-radio t-minor-regular" style="height:48px"><span class="lbl">Mild shedding</span><span class="app-icon app-icon--tint i-radio-unselect" style="color:var(--outline)"></span></button></div>
+      </div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Switch</span><code>.app-switch · .app-switch__knob</code><span class="t-subtext-regular muted">Active, Allow range selection (assessment type form).</span></div>
+      <div class="cx-stage cx-stage--white">
+        <div class="switch-row"><div><span class="t-body-medium navy">Active</span><span class="t-subtext-regular muted">Available in animal templates</span></div><button class="app-switch is-on" role="switch" aria-checked="true"><span class="app-switch__knob"></span></button></div>
+        <div class="switch-row"><div><span class="t-body-medium navy">Allow range selection</span><span class="t-subtext-regular muted">e.g. 60 – 100 bpm</span></div><button class="app-switch is-off" role="switch" aria-checked="false"><span class="app-switch__knob"></span></button></div>
+      </div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Attachment</span><code>.app-attachment · --pdf</code><span class="t-subtext-regular muted">Reference files and the Upload row.</span></div>
+      <div class="cx-stage cx-stage--white">
+        <div class="cx-row"><span class="app-attachment app-attachment--pdf"><span class="app-icon app-icon--tint i-pdf" style="color:var(--tertiary)"></span></span><span class="t-body-regular">BCS-guide.pdf</span></div>
+        <label class="upload"><span class="app-attachment"><span class="app-icon app-icon--tint i-attachment" style="color:var(--on-primary-container)"></span></span><span class="txt"><span class="t-body-title">Upload files</span><span class="t-subtext-regular muted">JPEG, PNG, PDF, DOC or MP4 · max 50 MB each</span></span></label>
+      </div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Photo badge and dropdown</span><code>.app-photo-badge--male/female/undetermined · .tab-dd</code><span class="t-subtext-regular muted">Gender on animal thumbnails; category filter in Assessment Masters.</span></div>
+      <div class="cx-stage cx-stage--white">
+        <div class="cx-row">
+          <span class="thumb"><img src="../../../app/sample-cheetah-104.png" alt=""><span class="app-photo-badge app-photo-badge--male t-small">M</span></span>
+          <span class="thumb"><img src="../../../app/sample-leopard-84.png" alt=""><span class="app-photo-badge app-photo-badge--female t-small">F</span></span>
+          <span class="thumb"><img src="../../../app/sample-bird-44.png" alt=""><span class="app-photo-badge app-photo-badge--undetermined t-small">U</span></span>
+          <button class="tab-dd t-body-medium" style="height:44px;border:1px solid var(--outline-variant)">All categories <span class="app-icon app-icon--20 app-icon--tint i-dropdown" style="color:var(--on-surface-variant)"></span></button>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ============================== LOCAL ============================== -->
+<section class="cx-sec">
+  <div class="cx-sec__hd"><h2 class="t-major-title">Built in the prototype</h2><span class="cx-tag cx-tag--loc t-subtext-title">core.css · species.css · touch.css</span></div>
+  <p class="t-body-regular">Built on library tokens, but not in the library yet. Candidates for Needs Review.</p>
+  <div class="cx-grid">
+
+    <article class="cx-card cx-card--wide">
+      <div class="cx-meta"><span class="t-body-title">Animal photo hero</span><code>.ah · __bar · __ic · __card · __rows · __foot · __pill · __dots</code><span class="t-subtext-regular muted">Top of the Animal page, shaped like the live Antz app.</span></div>
+      <div class="cx-stage" style="padding:0">
+        <div class="ah"><div class="ah__bg" style="background-image:url(../../../app/sample-cheetah-104.png)"></div>
+          <div class="ah__bar"><button class="ah__ic" aria-label="Back"><span class="app-icon app-icon--28 app-icon--tint i-back" style="color:var(--on-primary)"></span></button><span class="sp"></span><button class="ah__ic" aria-label="Favourite"><span class="app-icon app-icon--28 app-icon--tint i-saved" style="color:var(--on-primary)"></span></button><button class="ah__ic" aria-label="QR code"><span class="app-icon app-icon--28 app-icon--tint i-qr-code" style="color:var(--on-primary)"></span></button><button class="ah__ic" aria-label="More"><span class="app-icon app-icon--28 app-icon--tint i-menu-vertical" style="color:var(--on-primary)"></span></button></div>
+          <div class="ah__card"><span class="ah__name t-major-title">Raja</span><span class="t-body-reg-italic">Acinonyx jubatus</span><span class="ah__rows t-body-regular"><span>Species: <b class="t-body-title">Cheetah</b></span><span>Sex: <b class="t-body-title">Male</b></span><span>Site: <b class="t-body-title">North Zone</b></span><span>Encl: <b class="t-body-title">E-12</b></span><span>AID: <b class="t-body-title">ANZ-00104</b></span></span></div>
+          <div class="ah__foot"><span class="ah__pill t-subtext-title">Individual</span><span class="ah__pill ah__pill--ok t-subtext-title">Chipped</span><span class="sp"></span><span class="ah__dots" style="margin-right:0"><i class="on"></i><i></i><i></i><i></i><i></i></span><span class="sp"></span></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Floating action button</span><code>.fab · .fab.ad-fab</code><span class="t-subtext-regular muted">+ Add Reading (Assessment tab); New Assessment Type (Masters).</span></div>
+      <div class="cx-stage"><div class="cx-row"><button class="fab ad-fab t-body-title"><span class="app-icon app-icon--20 app-icon--tint i-plus" style="color:var(--on-primary)"></span>Add Reading</button><button class="fab t-minor-medium"><span class="app-icon app-icon--tint i-plus" style="color:var(--on-primary)"></span>New Assessment Type</button></div></div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Big buttons</span><code>.bigbtn --primary · --navy · --ghost · --text</code><span class="t-subtext-regular muted">Sheet footers: Same as last, Add Entry, Create assessment.</span></div>
+      <div class="cx-stage cx-stage--white">
+        <div class="cx-row"><button class="bigbtn bigbtn--ghost t-minor-medium" style="flex:0 0 auto;padding:0 var(--sp-16)"><span class="app-icon app-icon--20 app-icon--tint i-reset" style="color:var(--on-surface-variant)"></span>Same as last</button><button class="bigbtn bigbtn--primary t-minor-medium">Add Entry</button></div>
+        <div class="cx-row"><button class="bigbtn bigbtn--ghost t-minor-medium">Cancel</button><button class="bigbtn bigbtn--navy t-minor-medium">Create assessment</button></div>
+      </div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Status pills and trend</span><code>.pill --done · --due · --over · --off · --type · .trend --up/--down/--flat</code><span class="t-subtext-regular muted">Status in tables and sheets; change since last reading.</span></div>
+      <div class="cx-stage cx-stage--white">
+        <div class="cx-row"><span class="pill pill--done t-subtext-title">Up to date</span><span class="pill pill--due t-subtext-title">Due</span><span class="pill pill--over t-subtext-title">Overdue</span><span class="pill pill--off t-subtext-title">Inactive</span><span class="pill pill--type t-subtext-title">Number</span></div>
+        <div class="cx-row"><span class="trend trend--up t-subtext-title"><span class="app-icon app-icon--16 app-icon--tint i-dropdown chev-u" style="color:currentColor"></span>1.2%</span><span class="trend trend--down t-subtext-title"><span class="app-icon app-icon--16 app-icon--tint i-dropdown" style="color:currentColor"></span>3.4%</span><span class="trend trend--flat t-subtext-title">No change</span></div>
+      </div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Chips</span><code>.chips · .chip</code><span class="t-subtext-regular muted">List items and scale steps on an assessment type.</span></div>
+      <div class="cx-stage cx-stage--white"><div class="chips"><span class="chip t-body-regular"><span class="t-body-title">1</span>Emaciated</span><span class="chip t-body-regular"><span class="t-body-title">3</span>Ideal</span><span class="chip t-body-regular"><span class="t-body-title">5</span>Obese</span><span class="chip t-body-regular">Healthy</span><span class="chip t-body-regular">Mild shedding</span></div></div>
+    </article>
+
+    <article class="cx-card cx-card--wide">
+      <div class="cx-meta"><span class="t-body-title">KPI strip</span><code>.kpis</code><span class="t-subtext-regular muted">Species › Assessments: tap a KPI to filter the table.</span></div>
+      <div class="cx-stage">
+        <div class="kpis"><div><span class="k t-small">ASSESSED</span><span class="t-major-medium ink">9<span class="t-body-regular muted"> / 12</span></span><span class="sub2 t-small">3 due · every 7 days</span></div><div><span class="k t-small">GAINING</span><span class="t-major-medium up">4</span><span class="sub2 t-small">&gt; 2% in 30 days</span></div><div><span class="k t-small">LOSING</span><span class="t-major-medium down">2</span><span class="sub2 t-small">&gt; 2% in 30 days</span></div><div><span class="k t-small">STABLE</span><span class="t-major-medium ink">3</span><span class="sub2 t-small">within 2%</span></div></div>
+      </div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Stats</span><code>.stats · .stat</code><span class="t-subtext-regular muted">Under the graph in the side sheet.</span></div>
+      <div class="cx-stage cx-stage--white"><div class="stats"><div class="stat"><span class="t-subtext-regular muted">Latest</span><span class="v t-minor-title">42.6 kg</span></div><div class="stat"><span class="t-subtext-regular muted">Average</span><span class="v t-minor-title">41.9 kg</span></div><div class="stat"><span class="t-subtext-regular muted">Lowest</span><span class="v lo t-minor-title">39.8 kg</span></div></div></div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Records with swipe actions</span><code>.records · .rec · .rec__note · .sw · .sw__act--edit/--del</code><span class="t-subtext-regular muted">History list. Swipe left to Edit or Delete (shown open here).</span></div>
+      <div class="cx-stage cx-stage--white">
+        <div class="records">
+          <div class="rec"><span class="rec__date"><span class="t-body-title navy">29 Sep</span><span class="t-subtext-regular muted">10:20 AM</span></span><span class="rec__body"><span class="rec__val"><span class="t-minor-title">42.6</span><span class="u t-body-regular">kg</span></span><span class="rec__note t-subtext-regular"><span class="app-icon app-icon--16 app-icon--tint i-notes" style="color:var(--on-surface-variant)"></span>Ate well after fasting day.</span></span><span class="rec__by t-subtext-regular">Dr. Rao</span></div>
+          <div class="sw"><div class="sw__acts"><button class="sw__act sw__act--edit t-body-title"><span class="app-icon app-icon--20 app-icon--tint i-pencil" style="color:var(--on-primary)"></span>Edit</button><button class="sw__act sw__act--del t-body-title"><span class="app-icon app-icon--20 app-icon--tint i-delete" style="color:var(--on-primary)"></span>Delete</button></div><div class="sw__row" style="transform:translateX(-176px)"><div class="rec"><span class="rec__date"><span class="t-body-title navy">22 Sep</span><span class="t-subtext-regular muted">9:05 AM</span></span><span class="rec__body"><span class="rec__val"><span class="t-minor-title">42.1</span><span class="u t-body-regular">kg</span></span></span><span class="rec__by t-subtext-regular">Priya K.</span></div></div></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Number pad</span><code>.numpad · .numpad__k · --fn</code><span class="t-subtext-regular muted">Add Entry for number types: no system keyboard.</span></div>
+      <div class="cx-stage"><div class="numpad"><button class="numpad__k t-medium-medium">1</button><button class="numpad__k t-medium-medium">2</button><button class="numpad__k t-medium-medium">3</button><button class="numpad__k t-medium-medium">4</button><button class="numpad__k t-medium-medium">5</button><button class="numpad__k t-medium-medium">6</button><button class="numpad__k t-medium-medium">7</button><button class="numpad__k t-medium-medium">8</button><button class="numpad__k t-medium-medium">9</button><button class="numpad__k numpad__k--fn t-medium-medium">.</button><button class="numpad__k t-medium-medium">0</button><button class="numpad__k numpad__k--fn t-medium-medium" aria-label="Delete"><span class="app-icon app-icon--tint i-back" style="color:var(--on-surface-variant)"></span></button></div></div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Slider and stepper</span><code>.slider · __track · __fill · __knob · __ends · .stepper</code><span class="t-subtext-regular muted">Slider-type readings; Step in the type form.</span></div>
+      <div class="cx-stage cx-stage--white">
+        <div class="slider"><div class="slider__track"></div><div class="slider__fill" style="left:0;width:60%"></div><div class="slider__knob" style="left:60%"></div></div>
+        <div class="slider__ends t-subtext-regular"><span><span class="t-subtext-title">0</span>Calm</span><span><span class="t-subtext-title">10</span>Agitated</span></div>
+        <div class="switch-row"><div><span class="t-body-medium navy">Step</span><span class="t-subtext-regular muted">Gap between values</span></div><div class="stepper"><button class="t-minor-title">−</button><input class="t-minor-medium" value="1"><button class="t-minor-title">+</button></div></div>
+      </div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Popover menu</span><code>.pop · .pop__title · .pop__item · --danger</code><span class="t-subtext-regular muted">Hold a row, ⋮ menus, pickers.</span></div>
+      <div class="cx-stage"><div class="pop"><span class="pop__title t-subtext-title">Body Weight</span><button class="pop__item t-body-regular"><span class="app-icon app-icon--20 app-icon--tint i-plus" style="color:var(--on-surface-variant)"></span>Add entry</button><button class="pop__item t-body-regular"><span class="app-icon app-icon--20 app-icon--tint i-time" style="color:var(--on-surface-variant)"></span>History</button><button class="pop__item pop__item--danger t-body-regular"><span class="app-icon app-icon--20 app-icon--tint i-delete" style="color:var(--error)"></span>Delete</button></div></div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Toast with Undo</span><code>.toast</code><span class="t-subtext-regular muted">Confirms a save or delete.</span></div>
+      <div class="cx-stage"><div class="toast t-body-medium"><span class="app-icon app-icon--20 app-icon--tint i-just-tick-mark" style="color:var(--primary-container)"></span><span>Body Weight saved</span><button class="t-body-title">Undo</button></div></div>
+    </article>
+
+    <article class="cx-card cx-card--wide">
+      <div class="cx-meta"><span class="t-body-title">Table card and row</span><code>.tcard · .tcard__tools · .trow · .acell · .thumb</code><span class="t-subtext-regular muted">Species › Assessments animal table. Swipe a row for Add · History.</span></div>
+      <div class="cx-stage">
+        <div class="tcard"><div class="tcard__tools"><label class="tab-search" style="flex:1"><span class="app-icon app-icon--20 app-icon--tint i-search" style="color:var(--on-surface-variant)"></span><input class="t-body-regular" placeholder="Search animals…" style="border:0;outline:0;flex:1;min-width:0;background:transparent"></label></div>
+          <div class="trow" style="display:grid;grid-template-columns:1.2fr 1fr auto;align-items:center"><span class="acell"><span class="thumb"><img src="../../../app/sample-cheetah-104.png" alt=""><span class="app-photo-badge app-photo-badge--male t-small">M</span></span><span><span class="t-body-title navy">Raja</span><span class="t-subtext-regular">ANZ-00104</span></span></span><span class="t-body-regular">42.6 kg</span><span class="pct up t-subtext-title">+1.2%</span></div>
+          <div class="trow" style="display:grid;grid-template-columns:1.2fr 1fr auto;align-items:center"><span class="acell"><span class="thumb"><img src="../../../app/sample-leopard-84.png" alt=""><span class="app-photo-badge app-photo-badge--female t-small">F</span></span><span><span class="t-body-title navy">Zara</span><span class="t-subtext-regular">ANZ-00084</span></span></span><span class="t-body-regular">—</span><span class="pill pill--due t-subtext-title">Due</span></div>
+        </div>
+      </div>
+    </article>
+
+
+    <article class="cx-card cx-card--wide">
+      <div class="cx-meta"><span class="t-body-title">Assessment card</span><code>.ac · __hd · __bd · __row · __date · .ac-val · .ac-chg · .ac-viz · .ac-stats · .ac-note</code><span class="t-subtext-regular muted">Figma 1528:9130.</span></div>
+      <div class="cx-stage"><div style="max-width:380px"><div class="ac"><span class="ac__hd"><span class="ac__name"><span class="t-body-medium">Weight</span><span class="ac__cat t-subtext-regular">Physical Health</span></span><span class="ac__add"><span class="app-icon app-icon--24 app-icon--tint i-add-with-circle" style="color: var(--add-primary)"></span></span></span>
+        <span class="ac__bd"><span class="ac__row"><span class="ac__lead"><span class="ac__main"><span class="ac-val"><span class="ac-val__n t-medium-medium">57.6</span><span class="ac-val__u t-minor-medium">kg</span></span><span class="ac-chg ac-chg--up t-subtext-regular">↑ 0.1 kg</span></span></span><span class="ac-viz"><svg width="132" height="48" viewBox="0 0 132 48"><polygon points="0,48 0,30 30,40 55,32 80,34 105,22 128,6 128,48" style="fill:var(--primary-main-a20)"/><polyline points="0,30 30,40 55,32 80,34 105,22 128,6" fill="none" style="stroke:var(--primary-main);stroke-width:1.5"/><circle cx="128" cy="6" r="2.5" style="fill:var(--primary-main)"/></svg></span></span>
+        <span class="ac__date t-subtext-regular"><span class="app-icon app-icon--16 app-icon--tint i-time" style="color: currentColor"></span><i>Last tested on 29 Sep 2026</i></span>
+        <span class="ac-stats"><span class="ac-stat"><span class="ac-stat__k t-small">PREVIOUS</span><span class="ac-stat__v t-body-title">57.5 kg</span></span><span class="ac-stat"><span class="ac-stat__k t-small">AVERAGE</span><span class="ac-stat__v t-body-title">56.8 kg</span></span><span class="ac-stat"><span class="ac-stat__k t-small">MIN</span><span class="ac-stat__v t-body-title">55.4 kg</span></span><span class="ac-stat"><span class="ac-stat__k t-small">MAX</span><span class="ac-stat__v t-body-title">57.8 kg</span></span></span></span></div></div></div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">Record row</span><code>.rec2 · __date · __card · __top · __by</code><span class="t-subtext-regular muted">Details sheet › All Records.</span></div>
+      <div class="cx-stage cx-stage--white"><div class="rec2"><div class="rec2__date"><span class="t-subtext-title">29 Sep 2026</span><span class="t-subtext-regular">08:41 AM</span></div><div class="rec2__card"><div class="rec2__top"><span class="t-body-medium">57.6 kg</span><span class="app-icon app-icon--16 app-icon--tint i-notes" style="color: var(--moderate-secondary)"></span></div><p class="t-subtext-regular">Slight change from last week, keep monitoring.</p><div class="rec2__by t-subtext-regular"><span>Dr. Mehta</span><span>29 Sep 2026 • 08:41 AM</span></div></div></div></div>
+    </article>
+
+    <article class="cx-card">
+      <div class="cx-meta"><span class="t-body-title">References</span><code>.refsx · __hd · __grid · __more</code><span class="t-subtext-regular muted">Add entry sheet; the details sheet shows them large.</span></div>
+      <div class="cx-stage cx-stage--white"><div class="refsx"><div class="refsx__hd"><span class="t-body-medium">References</span><button class="t-subtext-title">View All</button></div><div class="refsx__grid"><button><img src="ref-eye.png" alt=""></button><button><img src="ref-eye.png" alt=""></button><button><img src="ref-eye.png" alt=""><span class="refsx__more t-major-medium">+2</span></button></div></div></div>
+    </article>
+  </div>
+</section>
+
+<!-- ============================== ICONS ============================== -->
+<section class="cx-sec">
+  <div class="cx-sec__hd"><h2 class="t-major-title">Icons</h2><span class="cx-tag cx-tag--lib t-subtext-title">app/icons/icons.css</span></div>
+  <div class="cx-icons t-subtext-regular" id="icons"></div>
+</section>
+
+<!-- ============================== TYPE ============================== -->
+<section class="cx-sec">
+  <div class="cx-sec__hd"><h2 class="t-major-title">Type styles</h2><span class="cx-tag cx-tag--lib t-subtext-title">app/type.css</span></div>
+  <p class="t-body-regular">The Antz text styles from Figma that this prototype uses, largest first. All are Inter. Each row shows the Figma name, a sample, then size · weight · line-height · letter-spacing (read from the page as it renders) and where the style is used.</p>
+  <div class="cx-type" id="type"></div>
+</section>
+
+</main>
+<script>
+  /* embed mode for the library's Animal Assessments page: ?view=review shows only what was built in the prototype, ?view=final only the library parts; reports its height to the parent */
+  (() => {
+    const v = new URLSearchParams(location.search).get('view'); if (!v) return;
+    const secs = [...document.querySelectorAll('.cx-sec')], keep = v === 'review' ? secs[1] : secs[0];
+    document.querySelector('.cx-top').hidden = true; secs.forEach(x => { x.hidden = x !== keep; });
+    keep.querySelector('.cx-sec__hd').hidden = true; Object.assign(document.querySelector('.cx').style, { padding: '0', maxWidth: 'none', margin: '0' });
+    const st = document.createElement('style'); st.textContent = '.cx-grid { grid-template-columns: minmax(0, 1fr); max-width: 810px; } .cx-meta code, .cx-meta .muted { display: none; } .cx-meta { padding-bottom: var(--sp-12); } .cx-card { cursor: pointer; } .cx-card.is-copied .cx-meta .t-body-title::after { content: "  ·  Copied"; color: var(--primary-dark, #2e7d32); }'; document.head.appendChild(st);
+    /* per-component decisions (Naveen, 5 Oct 2026): new / needs work stay here; library-style and old ones leave */
+    const DECIDE = { 'Animal photo hero': 'new', 'Floating action button': 'new', 'Big buttons': 'new', 'Status pills and trend': 'trend', 'Chips': 'new', 'KPI strip': 'lib', 'Stats': 'new', 'Records with swipe actions': 'work', 'Slider and stepper': 'stepper', 'Popover menu': 'new', 'Table card and row': 'old' };
+    if (v === 'review') document.querySelectorAll('.cx-card').forEach(c => {
+      const t = c.querySelector('.cx-meta .t-body-title'), d = DECIDE[t.textContent];
+      if (d && d !== 'work') c.remove();   // new / trend / stepper moved to the library's Finalized tab (5 Oct 2026); lib and old were never new
+      else if (d === 'work') c.classList.add('needs-work');
+    });
+    st.textContent += ' .needs-work .cx-meta .t-body-title::after { content: "  ·  Needs more work"; color: var(--on-primary-container); font-weight: 400; }';
+    document.querySelectorAll('.cx-card').forEach(c => c.addEventListener('click', () => {   // click a component: copy its source
+      const html = c.querySelector('.cx-stage').innerHTML.replace(/^\s*\n/, '').trim(), ta = document.createElement('textarea'); ta.value = html; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) { navigator.clipboard && navigator.clipboard.writeText(html); } ta.remove();
+      c.classList.add('is-copied'); setTimeout(() => c.classList.remove('is-copied'), 1500);
+    }));
+    const send = () => parent.postMessage({ antzAssessFrame: v, h: document.documentElement.scrollHeight }, '*');
+    addEventListener('load', send); new ResizeObserver(send).observe(document.body);
+  })();
+</script>
+<script>
+  const icons = ['back','search','plus','dropdown','close','close-with-circle','list','menu-vertical','view-settings','time','reset','pencil','delete','pdf','attachment','calendar','notes','saved','qr-code','transfer','approved','file-doc','just-tick-mark','paw','reason-or-list','radio-selected'];
+  document.getElementById('icons').innerHTML = icons.map(s => `<div><span class="app-icon app-icon--28 app-icon--tint i-${s}" style="color:var(--on-primary-container)"></span><span>${s}</span></div>`).join('');
+  const type = [
+    ['display-title', 'Antz_Display_Title', 'Typed value on the Add Entry pad'],
+    ['large-title', 'Antz_Large_Title', 'Latest value on a card, slider value'],
+    ['stat-title', 'Antz_Stat_Title', 'Average in the graph summary'],
+    ['major-title', 'Antz_Major_Title', 'Animal name in the hero, species name, form titles'],
+    ['major-medium', 'Antz_Major_Medium', 'KPI numbers, number entry field'],
+    ['medium-medium', 'Antz_Medium_Medium', 'Side sheet title, number pad keys, stat values'],
+    ['minor-title', 'Antz_Minor_Title', 'Text values, record values'],
+    ['minor-medium', 'Antz_Minor_Medium', 'Tabs, big buttons, field values'],
+    ['minor-regular', 'Antz_Minor_Regular', 'Form inputs, radio options'],
+    ['body-title', 'Antz_Body_Title', 'Card names, animal tags'],
+    ['body-medium', 'Antz_Body_Medium', 'Search, chips, toast'],
+    ['body-regular', 'Antz_Body_Regular', 'Body text, subtitles'],
+    ['body-reg-italic', 'Antz_Body_Reg_Italic', 'Scientific names'],
+    ['subtext-title', 'Antz_Subtext_title', 'Pills, Due / Overdue, trends'],
+    ['subtext-regular', 'Antz_Subtext_Regular', 'Bylines, dates, field labels'],
+    ['small', 'Antz_Small', 'Gender badge, KPI labels, graph axis']
+  ];
+  document.getElementById('type').innerHTML = type.map(([c, figma, use]) => {
+    const el = document.createElement('span'); el.className = 't-' + c; document.body.appendChild(el);
+    const st = getComputedStyle(el), spec = `${st.fontSize} · ${st.fontWeight} · lh ${st.lineHeight} · ls ${st.letterSpacing}`; el.remove();
+    return `<div class="cx-trow"><div><span class="name t-body-title">${figma}</span><code>.t-${c}</code></div><span class="t-${c} sample">Good data, good insights, healthy animals</span><div><span class="spec t-subtext-regular">${spec}</span><span class="spec t-subtext-regular">${use}</span></div></div>`;
+  }).join('');
+</script>
+</body>
+</html>

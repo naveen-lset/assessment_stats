@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assessments · iPad · v1</title>
+<link rel="stylesheet" href="../../../app/tokens.css">
+<link rel="stylesheet" href="../../../app/type.css">
+<link rel="stylesheet" href="../../../app/components.css">
+<link rel="stylesheet" href="../../../app/modules/hospital.css">
+<link rel="stylesheet" href="../../../app/icons/icons.css">
+<style>
+/* =====================================================================================================
+   Assessments · iPad v1. Tablet adaptation of Figma fAOcpkMwZPWEkHO3kMvNoy (Master 1485:8667, User 1485:10626, Components 1485:16978).
+   Library classes first (.hdr, .tab-search, .tab-primary, .app-field, .app-radio, .app-segmented, .app-switch, .btn, .app-attachment …).
+   Everything in this <style> is PAGE-LEVEL: tokens only, no hex, no font-size / font-weight (text size comes from .t-* classes).
+   Page-level pieces are candidates for Needs Review once the flow is agreed.
+   ===================================================================================================== */
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--light-bg); color: var(--on-surface-variant); }
+
+/* ---------- Preview chrome (outside the iPad) ---------- */
+.stage { display: flex; flex-direction: column; align-items: center; gap: var(--sp-16); padding: var(--sp-24) var(--sp-16) var(--sp-48); }
+.screens { display: flex; flex-wrap: wrap; gap: var(--sp-8); justify-content: center; max-width: 810px; }
+.screens button { border: 1px solid var(--outline-variant); background: var(--on-primary); color: var(--on-surface-variant); border-radius: 20px; padding: var(--sp-8) var(--sp-16); cursor: pointer; font-family: inherit; }
+.screens button.on { background: var(--on-primary-container); border-color: var(--on-primary-container); color: var(--on-primary); }
+.caption { max-width: 810px; color: var(--neutral-secondary); text-align: center; }
+
+/* ---------- iPad frame: 810 × 1080 (iPad 9th gen portrait, same as the library's tablet mock-ups) ---------- */
+.ipad { position: relative; width: 810px; height: 1080px; display: flex; flex-direction: column; overflow: hidden; background: var(--background); border: 1px solid var(--outline-variant); border-radius: 12px; }
+.screen { display: none; flex: 1; min-height: 0; flex-direction: column; }
+.screen.on { display: flex; }
+.hdr__close { margin-left: auto; cursor: pointer; }
+.hdr__row .app-icon[data-go] { cursor: pointer; }
+.btn--auto { width: auto; padding: var(--sp-8) var(--sp-16); gap: var(--sp-4); }       /* library .btn is fixed 78 wide; labels here are longer */
+.btn--ghost { background: var(--on-primary); border: 1px solid var(--outline); color: var(--on-surface-variant); }
+.btn--navy { background: var(--on-primary-container); color: var(--on-primary); }
+.btn[disabled] { background: var(--outline-variant); color: var(--on-primary); cursor: not-allowed; }
+.pill { display: inline-flex; align-items: center; padding: 2px var(--sp-8); border-radius: 4px; white-space: nowrap; }
+.pill--active { background: var(--secondary-container); color: var(--on-secondary-container); }
+.pill--off { background: var(--surface-variant); color: var(--neutral-secondary); }
+.pill--type { background: var(--displaybg-primary); color: var(--on-primary-container); }
+.muted { color: var(--neutral-secondary); }
+.k { color: var(--neutral-secondary); }
+
+/* ---------- Split view: list pane + detail pane (tablet replaces the phone's push navigation) ---------- */
+.split { flex: 1; min-height: 0; display: flex; }
+.pane-list { width: 280px; flex: 0 0 280px; display: flex; flex-direction: column; background: var(--on-primary); border-right: 1px solid var(--outline-variant); min-height: 0; }
+.pane-list__search { padding: var(--sp-12) var(--sp-16); border-bottom: 1px solid var(--surface-variant); }
+.pane-list__search .tab-search { padding: var(--sp-8) var(--sp-12); }
+.pane-list__scroll { flex: 1; overflow-y: auto; }
+.group-label { padding: var(--sp-16) var(--sp-16) var(--sp-8); color: var(--neutral-secondary); text-transform: uppercase; letter-spacing: .06em; }
+.li { display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-12) var(--sp-16); border-left: 3px solid transparent; cursor: pointer; }
+.li:hover { background: var(--background); }
+.li.on { background: var(--displaybg-primary); border-left-color: var(--primary-main); }
+.li__top { display: flex; align-items: center; gap: var(--sp-8); }
+.li__top .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--on-primary-container); }
+.li__meta { display: flex; align-items: center; gap: var(--sp-8); color: var(--neutral-secondary); }
+.li__value { color: var(--neutral-primary); }
+.pane-detail { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--sp-16); padding: var(--sp-20); }
+.pane-head { display: flex; align-items: flex-start; gap: var(--sp-12); }
+.pane-head__title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-4); }
+.pane-head__title .t-major-title { color: var(--on-primary-container); }
+.card { background: var(--on-primary); border-radius: 8px; padding: var(--sp-16); display: flex; flex-direction: column; gap: var(--sp-16); }
+.card__hd { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); }
+.kv { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-16) var(--sp-24); }
+.kv > div { display: flex; flex-direction: column; gap: var(--sp-4); }
+.kv .full { grid-column: 1 / -1; }
+.chips { display: flex; flex-wrap: wrap; gap: var(--sp-8); }
+.chip { display: inline-flex; align-items: center; gap: var(--sp-4); padding: var(--sp-8) var(--sp-12); border-radius: 6px; background: var(--background); color: var(--on-surface-variant); }
+.used { display: flex; align-items: center; justify-content: space-between; padding: var(--sp-16); border-radius: 8px; background: var(--displaybg-primary); color: var(--on-primary-container); }
+
+/* ---------- Form (New Assessment Type) ---------- */
+.form-wrap { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: var(--sp-24); padding: var(--sp-24) var(--sp-20); align-items: start; }
+.form { display: flex; flex-direction: column; gap: var(--sp-24); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-16); }
+.app-field input, .app-field textarea { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: inherit; font-family: inherit; resize: none; padding: 0; }
+.app-field--area { height: auto; min-height: 76px; align-items: flex-start; }
+.app-field .app-icon { flex: 0 0 auto; }
+.field-check { display: flex; align-items: center; gap: var(--sp-8); padding: var(--sp-16); border-radius: 4px; background: var(--surface); border: 1px solid var(--outline); color: var(--on-primary-container); cursor: pointer; }
+.sec-title { display: flex; flex-direction: column; gap: var(--sp-4); color: var(--on-primary-container); }
+.types { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--sp-8); }
+.type-tile { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-8); padding: var(--sp-12); border-radius: 8px; border: 1px solid var(--outline-variant); background: var(--on-primary); color: var(--on-surface-variant); cursor: pointer; text-align: left; font-family: inherit; min-height: 92px; }
+.type-tile:hover { border-color: var(--outline); }
+.type-tile.on { border: 1.5px solid var(--primary-main); background: var(--primary-main-a10); color: var(--on-primary-container); }
+.type-tile .glyph { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: var(--displaybg-primary); color: var(--on-primary-container); }
+.config { display: flex; flex-direction: column; gap: var(--sp-16); padding: var(--sp-16); border-radius: 8px; background: var(--on-primary); border: 1px solid var(--surface-variant); }
+.item-row { display: flex; align-items: center; gap: var(--sp-8); }
+.item-row .app-field { height: 48px; padding: var(--sp-12); }
+.item-row .num { flex: 0 0 72px; }
+.iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; flex: 0 0 auto; border-radius: 4px; border: 0; cursor: pointer; }
+.iconbtn--add { background: var(--primary-main); }
+.iconbtn--del { background: var(--error-container-a30); }
+.stepper { display: flex; align-items: center; gap: var(--sp-8); padding: var(--sp-4); border-radius: 6px; background: var(--background); }
+.stepper button { width: 32px; height: 32px; border: 0; border-radius: 4px; background: var(--on-primary); color: var(--on-primary-container); cursor: pointer; font-family: inherit; }
+.stepper .v { flex: 1; text-align: center; color: var(--on-primary-container); }
+.switch-row { display: flex; align-items: center; gap: var(--sp-16); }
+.switch-row > div { flex: 1; display: flex; flex-direction: column; gap: var(--sp-4); }
+.app-switch { cursor: pointer; border: 0; }
+.app-switch.is-off { padding: 4px 20px 4px 4px; }
+.app-switch.is-on { background: var(--primary-main); }
+.upload { display: flex; flex-direction: column; align-items: center; gap: var(--sp-8); padding: var(--sp-24); border-radius: 8px; border: 1px dashed var(--outline); background: var(--displaybg-primary-a60); color: var(--on-primary-container); text-align: center; }
+.preview { position: sticky; top: 0; display: flex; flex-direction: column; gap: var(--sp-12); padding: var(--sp-16); border-radius: 12px; background: var(--on-primary); border: 1px solid var(--surface-variant); }
+.preview__badge { align-self: flex-start; }
+.form-foot { display: flex; justify-content: flex-end; gap: var(--sp-12); padding: var(--sp-16) var(--sp-20); background: var(--on-primary); border-top: 1px solid var(--outline-variant); }
+
+/* ---------- Response inputs (shared by the Add Entry sheet and the form preview) ---------- */
+.opt { display: flex; align-items: center; gap: var(--sp-12); width: 100%; min-height: 48px; padding: var(--sp-12); border-radius: 4px; background: var(--background); border: 1px solid transparent; color: var(--on-surface-variant); cursor: pointer; text-align: left; font-family: inherit; }
+.opt.on { background: var(--primary-main-a10); border-color: var(--primary-main); color: var(--on-primary-container); }
+.opts { display: flex; flex-direction: column; gap: var(--sp-8); }
+.slider { position: relative; height: 24px; margin: var(--sp-8) var(--sp-8) 0; }
+.slider__track { position: absolute; left: 0; right: 0; top: 10px; height: 4px; border-radius: 2px; background: var(--surface-variant); }
+.slider__fill { position: absolute; top: 10px; height: 4px; border-radius: 2px; background: var(--primary-main); }
+.slider__knob { position: absolute; top: 4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: var(--primary-main); box-shadow: 0 0 0 3px var(--on-primary); }
+.slider__ends { display: flex; justify-content: space-between; color: var(--neutral-secondary); }
+.slider__ends span { display: flex; flex-direction: column; }
+.slider__ends span:last-child { text-align: right; }
+.big { color: var(--on-primary-container); }
+.dt { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-16); }
+.dt .app-field { gap: var(--sp-8); padding: var(--sp-12); border-color: var(--outline-variant); }
+.notes { display: flex; padding: var(--sp-16) var(--sp-12); border-radius: 4px; background: var(--notes); color: var(--rustic-red); }
+.notes textarea { flex: 1; border: 0; outline: 0; background: transparent; color: inherit; font-family: inherit; resize: none; min-height: 22px; padding: 0; }
+.notes textarea::placeholder { color: var(--rustic-red); }
+
+/* ---------- User side: summary + graph + records ---------- */
+.seg-row { display: flex; align-items: center; gap: var(--sp-12); }
+.seg-row .app-segmented { padding: 2px; background: var(--displaybg-primary); }
+.seg-row .app-segment { padding: 6px; }
+.seg-row .app-segment--active { background: var(--on-primary); color: var(--neutral-primary); box-shadow: 2px 2px 6px var(--black-05); }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart .axis { fill: var(--neutral-secondary); }
+.chart .grid { stroke: var(--surface-variant); stroke-width: 1; }
+.chart .avg { stroke: var(--outline); stroke-width: 1; stroke-dasharray: 4 4; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-8); padding-top: var(--sp-16); border-top: 1px solid var(--surface-variant); }
+.stat { display: flex; flex-direction: column; align-items: center; gap: var(--sp-8); padding: var(--sp-8) 6px; border-radius: 8px; background: var(--displaybg-primary); text-align: center; }
+.stat .v { color: var(--neutral-primary); }
+.stat .v.low { color: var(--error); }
+.freq { display: flex; flex-direction: column; gap: var(--sp-12); }
+.freq__row { display: flex; flex-direction: column; gap: 6px; }
+.freq__row .top { display: flex; justify-content: space-between; }
+.bar { height: 6px; border-radius: 3px; background: var(--surface-variant); overflow: hidden; }
+.bar > i { display: block; height: 100%; border-radius: 3px; background: var(--on-primary-container); }
+.refs { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-8); }
+.refs img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; display: block; }
+.refs .more { position: relative; }
+.refs .more span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: var(--neutral-primary-a50); color: var(--on-primary); }
+.records { display: flex; flex-direction: column; gap: var(--sp-12); }
+.rec { display: flex; align-items: flex-start; gap: var(--sp-12); }
+.rec__date { flex: 0 0 84px; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding-top: var(--sp-12); white-space: nowrap; }
+.rec__pill { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-8); padding: var(--sp-12); border-radius: 4px; background: var(--background); cursor: pointer; }
+.rec:nth-child(even) .rec__pill { background: var(--displaybg-primary); }
+.rec__val { display: flex; align-items: center; gap: var(--sp-8); }
+.rec__val .v { flex: 1; min-width: 0; color: var(--neutral-primary); }
+.rec__val .u { color: var(--on-primary-container); }
+.rec__by { display: flex; justify-content: space-between; gap: var(--sp-8); color: var(--neutral-secondary); }
+.rec__note { display: none; padding-top: var(--sp-8); border-top: 1px solid var(--outline-variant); color: var(--on-surface-variant); }
+.rec.open .rec__note { display: block; }
+.empty { padding: var(--sp-32); text-align: center; color: var(--neutral-secondary); }
+
+/* ---------- Form sheet (iPad): centred card over a dim backdrop, instead of the phone's bottom sheet ---------- */
+.scrim { position: absolute; inset: 0; z-index: 10; display: none; align-items: center; justify-content: center; padding: var(--sp-24); background: var(--neutral-primary-a50); }
+.scrim.on { display: flex; }
+.sheet { width: 560px; max-height: 100%; display: flex; flex-direction: column; border-radius: 16px; background: var(--on-primary); overflow: hidden; box-shadow: 0 8px 24px var(--neutral-primary-a10); }
+.sheet__hd { display: flex; flex-direction: column; gap: var(--sp-12); padding: var(--sp-16) var(--sp-20); border-bottom: 1px solid var(--outline-variant); }
+.sheet__hd .top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-12); }
+.sheet__hd .top > div { display: flex; flex-direction: column; gap: var(--sp-4); color: var(--on-primary-container); }
+.sheet__bd { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--sp-16); padding: var(--sp-20); }
+.sheet__ft { display: flex; gap: var(--sp-16); padding: var(--sp-16) var(--sp-20); background: var(--background); }
+.sheet__ft .btn { flex: 1; width: auto; }
+.toast { position: absolute; left: 50%; bottom: var(--sp-24); z-index: 11; transform: translateX(-50%); display: none; align-items: center; gap: var(--sp-8); padding: var(--sp-12) var(--sp-16); border-radius: 8px; background: var(--on-primary-container); color: var(--on-primary); }
+.toast.on { display: flex; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="screens t-body-medium" id="screens">
+    <button data-screen="masters" class="on">1 · Assessment Masters</button>
+    <button data-screen="new">2 · New Assessment Type</button>
+    <button data-screen="user">3 · Animal assessments</button>
+    <button data-screen="sheet">4 · Add Entry sheet</button>
+  </div>
+  <p class="caption t-body-regular" id="caption"></p>
+
+  <div class="ipad" id="ipad">
+
+    <!-- ============ 1 · MASTERS: list + detail (Figma "Assessment Type Details" 1485:9504 / 9555 / 9608 / 9951 / 10026 / 10531) ============ -->
+    <section class="screen on" data-s="masters">
+      <header class="hdr">
+        <div class="hdr__row">
+          <span class="app-icon i-back app-icon--tint" style="color: var(--on-secondary-container)"></span>
+          <div class="hdr__title">
+            <div class="hdr__title-row"><span class="t-major-title name">Assessment Masters</span></div>
+            <div class="hdr__sub t-body-medium"><span class="t-body-medium" id="mCount"></span><span class="sep t-body-medium">|</span><span class="t-body-medium">Used across animal templates</span></div>
+          </div>
+          <button class="btn btn--admit btn--auto t-body-medium" data-go="new"><span class="app-icon app-icon--20 app-icon--tint i-plus" style="color: var(--on-primary)"></span>New Assessment Type</button>
+        </div>
+        <div class="hdr__tabs-wrap"><div class="tab-primary-tabs t-body-medium" id="mTabs"></div></div>
+      </header>
+      <div class="split">
+        <aside class="pane-list">
+          <div class="pane-list__search"><div class="tab-search"><span class="app-icon app-icon--20 app-icon--tint i-search" style="color: var(--on-surface-variant)"></span><input class="t-body-medium" id="mSearch" placeholder="Search assessment types" style="border:0;outline:0;flex:1;min-width:0;background:transparent;color:inherit;font-family:inherit"></div></div>
+          <div class="pane-list__scroll" id="mList"></div>
+        </aside>
+        <main class="pane-detail" id="mDetail"></main>
+      </div>
+    </section>
+
+    <!-- ============ 2 · NEW ASSESSMENT TYPE (Figma "New Assessment Type_*" rows: Text, Numeric Value, List, Numeric Scale, Numeric Slider, Reference) ============ -->
+    <section class="screen" data-s="new">
+      <header class="hdr">
+        <div class="hdr__row">
+          <span class="app-icon i-back app-icon--tint" style="color: var(--on-secondary-container)" data-go="masters"></span>
+          <div class="hdr__title">
+            <div class="hdr__title-row"><span class="t-major-title name">New Assessment Type</span></div>
+            <div class="hdr__sub t-body-medium"><span class="t-body-medium">The preview on the right shows what vets will see</span></div>
+          </div>
+        </div>
+      </header>
+      <div class="form-wrap">
+        <div class="form">
+          <div class="row2">
+            <div class="app-field app-field--active app-dropdown"><span class="app-field__label t-subtext-regular">Category</span><span class="value t-minor-regular" style="color: var(--on-primary-container)">Physical Health</span><span class="app-icon app-icon--tint i-dropdown" style="color: var(--on-surface-variant)"></span></div>
+            <label class="app-field"><span class="app-field__label t-subtext-regular">Assessment Name</span><input class="t-minor-regular" id="fName" value="Activeness"></label>
+          </div>
+          <label class="app-field app-field--area"><span class="app-field__label t-subtext-regular">Description</span><textarea class="t-minor-regular" id="fDesc" rows="2">This is to assess the activity of the animals</textarea></label>
+          <div class="field-check t-body-medium" id="fActive"><span class="app-icon app-icon--tint i-checkbox-checked" style="color: var(--primary-main)"></span>Mark as Active (Available for selection)</div>
+
+          <div class="sec-title"><span class="t-minor-title">Response Type</span><span class="t-subtext-regular muted">How the vet answers this assessment</span></div>
+          <div class="types" id="fTypes"></div>
+          <div class="config" id="fConfig"></div>
+
+          <div class="sec-title"><span class="t-minor-title">Reference Details</span><span class="t-subtext-regular muted">Optional: photos or documents that show what to look for</span></div>
+          <div class="upload"><span class="app-attachment"><span class="app-icon app-icon--tint i-attachment" style="color: var(--on-primary-container)"></span></span><span class="t-body-title">Upload Files</span><span class="t-subtext-regular muted">JPEG, PNG, PDF, DOC, MP4 · max 50 MB</span></div>
+        </div>
+        <aside class="preview">
+          <span class="pill pill--type t-subtext-title preview__badge">Preview · vet view</span>
+          <div class="sec-title"><span class="t-minor-title" id="pvName">Activeness</span><span class="t-subtext-regular muted">Physical Health</span></div>
+          <div id="pvInput"></div>
+        </aside>
+      </div>
+      <div class="form-foot">
+        <button class="btn btn--ghost btn--auto t-body-medium" data-go="masters">Cancel</button>
+        <button class="btn btn--navy btn--auto t-body-medium" id="fSubmit" style="min-width: 160px">Submit</button>
+      </div>
+    </section>
+
+    <!-- ============ 3 · ANIMAL ASSESSMENTS (Figma "Assessment Animal added" 1485:10627 / 10955 / 12655 / 11774 / 13056 …) ============ -->
+    <section class="screen" data-s="user">
+      <header class="hdr">
+        <div class="hdr__row">
+          <span class="app-icon i-back app-icon--tint" style="color: var(--on-secondary-container)"></span>
+          <span class="hdr__logo"><img src="../../../app/sample-bird-44.png" alt="" style="border-radius: 50%"></span>
+          <div class="hdr__title">
+            <div class="hdr__title-row"><span class="t-major-title name">BI23000123</span><span class="app-tag app-tag--male t-small">M</span></div>
+            <div class="hdr__sub t-body-medium"><span class="t-body-medium">Peach Fronted Conure</span><span class="sep t-body-medium">|</span><span class="t-body-medium">Enclosure name</span><span class="sep t-body-medium">|</span><span class="t-body-medium">Section name</span></div>
+          </div>
+          <span class="app-icon app-icon--tint i-close hdr__close" style="color: var(--on-surface-variant)"></span>
+        </div>
+      </header>
+      <div class="split">
+        <aside class="pane-list">
+          <div class="pane-list__search"><div class="tab-search"><span class="app-icon app-icon--20 app-icon--tint i-search" style="color: var(--on-surface-variant)"></span><input class="t-body-medium" id="uSearch" placeholder="Search assessments" style="border:0;outline:0;flex:1;min-width:0;background:transparent;color:inherit;font-family:inherit"></div></div>
+          <div class="pane-list__scroll" id="uList"></div>
+        </aside>
+        <main class="pane-detail" id="uDetail"></main>
+      </div>
+    </section>
+
+    <!-- ============ 4 · ADD ENTRY form sheet (Figma "Assessment_* entry" 1485:10885 / 10917 / 11083 / 11194 / 11363 / 11678 …) ============ -->
+    <div class="scrim" id="scrim">
+      <div class="sheet" role="dialog" aria-modal="true">
+        <div class="sheet__hd">
+          <div class="top"><div><span class="t-minor-title" id="shTitle"></span><span class="t-subtext-regular" style="color: var(--on-surface-variant)" id="shCat"></span></div><span class="app-icon app-icon--tint i-close" style="color: var(--on-primary-container); cursor: pointer" data-close></span></div>
+          <p class="t-body-regular" style="margin:0" id="shDesc"></p>
+        </div>
+        <div class="sheet__bd">
+          <div id="shRefs"></div>
+          <div class="dt">
+            <div class="app-field"><span class="app-icon app-icon--tint i-calendar" style="color: var(--on-primary-container)"></span><span class="value t-minor-medium">12 Mar 2024</span></div>
+            <div class="app-field"><span class="app-icon app-icon--tint i-time" style="color: var(--on-primary-container)"></span><span class="value t-minor-medium">04 : 38 PM</span></div>
+          </div>
+          <div id="shInput"></div>
+          <label class="notes"><textarea class="t-minor-regular" id="shNotes" rows="1" placeholder="Add Notes"></textarea></label>
+        </div>
+        <div class="sheet__ft">
+          <button class="btn btn--ghost t-minor-medium" data-close>Cancel</button>
+          <button class="btn btn--admit t-minor-medium" id="shAdd">Add Entry</button>
+        </div>
+      </div>
+    </div>
+    <div class="toast t-body-medium" id="toast"><span class="app-icon app-icon--20 app-icon--tint i-just-tick-mark" style="color: var(--on-primary)"></span><span id="toastMsg"></span></div>
+  </div>
+</div>
+
+<script>
+/* ---------------- Data (sample content from the Figma frames) ---------------- */
+const TYPES = [
+  { key: 'text',   label: 'Text',           icon: 'notes',          hint: 'Free text answer' },
+  { key: 'number', label: 'Numeric Value',  icon: 'percentage',     hint: 'A number + unit' },
+  { key: 'list',   label: 'List',           icon: 'list',           hint: 'Pick from options' },
+  { key: 'scale',  label: 'Numeric Scale',  icon: 'reason-or-list', hint: 'Scored options' },
+  { key: 'slider', label: 'Numeric Slider', icon: 'filter-2',       hint: 'Value or range' },
+];
+const typeLabel = k => TYPES.find(t => t.key === k).label;
+const MASTERS = [
+  { name: 'Weight', cat: 'Physical Health', type: 'number', unit: 'kg', measure: 'Weight', active: true, used: 4, desc: 'Body weight of the animal, measured on the ward scale.' },
+  { name: 'Heart Rate', cat: 'Physical Health', type: 'slider', unit: 'bpm', measure: 'bpm', min: 40, max: 180, minL: 'Poor', maxL: 'Extreme', step: 10, range: true, active: true, used: 3, desc: 'Resting heart rate taken during routine examination.' },
+  { name: 'Eye Condition', cat: 'Physical Health', type: 'list', multi: true, items: ['Pain', 'Redness', 'Swelling', 'Discharge', 'Itchiness'], active: true, used: 2, refs: 4, desc: 'This is to assess the eye condition of the animals.' },
+  { name: 'Body Score', cat: 'Physical Health', type: 'scale', scale: [[1, 'Poor'], [4, 'Fair'], [6, 'Good'], [10, 'Excellent']], active: true, used: 5, desc: 'Body condition score from visual and hands-on check.' },
+  { name: 'Temperature', cat: 'Physical Health', type: 'number', unit: '°C', measure: 'Temperature', active: true, used: 1, desc: 'Body temperature.' },
+  { name: 'Activeness', cat: 'Behaviour', type: 'slider', unit: 'bpm', measure: 'bpm', min: 100, max: 1000, minL: 'Lowest', maxL: 'Highest', step: 10, range: false, active: true, used: 0, desc: 'This is to assess the activity of the animals.' },
+  { name: 'Mood', cat: 'Behaviour', type: 'text', active: true, used: 2, desc: 'Keeper and vet observation of mood.' },
+  { name: 'Stress Behaviour', cat: 'Behaviour', type: 'list', multi: false, items: ['None', 'Pacing', 'Over-grooming', 'Hiding'], active: true, used: 1, desc: 'Signs of stress seen during observation.' },
+  { name: 'Feeding Behaviour', cat: 'Behaviour', type: 'text', active: false, used: 0, desc: 'How the animal approaches food.' },
+  { name: 'Humidity', cat: 'Environment', type: 'number', unit: '%', measure: 'Humidity', active: true, used: 1, desc: 'Enclosure humidity.' },
+  { name: 'Enclosure Cleanliness', cat: 'Environment', type: 'scale', scale: [[1, 'Dirty'], [3, 'Acceptable'], [5, 'Clean']], active: false, used: 0, desc: 'Cleanliness of the enclosure at check time.' },
+];
+const byName = n => MASTERS.find(m => m.name === n);
+const DOC = ['Dr. Mehta', 'Dr. Mehta', 'Dr. Swathi', 'Dr. Mehta'];
+const NOTE = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.';
+/* Animal side: which assessments this animal has, with readings (latest first) */
+const ANIMAL = [
+  { name: 'Weight',        vals: [20.8, 21, 20.8, 20.8, 23.5, 22, 21.5], trend: [22.6, 23.5, 21.3, 21.6, 21.2, 20.3, 20.8] },
+  { name: 'Heart Rate',    vals: [[60, 100], [60, 100], [88, 104], [70, 110], [60, 100], [65, 95], [60, 100]], trend: [[70, 102], [72, 109], [88, 104], [74, 94], [68, 94], [70, 94], [70, 94]] },
+  { name: 'Eye Condition', vals: [['Redness'], ['Redness', 'Swelling'], ['Pain'], ['Redness'], ['Discharge'], ['Redness'], ['Itchiness']] },
+  { name: 'Body Score',    vals: [[1, 'Poor'], [4, 'Fair'], [1, 'Poor'], [4, 'Fair'], [1, 'Poor'], [4, 'Fair'], [1, 'Poor']] },
+  { name: 'Mood',          vals: ['Calm, eating well', 'Alert and curious', 'Slightly withdrawn', 'Calm', 'Calm', 'Playful', 'Calm'] },
+  { name: 'Temperature',   vals: [36.7, 36.9, 37.1, 36.8, 36.7, 36.6, 36.7], trend: [36.6, 36.7, 36.8, 37.1, 36.9, 36.7, 36.7] },
+  { name: 'Stress Behaviour', vals: [] },
+  { name: 'Humidity',      vals: [62, 60, 64, 61, 63, 60, 62], trend: [60, 61, 63, 64, 62, 60, 62] },
+];
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+const el = id => document.getElementById(id);
+const icon = (slug, color = 'var(--on-surface-variant)', size = '') => `<span class="app-icon ${size} app-icon--tint i-${slug}" style="color: ${color}"></span>`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* ---------------- Screen switching ---------------- */
+const CAPTIONS = {
+  masters: 'Admin view. On the phone this was a push from list → details; on iPad the list stays on the left and details open beside it. Tap any type.',
+  new: 'The phone’s “Select Response Type” pop-up becomes five tiles, so every option is visible. Settings for the chosen type appear below, and the preview on the right shows the vet’s input live.',
+  user: 'Vet view for one animal. The phone’s 12-tab scroll bar becomes a searchable list on the left, with the latest value shown on each row. Tap a record to expand its note in place.',
+  sheet: 'Add Entry. On iPad the phone’s bottom sheet becomes a centred form sheet (iPadOS convention), so the keyboard never covers Save. Pick any assessment on the left to see its input.',
+};
+function show(s) {
+  document.querySelectorAll('#screens button').forEach(b => b.classList.toggle('on', b.dataset.screen === s));
+  const target = s === 'sheet' ? 'user' : s;
+  document.querySelectorAll('.screen').forEach(x => x.classList.toggle('on', x.dataset.s === target));
+  el('caption').textContent = CAPTIONS[s];
+  if (s === 'sheet') openSheet(uSel); else closeSheet();
+}
+el('screens').addEventListener('click', e => { const b = e.target.closest('[data-screen]'); if (b) show(b.dataset.screen); });
+document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) show(g.dataset.go); });
+
+/* ---------------- Response input renderer (shared by sheet + preview) ---------------- */
+let sheetState = {};
+const snap = (m, v) => Math.round(v / (m.step || 1)) * (m.step || 1);
+const sliderDefault = m => ({ lo: m.range ? snap(m, m.min + (m.max - m.min) * .15) : m.min, hi: snap(m, m.min + (m.max - m.min) * .4) });   // knobs start on a step, not between steps
+function renderInput(m, st = {}) {
+  if (m.type === 'text') return `<label class="app-field app-field--area"><textarea class="t-minor-regular" rows="3" placeholder="Text input"></textarea></label>`;
+  if (m.type === 'number') return `<div class="row2"><label class="app-field"><input class="t-minor-medium" inputmode="decimal" placeholder="Value" value="${st.value ?? ''}" data-num></label><div class="app-field app-dropdown"><span class="value t-minor-medium">${esc(m.unit)}</span>${icon('dropdown')}</div></div>`;
+  if (m.type === 'list' || m.type === 'scale') {
+    const multi = m.type === 'list' && m.multi;
+    const opts = m.type === 'scale' ? m.scale.map(([n, l]) => `${n}  -  ${l}`) : m.items;
+    const sel = st.sel || [];
+    return `<div class="sec-title"><span class="t-body-title">${multi ? 'Select all that apply' : 'Select any one'}</span><span class="t-subtext-regular muted">${multi ? 'Choose one or more options.' : 'Select the most appropriate.'}</span></div>
+      <div class="opts">${opts.map((o, i) => { const on = sel.includes(i); const ic = multi ? (on ? 'checkbox-checked' : 'checkbox-unchecked') : (on ? 'radio-selected' : 'radio-unselect');
+        return `<button type="button" class="opt t-body-regular${on ? ' on' : ''}" data-opt="${i}">${icon(ic, on ? 'var(--primary-main)' : 'var(--outline)')}${esc(o)}</button>`; }).join('')}</div>`;
+  }
+  if (m.type === 'slider') {
+    const lo = st.lo ?? sliderDefault(m).lo, hi = st.hi ?? sliderDefault(m).hi;
+    const pct = v => ((v - m.min) / (m.max - m.min)) * 100;
+    const val = m.range ? `${Math.round(lo)} - ${Math.round(hi)}` : `${Math.round(hi)}`;
+    return `<div class="sec-title"><span class="t-body-title">${m.range ? 'Range' : 'Value'}</span><span class="t-subtext-regular muted">Set the ${m.range ? 'value range' : 'value'} for the assessment.</span></div>
+      <div><span class="t-major-medium big">${val}</span> <span class="t-minor-regular big">${esc(m.unit)}</span></div>
+      <div class="slider" data-slider><div class="slider__track"></div><div class="slider__fill" style="left:${m.range ? pct(lo) : 0}%;width:${pct(hi) - (m.range ? pct(lo) : 0)}%"></div>${m.range ? `<div class="slider__knob" style="left:${pct(lo)}%"></div>` : ''}<div class="slider__knob" style="left:${pct(hi)}%"></div></div>
+      <div class="slider__ends t-subtext-regular"><span><span class="t-subtext-title">${m.min}</span>${esc(m.minL || '')}</span><span><span class="t-subtext-title">${m.max}</span>${esc(m.maxL || '')}</span></div>`;
+  }
+  return '';
+}
+function wireInput(root, m, st, rerender) {
+  root.querySelectorAll('[data-opt]').forEach(b => b.onclick = () => {
+    const i = +b.dataset.opt, multi = m.type === 'list' && m.multi; st.sel = st.sel || [];
+    st.sel = multi ? (st.sel.includes(i) ? st.sel.filter(x => x !== i) : [...st.sel, i]) : [i]; rerender();
+  });
+  const sl = root.querySelector('[data-slider]');
+  if (sl) sl.onpointerdown = e => {
+    const move = ev => { const r = sl.getBoundingClientRect(); const v = m.min + Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width)) * (m.max - m.min);
+      const snap = Math.round(v / (m.step || 1)) * (m.step || 1);
+      const lo = st.lo ?? sliderDefault(m).lo, hi = st.hi ?? sliderDefault(m).hi;
+      if (m.range && Math.abs(snap - lo) < Math.abs(snap - hi)) st.lo = Math.min(snap, hi); else st.hi = Math.max(snap, m.range ? lo : m.min);
+      rerender(); };
+    move(e); const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  };
+  const num = root.querySelector('[data-num]'); if (num) num.oninput = () => { st.value = num.value; };
+}
+
+/* ---------------- 1 · Masters ---------------- */
+let mFilter = 'All', mSel = 'Eye Condition';
+function renderMasters() {
+  const q = el('mSearch').value.trim().toLowerCase();
+  const counts = { All: MASTERS.length, Active: MASTERS.filter(m => m.active).length, Inactive: MASTERS.filter(m => !m.active).length };
+  el('mCount').textContent = `${MASTERS.length} assessment types`;
+  el('mTabs').innerHTML = Object.keys(counts).map(k => `<button class="tab-primary t-body-medium${k === mFilter ? ' tab-primary--active' : ''}" data-mf="${k}">${k} - ${counts[k]}</button>`).join('');
+  const rows = MASTERS.filter(m => (mFilter === 'All' || (mFilter === 'Active') === m.active) && (!q || m.name.toLowerCase().includes(q)));
+  const cats = [...new Set(rows.map(m => m.cat))];
+  el('mList').innerHTML = cats.map(c => `<div class="group-label t-subtext-title">${c}</div>` + rows.filter(m => m.cat === c).map(m => `
+    <div class="li${m.name === mSel ? ' on' : ''}" data-m="${esc(m.name)}">
+      <div class="li__top"><span class="name t-body-title">${esc(m.name)}</span><span class="pill ${m.active ? 'pill--active' : 'pill--off'} t-small">${m.active ? 'Active' : 'Inactive'}</span></div>
+      <div class="li__meta t-subtext-regular"><span>${typeLabel(m.type)}</span><span>·</span><span>${m.used} template${m.used === 1 ? '' : 's'}</span></div>
+    </div>`).join('')).join('') || `<div class="empty t-body-regular">No assessment types match.</div>`;
+  const m = byName(mSel);
+  el('mDetail').innerHTML = m ? masterDetail(m) : '';
+}
+function masterDetail(m) {
+  let cfg = '';
+  if (m.type === 'number') cfg = `<div><span class="k t-subtext-regular">Measurement Type</span><span class="t-body-regular">${m.measure} (${m.unit})</span></div>`;
+  if (m.type === 'list') cfg = `<div><span class="k t-subtext-regular">Selection</span><span class="t-body-regular">${m.multi ? 'Multi Select' : 'Single Select'}</span></div><div class="full"><span class="k t-subtext-regular">List Items · ${m.items.length}</span><div class="chips">${m.items.map(i => `<span class="chip t-body-regular">${esc(i)}</span>`).join('')}</div></div>`;
+  if (m.type === 'scale') cfg = `<div class="full"><span class="k t-subtext-regular">Scale · ${m.scale.length} options</span><div class="chips">${m.scale.map(([n, l]) => `<span class="chip t-body-regular"><span class="t-body-title">${n}</span> - ${esc(l)}</span>`).join('')}</div></div>`;
+  if (m.type === 'slider') cfg = `<div><span class="k t-subtext-regular">Measurement Type</span><span class="t-body-regular">${m.measure}</span></div><div><span class="k t-subtext-regular">Interval</span><span class="t-body-regular">${m.step}</span></div>
+    <div><span class="k t-subtext-regular">Lowest</span><span class="t-body-regular">${m.min} · ${m.minL}</span></div><div><span class="k t-subtext-regular">Highest</span><span class="t-body-regular">${m.max} · ${m.maxL}</span></div>
+    <div><span class="k t-subtext-regular">Range Selection</span><span class="t-body-regular">${m.range ? 'Enabled' : 'Disabled'}</span></div>`;
+  const refs = m.refs ? `<div class="card"><div class="card__hd"><span class="t-minor-title" style="color: var(--on-primary-container)">References Added · ${m.refs}</span><span class="t-subtext-title" style="color: var(--primary-main)">View All</span></div>
+    <div class="refs">${refImgs(m.refs)}</div></div>` : '';
+  return `<div class="pane-head"><div class="pane-head__title"><span class="pill ${m.active ? 'pill--active' : 'pill--off'} t-small" style="align-self:flex-start">${m.active ? 'Active' : 'Inactive'}</span><span class="t-major-title">${esc(m.name)}</span><span class="t-body-regular muted">${esc(m.cat)}</span></div>
+      <span class="tab-iconbox" title="Edit">${icon('pencil')}</span><span class="tab-iconbox" title="More">${icon('menu-vertical')}</span></div>
+    <div class="card"><div class="kv">
+      <div class="full"><span class="k t-subtext-regular">Description</span><span class="t-body-regular">${esc(m.desc)}</span></div>
+      <div><span class="k t-subtext-regular">Category</span><span class="t-body-regular">${esc(m.cat)}</span></div>
+      <div><span class="k t-subtext-regular">Response Type</span><span class="t-body-regular">${typeLabel(m.type)}</span></div>
+      ${cfg}</div></div>
+    ${refs}
+    <div class="card"><span class="t-minor-title" style="color: var(--on-primary-container)">Preview · what vets see</span>${renderInput(m, {})}</div>
+    <div class="used t-body-medium"><span>Used in Templates</span><span class="t-minor-title">${m.used}</span></div>`;
+}
+const SAMPLES = ['../../../app/sample-leopard-84.png', '../../../app/sample-cheetah-104.png'];   // placeholders for uploaded reference photos
+const refImgs = n => Array.from({ length: Math.min(n, 4) }, (_, i) => i === 3 && n > 4 ? `<div class="more"><img src="${SAMPLES[i % 2]}" alt=""><span class="t-minor-title">+${n - 3}</span></div>` : `<img src="${SAMPLES[i % 2]}" alt="">`).join('');
+el('mList').addEventListener('click', e => { const r = e.target.closest('[data-m]'); if (r) { mSel = r.dataset.m; renderMasters(); } });
+el('mTabs').addEventListener('click', e => { const b = e.target.closest('[data-mf]'); if (b) { mFilter = b.dataset.mf; renderMasters(); } });
+el('mSearch').addEventListener('input', renderMasters);
+
+/* ---------------- 2 · New Assessment Type ---------------- */
+const draft = { name: 'Activeness', cat: 'Physical Health', type: 'slider', unit: 'bpm', measure: 'Weight', min: 100, max: 1000, minL: 'Lowest', maxL: 'Highest', step: 10, range: false, multi: true,
+  items: ['Pain', 'Redness'], scale: [[0.5, 'Poor'], [1, 'Medium'], [1.5, 'Good']] };
+const pvState = {};
+function renderForm() {
+  el('fTypes').innerHTML = TYPES.map(t => `<button type="button" class="type-tile${t.key === draft.type ? ' on' : ''}" data-t="${t.key}"><span class="glyph">${icon(t.icon, 'var(--on-primary-container)', 'app-icon--20')}</span><span class="t-body-title">${t.label}</span><span class="t-small muted">${t.hint}</span></button>`).join('');
+  const d = draft; let c = '';
+  if (d.type === 'text') c = `<span class="t-body-regular muted">No extra settings. Vets type a free-text answer.</span>`;
+  if (d.type === 'number') c = `<div class="app-field app-field--filled app-dropdown"><span class="app-field__label t-subtext-regular">Choose Measurement Type</span><span class="value t-minor-regular">${d.measure}</span>${icon('dropdown')}</div>`;
+  if (d.type === 'list') c = `<div class="sec-title"><span class="t-body-title">Selection Type</span></div>
+      <div class="app-segmented" style="padding:0"><button class="app-segment t-subtext-${!d.multi ? 'title app-segment--active' : 'regular'}" data-multi="0">Single Select</button><button class="app-segment t-subtext-${d.multi ? 'title app-segment--active' : 'regular'}" data-multi="1">Multi Select</button></div>
+      <div class="sec-title"><span class="t-body-title">List Items · ${d.items.length}</span></div>
+      ${d.items.map((it, i) => `<div class="item-row"><div class="app-field app-field--filled"><span class="value t-body-regular">${esc(it)}</span></div><button class="iconbtn iconbtn--del" data-del="${i}">${icon('close-with-circle', 'var(--error)')}</button></div>`).join('')}
+      <div class="item-row"><label class="app-field"><input class="t-body-regular" placeholder="Add List Item…" id="newItem"></label><button class="iconbtn iconbtn--add" id="addItem">${icon('plus', 'var(--on-primary)')}</button></div>`;
+  if (d.type === 'scale') c = `<div class="item-row t-body-title"><span class="num">#&nbsp;Scale</span><span>Option name</span></div>
+      ${d.scale.map(([n, l], i) => `<div class="item-row"><div class="app-field app-field--filled num"><span class="value t-body-regular">${n}</span></div><div class="app-field app-field--filled"><span class="value t-body-regular">${esc(l)}</span></div><button class="iconbtn iconbtn--del" data-sdel="${i}">${icon('close-with-circle', 'var(--error)')}</button></div>`).join('')}
+      <div class="item-row"><label class="app-field num"><input class="t-body-regular" placeholder="0" id="newN"></label><label class="app-field"><input class="t-body-regular" placeholder="Name" id="newL"></label><button class="iconbtn iconbtn--add" id="addScale">${icon('plus', 'var(--on-primary)')}</button></div>`;
+  if (d.type === 'slider') c = `<div class="app-field app-field--filled app-dropdown"><span class="app-field__label t-subtext-regular">Set Measurement Type</span><span class="value t-minor-regular">${d.measure}</span>${icon('dropdown')}</div>
+      <div class="row2"><label class="app-field"><span class="app-field__label t-subtext-regular">Minimum</span><input class="t-body-regular" value="${d.min}" data-k="min"></label><label class="app-field"><span class="app-field__label t-subtext-regular">Label (optional)</span><input class="t-body-regular" value="${esc(d.minL)}" data-k="minL"></label></div>
+      <div class="row2"><label class="app-field"><span class="app-field__label t-subtext-regular">Maximum</span><input class="t-body-regular" value="${d.max}" data-k="max"></label><label class="app-field"><span class="app-field__label t-subtext-regular">Label (optional)</span><input class="t-body-regular" value="${esc(d.maxL)}" data-k="maxL"></label></div>
+      <div class="sec-title"><span class="t-body-title">Interval / Steps <span class="muted t-subtext-regular">(optional)</span></span><span class="t-subtext-regular muted">The step size between values.</span></div>
+      <div class="stepper"><button data-step="-1" class="t-minor-title">−</button><span class="v t-minor-medium">${d.step}</span><button data-step="1" class="t-minor-title">+</button></div>
+      <div class="switch-row"><div><span class="t-body-title" style="color: var(--on-primary-container)">Allow Range Selection?</span><span class="t-subtext-regular muted">Let vets select any two values within this range.</span></div><button class="app-switch ${d.range ? 'is-on' : 'is-off'}" id="rangeSw" aria-pressed="${d.range}"><span class="app-switch__knob"></span></button></div>`;
+  el('fConfig').innerHTML = `<div class="sec-title"><span class="t-minor-title">${typeLabel(d.type)} settings</span></div>` + c;
+  const valid = d.name.trim() && (d.type !== 'list' || d.items.length) && (d.type !== 'scale' || d.scale.length);
+  el('fSubmit').disabled = !valid;
+  el('pvName').textContent = d.name || 'Assessment name';
+  const pm = { ...d, unit: d.type === 'number' ? 'kg' : d.unit };
+  el('pvInput').innerHTML = renderInput(pm, pvState);
+  wireInput(el('pvInput'), pm, pvState, renderForm);
+}
+el('fTypes').addEventListener('click', e => { const t = e.target.closest('[data-t]'); if (t) { draft.type = t.dataset.t; Object.keys(pvState).forEach(k => delete pvState[k]); renderForm(); } });
+el('fConfig').addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.dataset.multi) draft.multi = t.dataset.multi === '1';
+  if (t.dataset.del) draft.items.splice(+t.dataset.del, 1);
+  if (t.dataset.sdel) draft.scale.splice(+t.dataset.sdel, 1);
+  if (t.id === 'addItem') { const v = el('newItem').value.trim(); if (!v) return; draft.items.push(v); }
+  if (t.id === 'addScale') { const n = el('newN').value.trim(), l = el('newL').value.trim(); if (!n || !l) return; draft.scale.push([n, l]); }
+  if (t.dataset.step) draft.step = Math.max(1, draft.step + (+t.dataset.step));
+  if (t.id === 'rangeSw') { draft.range = !draft.range; delete pvState.lo; }
+  renderForm();
+});
+el('fConfig').addEventListener('change', e => { const k = e.target.dataset.k; if (!k) return; draft[k] = ['min', 'max'].includes(k) ? +e.target.value || 0 : e.target.value; renderForm(); });
+el('fName').addEventListener('input', e => { draft.name = e.target.value; el('pvName').textContent = draft.name || 'Assessment name'; el('fSubmit').disabled = !draft.name.trim(); });
+el('fActive').addEventListener('click', () => { const i = el('fActive').querySelector('.app-icon'); const on = i.classList.toggle('i-checkbox-checked'); i.classList.toggle('i-checkbox-unchecked', !on); i.style.color = on ? 'var(--primary-main)' : 'var(--outline)'; });
+el('fSubmit').addEventListener('click', () => {
+  const d = draft; MASTERS.push({ name: d.name.trim(), cat: d.cat, type: d.type, unit: d.type === 'number' ? 'kg' : d.unit, measure: d.measure, min: d.min, max: d.max, minL: d.minL, maxL: d.maxL, step: d.step, range: d.range, multi: d.multi, items: [...d.items], scale: d.scale.map(x => [...x]),
+    active: el('fActive').querySelector('.i-checkbox-checked') !== null, used: 0, desc: el('fDesc').value });
+  mSel = d.name.trim(); mFilter = 'All'; renderMasters(); show('masters'); toast(`${d.name.trim()} created`);
+});
+
+/* ---------------- 3 · Animal assessments ---------------- */
+let uSel = 'Weight', uRange = 'W', uChart = 'line';
+const fmtVal = (m, v) => m.type === 'number' ? `${v}` : m.type === 'slider' ? (Array.isArray(v) ? `${v[0]} - ${v[1]}` : `${v}`) : m.type === 'scale' ? `${v[0]}  -  ${v[1]}` : m.type === 'list' ? v.join(', ') : v;
+function renderUser() {
+  const q = el('uSearch').value.trim().toLowerCase();
+  const rows = ANIMAL.filter(a => !q || a.name.toLowerCase().includes(q));
+  const cats = [...new Set(rows.map(a => byName(a.name).cat))];
+  el('uList').innerHTML = cats.map(c => `<div class="group-label t-subtext-title">${c}</div>` + rows.filter(a => byName(a.name).cat === c).map(a => {
+    const m = byName(a.name), last = a.vals[0];
+    return `<div class="li${a.name === uSel ? ' on' : ''}" data-u="${esc(a.name)}">
+      <div class="li__top"><span class="name t-body-title">${esc(a.name)}</span><span class="t-subtext-regular muted">${a.vals.length ? '57 min ago' : ''}</span></div>
+      <div class="li__meta t-subtext-regular">${a.vals.length ? `<span class="li__value t-body-medium" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(fmtVal(m, last))}${m.unit && m.type !== 'scale' ? ' ' + m.unit : ''}</span>` : '<span>No readings yet</span>'}</div>
+    </div>`; }).join('')).join('');
+  const a = ANIMAL.find(x => x.name === uSel), m = byName(uSel);
+  el('uDetail').innerHTML = `<div class="pane-head"><div class="pane-head__title"><span class="t-major-title">${esc(m.name)}</span><span class="t-body-regular muted">${esc(m.cat)} · ${typeLabel(m.type)}</span></div>
+      <button class="btn btn--admit btn--auto t-body-medium" data-add>${icon('plus', 'var(--on-primary)', 'app-icon--20')}Add Entry</button></div>
+    ${summary(m, a)}
+    ${m.refs ? `<div class="card"><div class="card__hd"><span class="t-minor-title" style="color: var(--on-primary-container)">References</span><span class="t-subtext-title" style="color: var(--primary-main)">View All</span></div><div class="refs">${refImgs(m.refs)}</div></div>` : ''}
+    <div class="card__hd"><span class="t-minor-medium">All Records</span><span class="t-subtext-regular muted">${a.vals.length} Readings</span></div>
+    ${a.vals.length ? `<div class="card records">${a.vals.map((v, i) => `<div class="rec" data-rec>
+        <div class="rec__date"><span class="t-subtext-title">${12 - i < 1 ? 1 : 12 - i} Sep 2026</span><span class="t-subtext-regular muted">13:30 PM</span></div>
+        <div class="rec__pill"><div class="rec__val"><span class="v ${m.type === 'number' || m.type === 'slider' ? 't-medium-medium' : 't-body-medium'}">${esc(fmtVal(m, v))}${m.unit && (m.type === 'number' || m.type === 'slider') ? ` <span class="u t-subtext-regular">${m.unit}</span>` : ''}</span>${i % 3 === 0 ? icon('notes', 'var(--moderate-secondary)', 'app-icon--20') : ''}</div>
+          <div class="rec__by t-subtext-regular"><span>${DOC[i % 4]}</span><span>21 Aug 2026 • 05:30 PM</span></div>
+          ${i % 3 === 0 ? `<div class="rec__note t-body-regular">${NOTE}</div>` : ''}</div></div>`).join('')}</div>`
+      : `<div class="card empty t-body-regular">No readings yet. Tap <b>Add Entry</b> to record the first one.</div>`}`;
+}
+function summary(m, a) {
+  if (!a.vals.length || m.type === 'text') return '';
+  const seg = `<div class="seg-row"><div class="app-segmented" style="flex:1">${['W', 'M', '3M', '6M'].map(r => `<button class="app-segment t-body-medium${r === uRange ? ' app-segment--active' : ''}" data-range="${r}">${r}</button>`).join('')}<button class="app-segment app-segment--icon" title="Pick dates">${icon('calendar', 'var(--on-surface-variant)', 'app-icon--20')}</button></div>
+      ${m.type === 'number' || m.type === 'slider' ? `<div class="app-segmented" style="width:auto">${['line', 'bar'].map(c => `<button class="app-segment t-subtext-regular${c === uChart ? ' app-segment--active' : ''}" data-chart="${c}">${c === 'line' ? 'Line' : 'Bar'}</button>`).join('')}</div>` : ''}</div>`;
+  if (m.type === 'number' || m.type === 'slider') {
+    const t = a.trend, isRange = m.type === 'slider';
+    const flat = t.flat(), lo = Math.floor(Math.min(...flat)), hi = Math.ceil(Math.max(...flat));
+    const latest = isRange ? `${a.vals[0][0]}–${a.vals[0][1]}` : a.vals[0], highest = isRange ? Math.max(...a.vals.flat()) : Math.max(...a.vals), lowest = isRange ? Math.min(...a.vals.flat()) : Math.min(...a.vals);
+    const down = !isRange && t[t.length - 1] < t[0];
+    return `<div class="card">${seg}
+      <span class="t-subtext-regular" style="color: var(--neutral-primary)">22 Jun – 28 Jun 2026 · ${t.length} readings</span>
+      <div class="chart">${chartSVG(t, lo, hi, isRange, down)}</div>
+      <div class="stats">${[['Latest', latest, ''], ['Highest', highest, ''], ['Lowest', lowest, ' low']].map(([k, v, c]) => `<div class="stat"><span class="t-body-regular">${k}</span><span class="v${c}"><span class="t-medium-medium">${v}</span> <span class="t-subtext-regular">${m.unit}</span></span><span class="t-small muted">23 Jun 26</span></div>`).join('')}</div></div>`;
+  }
+  // list / scale: most frequent + top responses
+  const counts = {}; a.vals.forEach(v => (m.type === 'scale' ? [`${v[1]} - ${v[0]}`] : v).forEach(x => counts[x] = (counts[x] || 0) + 1));
+  const top = Object.entries(counts).sort((x, y) => y[1] - x[1]).slice(0, 5), total = a.vals.length;
+  return `<div class="card">${seg}
+    <div class="sec-title"><span class="t-subtext-regular muted">Most Frequent</span><span class="t-major-medium" style="color: var(--neutral-primary)">${esc(top[0][0])}</span><span class="t-subtext-regular muted">22 Jun – 28 Jun 2026 · ${total} readings</span></div>
+    <span class="t-body-medium">Top ${top.length} responses recorded</span>
+    <div class="freq">${top.map(([k, n]) => `<div class="freq__row"><div class="top"><span class="t-body-regular">${esc(k)}</span><span class="t-subtext-regular muted">${n} time${n === 1 ? '' : 's'} • ${Math.round(n / total * 100)}%</span></div><div class="bar"><i style="width:${n / top[0][1] * 100}%"></i></div></div>`).join('')}</div></div>`;
+}
+function chartSVG(t, lo, hi, isRange, down) {
+  const W = 478, H = 200, L = 36, R = 8, T = 16, B = 24, pw = W - L - R, ph = H - T - B;
+  const pad = Math.max(1, (hi - lo) * .15); lo = Math.floor(lo - pad); hi = Math.ceil(hi + pad);
+  const x = i => L + (i + .5) * pw / t.length, y = v => T + ph - (v - lo) / (hi - lo) * ph;
+  const col = isRange || !down ? 'var(--primary-main)' : 'var(--tertiary)';
+  const ticks = Array.from({ length: 5 }, (_, i) => lo + (hi - lo) * i / 4);
+  let g = ticks.map(v => `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="axis t-small" x="${L - 6}" y="${y(v) + 3}" text-anchor="end">${hi - lo > 10 ? Math.round(v) : Math.round(v * 10) / 10}</text>`).join('');
+  g += DAYS.slice(0, t.length).map((d, i) => `<text class="axis t-small" x="${x(i)}" y="${H - 6}" text-anchor="middle">${d}</text>`).join('');
+  if (isRange) return `<svg viewBox="0 0 ${W} ${H}">${g}${t.map(([a, b], i) => uChart === 'bar'
+      ? `<rect x="${x(i) - 10}" y="${y(b)}" width="20" height="${y(a) - y(b)}" rx="3" style="fill:${col}"/>`
+      : `<line x1="${x(i)}" x2="${x(i)}" y1="${y(b)}" y2="${y(a)}" style="stroke:${col};stroke-width:8;stroke-linecap:round"/>`).join('')}</svg>`;
+  const avg = t.reduce((s, v) => s + v, 0) / t.length;
+  if (uChart === 'bar') return `<svg viewBox="0 0 ${W} ${H}">${g}<line class="avg" x1="${L}" x2="${W - R}" y1="${y(avg)}" y2="${y(avg)}"/>${t.map((v, i) => `<rect x="${x(i) - 14}" y="${y(v)}" width="28" height="${T + ph - y(v)}" rx="3" style="fill:${col}"/>`).join('')}</svg>`;
+  const pts = t.map((v, i) => [x(i), y(v)]);
+  const d = pts.map((p, i) => i ? (() => { const q = pts[i - 1], cx = (q[0] + p[0]) / 2; return `C${cx},${q[1]} ${cx},${p[1]} ${p[0]},${p[1]}`; })() : `M${p[0]},${p[1]}`).join(' ');
+  const maxI = t.indexOf(Math.max(...t));
+  return `<svg viewBox="0 0 ${W} ${H}"><defs><linearGradient id="gA" x1="0" x2="0" y1="0" y2="1"><stop offset="0" style="stop-color:${col};stop-opacity:.25"/><stop offset="1" style="stop-color:${col};stop-opacity:0"/></linearGradient></defs>${g}
+    <line class="avg" x1="${L}" x2="${W - R}" y1="${y(avg)}" y2="${y(avg)}"/>
+    <path d="${d} L${pts[pts.length - 1][0]},${T + ph} L${pts[0][0]},${T + ph} Z" fill="url(#gA)"/>
+    <path d="${d}" fill="none" style="stroke:${col};stroke-width:2"/>
+    ${pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="3" style="fill:var(--on-primary);stroke:${col};stroke-width:2"/>`).join('')}
+    <text class="t-small" x="${pts[maxI][0]}" y="${pts[maxI][1] - 8}" text-anchor="middle" style="fill:var(--on-surface-variant)">${t[maxI]}</text></svg>`;
+}
+el('uList').addEventListener('click', e => { const r = e.target.closest('[data-u]'); if (r) { uSel = r.dataset.u; renderUser(); if (el('scrim').classList.contains('on')) openSheet(uSel); } });
+el('uSearch').addEventListener('input', renderUser);
+el('uDetail').addEventListener('click', e => {
+  const r = e.target.closest('[data-range]'); if (r) { uRange = r.dataset.range; renderUser(); return; }
+  const c = e.target.closest('[data-chart]'); if (c) { uChart = c.dataset.chart; renderUser(); return; }
+  if (e.target.closest('[data-add]')) { openSheet(uSel); document.querySelectorAll('#screens button').forEach(b => b.classList.toggle('on', b.dataset.screen === 'sheet')); el('caption').textContent = CAPTIONS.sheet; return; }
+  const rec = e.target.closest('[data-rec]'); if (rec && rec.querySelector('.rec__note')) rec.classList.toggle('open');
+});
+
+/* ---------------- 4 · Add Entry sheet ---------------- */
+let sheetFor = null;
+function openSheet(name) {
+  sheetFor = byName(name); sheetState = {};
+  el('shTitle').textContent = sheetFor.name; el('shCat').textContent = sheetFor.cat; el('shDesc').textContent = sheetFor.desc; el('shNotes').value = '';
+  el('shRefs').innerHTML = sheetFor.refs ? `<div class="card__hd" style="margin-bottom: var(--sp-8)"><span class="t-body-title">References</span><span class="t-subtext-title" style="color: var(--primary-main)">View All</span></div><div class="refs">${refImgs(sheetFor.refs)}</div>` : '';
+  renderSheetInput(); el('scrim').classList.add('on');
+}
+function renderSheetInput() { el('shInput').innerHTML = renderInput(sheetFor, sheetState); wireInput(el('shInput'), sheetFor, sheetState, renderSheetInput); }
+function closeSheet() { el('scrim').classList.remove('on'); }
+el('scrim').addEventListener('click', e => { if (e.target.closest('[data-close]') || e.target === el('scrim')) { closeSheet(); document.querySelectorAll('#screens button').forEach(b => b.classList.toggle('on', b.dataset.screen === 'user')); el('caption').textContent = CAPTIONS.user; } });
+el('shAdd').addEventListener('click', () => {
+  const m = sheetFor, a = ANIMAL.find(x => x.name === m.name); if (!a) { closeSheet(); return; }
+  let v;
+  if (m.type === 'text') v = el('shInput').querySelector('textarea').value.trim() || 'Text input';
+  if (m.type === 'number') v = parseFloat(sheetState.value) || a.vals[0] || 0;
+  if (m.type === 'list') { const s = sheetState.sel || [0]; v = s.map(i => m.items[i]); }
+  if (m.type === 'scale') v = m.scale[(sheetState.sel || [0])[0]];
+  if (m.type === 'slider') { const lo = sheetState.lo ?? sliderDefault(m).lo, hi = sheetState.hi ?? sliderDefault(m).hi; v = m.range ? [lo, hi] : hi; }
+  a.vals.unshift(v); if (a.trend) { a.trend.shift(); a.trend.push(v); }
+  closeSheet(); renderUser(); toast(`${m.name} entry added`);
+  document.querySelectorAll('#screens button').forEach(b => b.classList.toggle('on', b.dataset.screen === 'user'));
+});
+function toast(msg) { el('toastMsg').textContent = msg; el('toast').classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el('toast').classList.remove('on'), 2200); }
+
+renderMasters(); renderForm(); renderUser();
+const [start, pick] = decodeURIComponent(location.hash.slice(1)).split(':');   // #masters · #new · #user · #sheet, optionally :<assessment> e.g. #sheet:Eye Condition
+if (pick && ANIMAL.some(a => a.name === pick)) { uSel = pick; renderUser(); }
+show(CAPTIONS[start] ? start : 'masters');
+</script>
+</body>
+</html>

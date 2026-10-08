@@ -1,0 +1,25 @@
+/* ==================== HOSPITAL MODULE — module-specific components (app, tablet) ====================
+   Pieces that only make sense inside the hospital module. Kept out of components.css on Swathi's instruction (2026-09-21):
+   "anything added in this module that is module specific, keep it like that only — header will mostly be global, but chips
+   like Check up / Follow up are module specific". Previews link this file AFTER components.css. Every value carries its src. */
+/* ---------- Incoming row: side column with case tag + MED + action buttons (567:38288, 567:38352, 567:38354, I594:65710;594:65801) · approved 2026-09-21 ---------- */
+.pcard__side { display: flex; align-items: center; gap: var(--sp-8); width: 326px; flex: 0 0 auto; }               /* src: 567:38288 w326 gap8 */
+.pcard__side .pcard__meta { justify-content: flex-start; }                                                          /* src: 567:38289 gap8, top-aligned */
+.pcard__side .med { white-space: nowrap; }                                                                          /* src: 567:38292 MED id, own line */
+.pcard__buttons { display: flex; align-items: center; gap: var(--sp-12); }                                          /* src: 567:38351 gap12 */
+.pcard--incoming .pcard__note { gap: var(--sp-8); padding: var(--sp-12) var(--sp-16); }                            /* src: I589:63797;594:67942 px16 py12 gap8 (Under Care note is p16 gap12) */
+/* ---------- Case type tags (42:1130) · approved 2026-09-21 ---------- */
+.case-tag { display: inline-flex; align-items: center; justify-content: center; padding: var(--sp-4) var(--sp-8); border-radius: 4px; white-space: nowrap; flex: 0 0 auto; } /* src: 42:1130 tag geometry px8 py4 r4, Antz_Body_Medium */
+.case-tag--checkup   { background: var(--secondary-container-a30); color: var(--add-primary); }                     /* src: 42:1130 SecondaryContainer 30% / addPrimary */
+.case-tag--emergency { background: var(--tertiary-container-a30); color: var(--tertiary); }                         /* src: I589:63857;567:38290 TertiaryContainer 30% / Tertiary */
+.case-tag--planned   { background: var(--error-container-40); color: var(--error); }                                /* src: I589:63797;594:67957 ErrorContainer 40% / Error */
+.case-tag--opd       { background: var(--antz-notes-40); color: var(--moderate-secondary); }                        /* src: I589:63887;567:38290 notes 40% / moderateSecondary */
+.case-tag--followup  { background: var(--on-background); color: var(--on-surface); }                                /* src: I593:24799;567:38290 OnBackground / OnSurface */
+/* ---------- Discharged row extras: date lines + note columns (594:68023, 594:68026, 594:69323, 594:69324) · approved 2026-09-21 ---------- */
+.pcard__kv { display: flex; align-items: center; gap: var(--sp-4); white-space: nowrap; min-width: 0; }            /* src: I594:68982;594:68023 / 594:68026 gap4, Antz_Subtext_title label + Antz_Subtext_Regular value */
+.pcard__kv .v { overflow: hidden; text-overflow: ellipsis; }
+.pcard__kv--discharged .k { color: var(--on-surface); }                                                            /* src: 594:68024 — Figma value is hex 00572A, not an app style; OnSurface used (Needs Review › Colours) */
+.pcard__kv--followup .k { color: var(--add-primary); }                                                              /* src: 594:68027 addPrimary */
+.pcard__note-row .vet--w { flex: 0 0 373px; }                                                                       /* src: I594:68982;594:69323 Attending Vet w373 */
+.pcard__note-row .adm { flex: 1 1 auto; min-width: 0; }                                                             /* src: I594:68982;594:69324 Admitted for, fills */
+.pcard__note-row .adm .days { color: var(--neutral-primary); }                                                      /* src: 594:69325 "5 Days" black */

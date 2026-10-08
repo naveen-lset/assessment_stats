@@ -1,0 +1,91 @@
+/* Animal Assessments module — components that exist only inside Assessments (Species › Assessments, Animal page › Assessment tab).
+   Finalized 2026-10-05 on Naveen's picks (Assessments_Ipad_design/1-iterations/v4/library-style.html, "Your pick" column).
+   Each part is the prototype's own piece redrawn from the nearest library component; that component is named in every src.
+   Global parts are NOT redrawn here — compose them: .btn--admit / --revert / --reject (footer buttons), .app-filter-chip (chips),
+   .app-tabs--status / .app-tab-status (KPI strip), .app-tag (hero tags), .app-photo-badge, .app-icon.
+   Tokens only, no hex, no font values (compose with app/type.css). Previews link this file after components.css.
+   Still open (Needs review, not here): swipe Edit / Delete (3 options), number pad, toast. Kept prototype-only: slider, animal table. */
+
+/* ---------- Animal photo hero — top of the Animal page · src: prototype .ah redrawn; info card r12 = .app-animal-card (1266:3932), tags = .app-tag--id / gender (1172:7106) ---------- */
+.as-hero { position: relative; display: flex; flex-direction: column; gap: var(--sp-16); padding: var(--sp-8) var(--sp-24) var(--sp-16); overflow: hidden; color: var(--on-primary); background: var(--on-secondary-container); }
+.as-hero__bg { position: absolute; inset: 0; background-size: cover; background-position: center 30%; }
+.as-hero__bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, var(--neutral-primary-a50) 0%, transparent 35%, transparent 65%, var(--neutral-primary-a50) 100%); }
+.as-hero > *:not(.as-hero__bg) { position: relative; z-index: 1; }
+.as-hero__bar { display: flex; align-items: center; gap: var(--sp-4); margin: 0 calc(var(--sp-12) * -1); }   /* back · favourite · QR · more */
+.as-hero__bar .sp, .as-hero__foot .sp { flex: 1; }
+.as-hero__ic { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border: 0; border-radius: 24px; background: none; cursor: pointer; }
+.as-hero__ic:active { background: var(--on-primary-a20); }
+.as-hero__card { display: flex; flex-direction: column; gap: 2px; padding: var(--sp-20) var(--sp-24); border-radius: 12px; background: var(--neutral-primary-a50); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }   /* r12 = .app-animal-card */
+.as-hero__name { display: inline-flex; align-items: center; gap: var(--sp-8); }   /* Antz_Major_Title + gender .app-tag */
+.as-hero__card .t-body-reg-italic { color: var(--on-primary-a80); }   /* scientific name */
+.as-hero__rows { display: grid; grid-template-columns: repeat(2, max-content); column-gap: var(--sp-48); row-gap: var(--sp-4); margin-top: var(--sp-12); color: var(--on-primary-a80); }
+.as-hero__rows b { color: var(--on-primary); }
+.as-hero__foot { display: flex; align-items: center; gap: var(--sp-8); min-height: 32px; }
+.as-hero__foot .app-tag { height: 24px; }   /* Individual · Chipped = .app-tag--id */
+.as-hero__dots { display: flex; gap: 6px; }
+.as-hero__dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--on-primary-a70); }
+.as-hero__dots i.on { background: var(--primary-container); }
+
+/* ---------- Add button (floating) — "+ Add Reading", "New Assessment Type" · src: web .btn-add (addPrimary, r8, 12/16) floated; one colour for every add ---------- */
+.as-fab { display: inline-flex; align-items: center; gap: var(--sp-8); height: 48px; padding: var(--sp-12) var(--sp-20) var(--sp-12) var(--sp-16); border: 0; border-radius: 8px; background: var(--add-primary); color: var(--on-primary); box-shadow: 0 4px 12px var(--neutral-primary-a30); cursor: pointer; white-space: nowrap; }   /* label Antz_Minor_Medium, plus icon 20 */
+.as-fab--float { position: absolute; right: var(--sp-24); bottom: var(--sp-24); z-index: 8; }
+
+/* ---------- Sheet footer — Add Entry, side sheet, type form · src: global tablet .btn (567:38352 / 38354 / 594:65801), stretched; nothing redrawn ---------- */
+.as-actions { display: flex; align-items: center; gap: var(--sp-12); padding: var(--sp-16) var(--sp-20) var(--sp-20); background: var(--on-primary); border-top: 1px solid var(--surface-variant-60); }
+.as-actions .btn { flex: 1; width: auto; gap: var(--sp-4); }            /* main action = .btn--admit · second = .btn--revert · delete = .btn--reject; label Antz_Body_Medium */
+.as-actions .btn--revert.as-actions__fit { flex: 0 0 auto; padding: var(--sp-8) var(--sp-12) var(--sp-8) var(--sp-8); }   /* "Same as last" keeps its width, reset icon 16 */
+
+/* ---------- Status tag — Up to date / Due / Overdue / Inactive / type · src: .case-tag geometry (42:1130, r4, 4/8) + web lab legend tones ---------- */
+.as-status { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-4); padding: var(--sp-4) var(--sp-8); border-radius: 4px; white-space: nowrap; }   /* label Antz_Subtext_title */
+.as-status--ok   { background: var(--primary-18); color: var(--primary-dark); }               /* web .chip--soft-green (Completed) */
+.as-status--due  { background: var(--moderate-secondary-10); color: var(--tertiary); }       /* .app-listing-card__status (Due strip + state) */
+.as-status--over { background: var(--error-container-40); color: var(--error); }             /* .case-tag--planned */
+.as-status--off  { background: var(--outline-18); color: var(--neutral-secondary); }          /* web .chip--soft-grey (Pending) */
+.as-status--type { background: var(--displaybg-secondary); color: var(--on-primary-container); } /* .app-tag--id */
+
+/* ---------- Trend — change since the last reading · src: .app-listing-card__details .alert (Tertiary); arrow = dropdown icon 16 (rotated up) ---------- */
+.as-trend { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }   /* Antz_Subtext_title */
+.as-trend--up { color: var(--on-surface); }
+.as-trend--down { color: var(--tertiary); }
+.as-trend--flat { color: var(--neutral-secondary); }
+.as-trend--up .app-icon { transform: rotate(180deg); }
+
+/* ---------- Chips — list items and scale steps on an assessment type · src: global .app-filter-chip (1147:9274); this only lets the row wrap and sets the fill ---------- */
+.as-chips { flex-wrap: wrap; overflow: visible; }                                   /* on .app-filter-chips */
+.as-chips .app-filter-chip { background: var(--on-primary); }                       /* Antz_Subtext_Regular, score Antz_Subtext_title */
+
+/* ---------- KPI strip — Species › Assessments filters · src: global .app-tabs--status / .app-tab-status (1218:5268) on a white strip; count Antz_Minor_Title, label Antz_Body_Regular ---------- */
+.as-kpis { padding-right: var(--sp-16); border-radius: 12px; background: var(--on-primary); overflow-x: auto; scrollbar-width: none; }
+.as-kpis .app-tab-status { flex: 0 0 auto; border: 0; background: none; font-family: inherit; padding: 0; cursor: pointer; }   /* each tab is a <button>; the rule ("> 2% in 30 days") rides in its title */
+.as-kpis .app-tab-status > span:not(.indicator) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Stats — Latest / Highest / Lowest under the graph · src: .pcard__note (567:38371: displaybgPrimary 60 %, r8, p16, Subtext_title labels) ---------- */
+.as-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-16); padding: var(--sp-16); border-radius: 8px; background: var(--displaybg-primary-a60); }
+.as-stat { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }   /* label Antz_Subtext_title · value Antz_Medium_Medium · date Antz_Small */
+.as-stat .v { color: var(--neutral-primary); }
+.as-stat .v.lo { color: var(--error); }
+
+/* ---------- History records — readings list in the side sheet · src: web .row + .divider (surface-variant 60 %), note = web .callout-footer (notes colour) ---------- */
+.as-recs { display: flex; flex-direction: column; }
+.as-rec { display: flex; align-items: flex-start; gap: var(--sp-12); padding: var(--sp-12) 0; border-bottom: 1px solid var(--surface-variant-60); }
+.as-rec:last-child { border-bottom: 0; }
+.as-rec__date { flex: 0 0 76px; display: flex; flex-direction: column; gap: 2px; }   /* date Antz_Body_Title OnPrimaryContainer · time Antz_Subtext_Regular */
+.as-rec__date .d { color: var(--on-primary-container); }
+.as-rec__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-8); }
+.as-rec__val { display: flex; align-items: baseline; gap: var(--sp-4); color: var(--neutral-primary); }   /* value Antz_Minor_Title · unit Antz_Body_Regular */
+.as-rec__val .u { color: var(--on-primary-container); }
+.as-rec__note { display: flex; gap: var(--sp-8); padding: 10px var(--sp-16); border-radius: 8px; background: var(--antz-notes); color: var(--on-surface-variant); }   /* Antz_Subtext_Regular, notes icon 16 moderateSecondary */
+.as-rec__by { flex: 0 0 auto; text-align: right; color: var(--neutral-secondary); }
+
+/* ---------- Stepper — "Step" in the type form · src: .app-iconbox 44 r8 (1147:9300) with subtract / add icons, value box = .tab-search height + line ---------- */
+.as-stepper { display: flex; align-items: center; gap: var(--sp-8); flex: 0 0 auto; }
+.as-stepper .app-iconbox { border: 0; cursor: pointer; background: var(--displaybg-secondary); }   /* icons 20 OnPrimaryContainer */
+.as-stepper input { width: 72px; height: 44px; text-align: center; border: 1px solid var(--outline-variant); border-radius: 8px; background: var(--on-primary); color: var(--neutral-primary); outline: 0; font-family: inherit; }   /* Antz_Minor_Medium */
+
+/* ---------- Menu — hold a row, ⋮ menus, pickers · src: .app-listing-card radius 10, rows 48 like .app-radio, web .divider ---------- */
+.as-menu { min-width: 240px; display: flex; flex-direction: column; border-radius: 10px; background: var(--on-primary); box-shadow: 0 4px 12px var(--neutral-primary-a10), 0 0 0 1px var(--surface-variant-60); overflow: hidden; }
+.as-menu__title { padding: var(--sp-12) var(--sp-16) var(--sp-8); color: var(--neutral-secondary); }   /* Antz_Subtext_title */
+.as-menu__item { display: flex; align-items: center; gap: var(--sp-12); min-height: 48px; padding: 0 var(--sp-16); border: 0; border-top: 1px solid var(--surface-variant-60); background: none; color: var(--on-surface-variant); cursor: pointer; text-align: left; font-family: inherit; }   /* Antz_Body_Medium, icon 20; add = add-with-circle addPrimary */
+.as-menu > .as-menu__item:first-child { border-top: 0; }
+.as-menu__item:active { background: var(--displaybg-primary); }
+.as-menu__item--danger { color: var(--error); }

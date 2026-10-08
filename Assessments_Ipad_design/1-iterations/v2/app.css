@@ -1,0 +1,280 @@
+/* =====================================================================================================
+   Assessments · iPad v2 — page-level styles.
+   Layout language copied from the approved hospital tablet passes (app/review/split-view-cards-detail.png, add-patient-form.png,
+   reject-admission-sheet.png, view-settings-menu.png, nav-bar-tablet.png, fab-add-patient.png): status bar → .hdr → tools → pill tabs,
+   Background canvas, white list card + white detail card, full-width bottom sheets, popover menus, floating add button, bottom nav.
+   Library first (.hdr, .tab-search, .tab-date, .tab-iconbox, .tab-primary, .tab-seg, .tab-dd, .app-field, .app-radio, .app-switch,
+   .app-animal-card, .app-profile, .app-photo-badge, .btn …). This file only adds what the library does not have yet.
+   Tokens only: no hex, no font-size / font-weight (text size comes from the .t-* class on each element).
+   ===================================================================================================== */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--neutral-primary-a70); color: var(--on-surface-variant); display: flex; justify-content: center; align-items: flex-start; }
+button { font-family: inherit; }
+input, select, textarea { font-family: inherit; color: inherit; }
+[hidden] { display: none !important; }
+
+/* ---------- Device: iPad 9th gen portrait 810 × 1080 (the library's tablet size). On a real iPad it fills the screen. ---------- */
+.app { position: relative; width: 810px; height: 1080px; display: flex; flex-direction: column; overflow: hidden; background: var(--background); }
+@media (max-width: 830px) { .app { width: 100vw; height: 100dvh; } body { background: var(--background); } }
+@media (min-width: 831px) { body { padding: var(--sp-24) 0; } .app { border-radius: 18px; box-shadow: 0 12px 40px var(--neutral-primary-a30); } }
+.statusbar { display: flex; align-items: center; justify-content: space-between; height: 32px; flex: 0 0 auto; padding: 0 var(--sp-20); background: var(--on-primary); color: var(--neutral-primary); }
+.statusbar .l { display: flex; gap: var(--sp-8); }
+.statusbar .r { display: flex; align-items: center; gap: var(--sp-8); }
+.battery { position: relative; width: 24px; height: 12px; border-radius: 3px; background: var(--neutral-primary); }
+.battery::after { content: ''; position: absolute; right: -3px; top: 4px; width: 2px; height: 4px; border-radius: 0 1px 1px 0; background: var(--neutral-primary-a50); }
+.view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+/* ---------- Header additions (library .hdr) ---------- */
+.hdr { border-bottom: 1px solid var(--surface-variant); }
+.hdr--plain .hdr__row { padding-top: var(--sp-16); padding-bottom: var(--sp-16); }
+.hdr__back { cursor: pointer; }
+.hdr__end { display: flex; align-items: center; gap: var(--sp-12); flex: 0 0 auto; }
+.hdr__tools .tab-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; }
+.tab-iconbox { cursor: pointer; border: 0; }
+.tab-iconbox.is-on { background: var(--on-primary-container); }
+.chev-r { transform: rotate(-90deg); }
+.chev-l { transform: rotate(90deg); }
+.tab-primary-tabs { scroll-behavior: smooth; }
+
+/* ---------- Canvas + cards ---------- */
+.canvas { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-16); padding: var(--sp-16) var(--sp-20) 0; }
+.canvas__bar { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-12); flex: 0 0 auto; }
+.split { flex: 1; min-height: 0; display: flex; gap: var(--sp-16); }
+.card { background: var(--on-primary); border-radius: 8px; }
+.list-card { width: 264px; flex: 0 0 264px; display: flex; flex-direction: column; min-height: 0; margin-bottom: var(--sp-20); }
+.list-card__hd { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); padding: var(--sp-16) var(--sp-12) var(--sp-12) var(--sp-16); }
+.list-card__hd .tools { display: flex; gap: var(--sp-8); }
+.list-card__hd .tab-iconbox { width: 32px; height: 32px; padding: var(--sp-4); background: var(--background); }
+.list-card__search { padding: 0 var(--sp-12) var(--sp-12); }
+.list-card__search .tab-search { padding: var(--sp-8) var(--sp-12); }
+.list-card__scroll { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: var(--sp-8); }
+.detail-card { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; margin-bottom: var(--sp-20); overflow: hidden; }
+.detail-card__hd { display: flex; align-items: center; gap: var(--sp-12); padding: var(--sp-16); border-bottom: 1px solid var(--surface-variant); flex: 0 0 auto; }
+.detail-card__hd .ttl { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; color: var(--on-surface-variant); }
+.detail-card__hd .ttl > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.detail-card__bd { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+.block { display: flex; flex-direction: column; gap: var(--sp-12); padding: var(--sp-16); border-bottom: 1px solid var(--surface-variant); }
+.block:last-child { border-bottom: 0; }
+.block__hd { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); color: var(--on-surface-variant); }
+.link { display: inline-flex; align-items: center; gap: 2px; color: var(--on-surface); cursor: pointer; background: none; border: 0; padding: 0; }
+.muted { color: var(--neutral-secondary); }
+.navy { color: var(--on-primary-container); }
+.ink { color: var(--neutral-primary); }
+.empty { display: flex; flex-direction: column; align-items: center; gap: var(--sp-8); padding: var(--sp-48) var(--sp-24); text-align: center; color: var(--neutral-secondary); }
+
+/* ---------- List rows (animal rows reuse .app-animal-card--compact; type rows are text rows) ---------- */
+.row { position: relative; display: block; width: 100%; padding: var(--sp-12) var(--sp-16); border: 0; border-left: 3px solid transparent; background: transparent; text-align: left; cursor: pointer; color: inherit; }
+.row + .row::before { content: ''; position: absolute; left: var(--sp-16); right: var(--sp-16); top: 0; border-top: 1px solid var(--surface-variant); }
+.row:hover { background: var(--background); }
+.row.on { background: var(--primary-main-a10); border-left-color: var(--primary-main); }
+.row.on::before, .row.on + .row::before { display: none; }
+.row .app-animal-card { padding: 0; background: transparent; box-shadow: none; border-radius: 0; gap: var(--sp-12); }
+.row .app-profile { width: 56px; height: 56px; }
+.row .app-animal-card__details { gap: 2px; }
+.row-type { display: flex; flex-direction: column; gap: var(--sp-4); }
+.row-type .top { display: flex; align-items: center; gap: var(--sp-8); }
+.row-type .top .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--on-primary-container); }
+.group { padding: var(--sp-12) var(--sp-16) var(--sp-4); color: var(--neutral-secondary); }
+
+/* ---------- Status / type tags ---------- */
+.stag { display: inline-flex; align-items: center; gap: var(--sp-4); padding: var(--sp-4) var(--sp-8); border-radius: 4px; white-space: nowrap; }
+.stag--active { background: var(--secondary-container-a40); color: var(--on-secondary-container); }
+.stag--inactive { background: var(--surface-variant); color: var(--neutral-secondary); }
+.stag--type { background: var(--displaybg-primary); color: var(--on-primary-container); }
+.stag--due { background: var(--tertiary-container-a30); color: var(--tertiary); }
+.stag--done { background: var(--primary-main-a10); color: var(--on-surface); }
+
+/* ---------- Animal summary (as on the hospital Admit Patient pane) ---------- */
+.animal-sum { display: flex; gap: var(--sp-12); padding: var(--sp-12); border-radius: 8px; background: var(--background); }
+.animal-sum .app-profile { width: 88px; height: 88px; }
+.animal-sum .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.animal-sum .info > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.animal-sum .progress { display: flex; flex-direction: column; align-items: flex-end; gap: var(--sp-4); }
+
+/* ---------- Assessment tiles (Components 1485:17994 "Numerical, Slider one value" …) ---------- */
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-12); }
+.tile { position: relative; display: flex; flex-direction: column; gap: var(--sp-8); min-height: 124px; padding: var(--sp-12); border-radius: 8px; border: 1px solid var(--surface-variant); background: var(--on-primary); text-align: left; cursor: pointer; color: inherit; }
+.tile:hover { border-color: var(--outline-variant); box-shadow: 0 4px 14px var(--neutral-primary-a8); }
+.tile__hd { display: flex; align-items: flex-start; gap: var(--sp-8); padding-right: 32px; }
+.tile__hd .ttl { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tile__hd .ttl .name { display: flex; align-items: center; gap: 2px; color: var(--on-primary-container); }
+.tile__add { position: absolute; right: var(--sp-8); top: var(--sp-8); display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 0; border-radius: 16px; background: var(--primary-main-a10); cursor: pointer; }
+.tile__val { display: flex; align-items: flex-end; gap: var(--sp-8); margin-top: auto; }
+.tile__val .now { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tile__val .now .v { color: var(--neutral-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile__val .spark { flex: 1; min-width: 0; height: 32px; }
+.tile__text { color: var(--neutral-primary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tile__foot { display: flex; justify-content: space-between; gap: var(--sp-8); color: var(--neutral-secondary); }
+.tile__foot > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile--empty .tile__val .now .v { color: var(--neutral-secondary); }
+
+/* ---------- Graph card (Components 1485:17171 "Graphs") ---------- */
+.seg { display: flex; align-items: center; height: 40px; padding: 2px; border-radius: 8px; background: var(--displaybg-primary); }
+.seg button { flex: 1; height: 100%; border: 0; border-radius: 6px; background: transparent; color: var(--neutral-50); cursor: pointer; }
+.seg button.on { background: var(--on-primary); color: var(--neutral-primary); box-shadow: 2px 2px 6px var(--black-05); }
+.seg--sm { height: 32px; }
+.seg--sm button { padding: 0 var(--sp-8); }
+.graph-hd { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-12); }
+.graph-hd .avg { display: flex; flex-direction: column; gap: 2px; }
+.graph svg { display: block; width: 100%; height: auto; overflow: visible; }
+.graph .axis { fill: var(--neutral-secondary); }
+.graph .grid { stroke: var(--surface-variant); stroke-width: 1; }
+.graph .avgline { stroke: var(--outline); stroke-width: 1; stroke-dasharray: 4 4; }
+.graph .hit { fill: transparent; cursor: pointer; }
+.graph .tip rect { fill: var(--on-primary-container); }
+.graph .tip text { fill: var(--on-primary); }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-8); }
+.stat { display: flex; flex-direction: column; align-items: center; gap: var(--sp-8); padding: var(--sp-8) 6px; border-radius: 8px; background: var(--displaybg-primary); text-align: center; }
+.stat .v { color: var(--neutral-primary); }
+.stat .v.lo { color: var(--error); }
+.freq { display: flex; flex-direction: column; gap: var(--sp-12); }
+.freq__row { display: flex; flex-direction: column; gap: 6px; }
+.freq__row .top { display: flex; justify-content: space-between; gap: var(--sp-8); }
+.bar { height: 6px; border-radius: 3px; background: var(--surface-variant); overflow: hidden; }
+.bar > i { display: block; height: 100%; border-radius: 3px; background: var(--on-primary-container); }
+
+/* ---------- References ---------- */
+.refs { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-8); }
+.refs button { position: relative; padding: 0; border: 0; border-radius: 6px; overflow: hidden; aspect-ratio: 1; cursor: pointer; background: var(--background); }
+.refs img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.refs .more { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--neutral-primary-a50); color: var(--on-primary); }
+.refs .doc { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: var(--tertiary-a10); }
+
+/* ---------- Records (User 1485:10955 "All Records") ---------- */
+.records { display: flex; flex-direction: column; gap: var(--sp-12); }
+.rec { display: flex; align-items: flex-start; gap: var(--sp-12); }
+.rec__date { flex: 0 0 84px; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding-top: var(--sp-12); white-space: nowrap; }
+.rec__pill { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-8); padding: var(--sp-12); border-radius: 4px; background: var(--background); border: 0; text-align: left; color: inherit; }
+.rec:nth-child(even) .rec__pill { background: var(--displaybg-primary); }
+.rec__pill[data-note] { cursor: pointer; }
+.rec__val { display: flex; align-items: center; gap: var(--sp-8); }
+.rec__val .v { flex: 1; min-width: 0; color: var(--neutral-primary); }
+.rec__val .u { color: var(--on-primary-container); }
+.rec__by { display: flex; justify-content: space-between; gap: var(--sp-8); color: var(--neutral-secondary); }
+.rec__note { display: none; padding-top: var(--sp-8); border-top: 1px solid var(--outline-variant); color: var(--on-surface-variant); }
+.rec.open .rec__note { display: block; }
+.rec.is-new .rec__pill { box-shadow: inset 0 0 0 1.5px var(--primary-main); }
+
+/* ---------- Form page (as hospital Add Patient: section cards + sticky action bar) ---------- */
+.form-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--sp-16); padding: var(--sp-16) var(--sp-20) var(--sp-24); }
+.fcard { display: flex; flex-direction: column; gap: var(--sp-16); padding: var(--sp-20); border-radius: 8px; background: var(--on-primary); }
+.fcard__hd { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); color: var(--on-surface-variant); }
+.fcard__hd .sub { display: block; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-16); }
+.app-field { cursor: text; }
+.app-field input, .app-field textarea, .app-field select { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; padding: 0; resize: none; }
+.app-field select { -webkit-appearance: none; appearance: none; cursor: pointer; color: var(--on-primary-container); }
+.app-field:focus-within { background: var(--on-primary); border: 1.5px solid var(--primary-main); }
+.app-field:focus-within > .app-field__label { color: var(--primary-main); }
+.app-field--white { background: var(--on-primary); border-color: var(--outline-variant); }
+.app-field--area { height: auto; min-height: 88px; align-items: flex-start; }
+.app-field--error, .app-field--error:focus-within { border: 1.5px solid var(--error); }
+.app-field--error > .app-field__label { color: var(--error); }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field__err { color: var(--error); }
+.app-field .unit { color: var(--neutral-secondary); }
+.choice-row { display: flex; flex-wrap: wrap; gap: var(--sp-12); }
+.choice { display: inline-flex; align-items: center; gap: var(--sp-8); height: 40px; padding: 0 var(--sp-16); border-radius: 4px; border: 1px solid var(--outline-variant); background: var(--on-primary); color: var(--on-surface-variant); cursor: pointer; }
+.choice.on { border-color: var(--primary-main); background: var(--primary-main-a10); color: var(--on-primary-container); }
+.app-radio { cursor: pointer; text-align: left; gap: var(--sp-12); }
+.app-radio .lbl { flex: 1; min-width: 0; }
+.opts { display: flex; flex-direction: column; gap: var(--sp-8); }
+.opts--2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-8); }
+.item-row { display: flex; align-items: center; gap: var(--sp-8); }
+.item-row .app-field { height: 48px; padding: var(--sp-12); }
+.item-row .num { flex: 0 0 96px; }
+.item-row .grip { color: var(--outline); }
+.sqbtn { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; flex: 0 0 auto; border: 0; border-radius: 4px; cursor: pointer; }
+.sqbtn--add { background: var(--primary-main); }
+.sqbtn--del { background: var(--error-container-a30); }
+.switch-row { display: flex; align-items: center; gap: var(--sp-16); }
+.switch-row > div { flex: 1; display: flex; flex-direction: column; gap: var(--sp-4); }
+.app-switch { cursor: pointer; border: 0; flex: 0 0 auto; transition: background .15s, padding .15s; }
+.app-switch.is-off { padding: 4px 20px 4px 4px; }
+.app-switch.is-on { background: var(--primary-main); }
+.stepper { display: flex; align-items: center; gap: var(--sp-8); padding: var(--sp-4); border-radius: 6px; background: var(--background); }
+.stepper button { width: 40px; height: 40px; border: 0; border-radius: 4px; background: var(--on-primary); color: var(--on-primary-container); cursor: pointer; }
+.stepper input { flex: 1; min-width: 0; text-align: center; border: 0; outline: 0; background: transparent; color: var(--on-primary-container); }
+.upload { display: flex; align-items: center; gap: var(--sp-16); padding: var(--sp-20); border-radius: 8px; border: 1px dashed var(--outline); background: var(--displaybg-primary-a60); cursor: pointer; }
+.upload .txt { display: flex; flex-direction: column; gap: 2px; color: var(--on-primary-container); }
+.files { display: flex; flex-wrap: wrap; gap: var(--sp-8); }
+.file { display: inline-flex; align-items: center; gap: var(--sp-8); padding: var(--sp-4) var(--sp-4) var(--sp-4) var(--sp-4); border-radius: 8px; background: var(--background); max-width: 240px; }
+.file img { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; }
+.file .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file button { border: 0; background: none; cursor: pointer; padding: var(--sp-4); display: inline-flex; }
+.preview-box { padding: var(--sp-16); border-radius: 8px; background: var(--background); display: flex; flex-direction: column; gap: var(--sp-12); }
+.actionbar { display: flex; gap: var(--sp-24); padding: var(--sp-16) var(--sp-20) var(--sp-24); background: var(--on-primary); box-shadow: 0 -1px 0 var(--neutral-primary-a10); flex: 0 0 auto; }
+.bigbtn { flex: 1; height: 56px; display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-8); border-radius: 8px; border: 0; cursor: pointer; }
+.bigbtn--ghost { background: var(--on-primary); border: 1px solid var(--outline); color: var(--on-surface-variant); }
+.bigbtn--primary { background: var(--primary-main); color: var(--on-primary); }
+.bigbtn--navy { background: var(--on-primary-container); color: var(--on-primary); }
+.bigbtn--danger { background: var(--error); color: var(--on-primary); }
+.bigbtn[disabled] { opacity: .45; cursor: not-allowed; }
+
+/* ---------- Slider (Components 1485:18031 "Slider Range") ---------- */
+.slider { position: relative; height: 32px; margin: 0 var(--sp-12); touch-action: none; cursor: pointer; }
+.slider__track { position: absolute; left: 0; right: 0; top: 14px; height: 4px; border-radius: 2px; background: var(--surface-variant); }
+.slider__fill { position: absolute; top: 14px; height: 4px; border-radius: 2px; background: var(--primary-main); }
+.slider__knob { position: absolute; top: 6px; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%; background: var(--primary-main); box-shadow: 0 0 0 4px var(--on-primary), 0 1px 4px 4px var(--neutral-primary-a10); }
+.slider__ends { display: flex; justify-content: space-between; color: var(--neutral-secondary); }
+.slider__ends span { display: flex; flex-direction: column; }
+.slider__ends span:last-child { text-align: right; }
+.bigval { display: flex; align-items: baseline; gap: var(--sp-4); color: var(--on-primary-container); }
+
+/* ---------- Notes field (Figma: notes yellow, OnErrorContainer text) ---------- */
+.notes { display: flex; padding: var(--sp-16) var(--sp-12); border-radius: 4px; background: var(--notes); color: var(--rustic-red); cursor: text; }
+.notes textarea { flex: 1; border: 0; outline: 0; background: transparent; resize: none; min-height: 24px; padding: 0; }
+.notes textarea::placeholder { color: var(--rustic-red); }
+
+/* ---------- Bottom sheet (as hospital Reject Admission: full width, r16 top, big buttons) ---------- */
+.scrim { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; justify-content: flex-end; background: var(--neutral-primary-a50); opacity: 0; pointer-events: none; transition: opacity .2s; }
+.scrim.on { opacity: 1; pointer-events: auto; }
+.sheet { max-height: calc(100% - 120px); display: flex; flex-direction: column; border-radius: 16px 16px 0 0; background: var(--on-primary); transform: translateY(24px); transition: transform .2s; }
+.scrim.on .sheet { transform: none; }
+.sheet__hd { display: flex; align-items: flex-start; gap: var(--sp-12); padding: var(--sp-20); box-shadow: 0 2px 4px var(--black-05); }
+.sheet__hd .ttl { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-4); }
+.sheet__hd .close { border: 0; background: none; cursor: pointer; padding: 0; display: inline-flex; }
+.sheet__bd { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--sp-20); padding: var(--sp-20); }
+.sheet .actionbar { box-shadow: 0 -1px 0 var(--neutral-primary-a10); }
+
+/* ---------- Popover menu (as hospital View Settings) ---------- */
+.pop { position: absolute; z-index: 25; min-width: 240px; display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-8); border-radius: 12px; background: var(--on-primary); box-shadow: 0 8px 24px var(--neutral-primary-a30); }
+.pop__item { display: flex; align-items: center; gap: var(--sp-12); padding: var(--sp-12); border: 0; border-radius: 8px; background: none; color: var(--on-surface-variant); cursor: pointer; text-align: left; }
+.pop__item:hover { background: var(--background); }
+.pop__item--danger { color: var(--error); }
+.pop__title { padding: var(--sp-8) var(--sp-12) var(--sp-4); color: var(--on-surface-variant); }
+.pop-scrim { position: absolute; inset: 0; z-index: 24; }
+
+/* ---------- Floating add (as hospital "+ Add Patient") ---------- */
+.fab { position: absolute; right: var(--sp-24); bottom: 112px; z-index: 5; display: inline-flex; align-items: center; gap: var(--sp-8); height: 48px; padding: 0 var(--sp-20) 0 var(--sp-16); border: 0; border-radius: 24px; background: var(--add-primary); color: var(--on-primary); box-shadow: 0 4px 14px var(--neutral-primary-a30); cursor: pointer; }
+
+/* ---------- Bottom navigation (as hospital tablet nav bar) ---------- */
+.tabnav { display: flex; justify-content: center; gap: var(--sp-64); height: 96px; flex: 0 0 auto; padding-top: var(--sp-12); background: var(--secondary-container-a30); border-top: 1px solid var(--secondary-container-a40); }
+.tabnav button { display: flex; flex-direction: column; align-items: center; gap: var(--sp-8); width: 180px; white-space: nowrap; border: 0; background: none; color: var(--on-primary-container); cursor: pointer; }
+.tabnav .ic { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 8px; }
+.tabnav button.on .ic { background: var(--on-primary); box-shadow: 0 1px 3px var(--neutral-primary-a10); }
+
+/* ---------- Reference viewer (User 1485:13364 row) ---------- */
+.viewer { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; background: var(--neutral-primary); color: var(--on-primary); }
+.viewer__hd { display: flex; align-items: center; gap: var(--sp-12); padding: var(--sp-16) var(--sp-20); }
+.viewer__hd .ttl { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.viewer__hd button { border: 0; background: none; cursor: pointer; display: inline-flex; padding: 0; }
+.viewer__img { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: var(--sp-16); }
+.viewer__img img { max-width: 100%; max-height: 100%; border-radius: 8px; }
+.viewer__img .doc { display: flex; flex-direction: column; align-items: center; gap: var(--sp-12); padding: var(--sp-48); border-radius: 12px; background: var(--on-primary); color: var(--on-surface-variant); }
+.viewer__thumbs { display: flex; justify-content: center; gap: var(--sp-8); padding: var(--sp-16) var(--sp-20) var(--sp-32); }
+.viewer__thumbs button { width: 64px; height: 64px; padding: 0; border: 2px solid transparent; border-radius: 8px; overflow: hidden; cursor: pointer; background: var(--on-primary); }
+.viewer__thumbs button.on { border-color: var(--primary-main); }
+.viewer__thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ---------- Toast ---------- */
+.toast { position: absolute; left: 50%; bottom: 120px; z-index: 40; transform: translate(-50%, 16px); display: flex; align-items: center; gap: var(--sp-12); padding: var(--sp-12) var(--sp-12) var(--sp-12) var(--sp-16); border-radius: 8px; background: var(--on-primary-container); color: var(--on-primary); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.toast button { border: 0; background: none; color: var(--primary-container); cursor: pointer; padding: var(--sp-4) var(--sp-8); }
+
+/* native date / time pickers: keep the iPad picker, hide the desktop indicator (the library icon is the affordance) */
+.app-field input[type=date], .app-field input[type=time] { cursor: pointer; }
+.app-field input[type=date]::-webkit-calendar-picker-indicator, .app-field input[type=time]::-webkit-calendar-picker-indicator { display: none; }
+.view:has(.fab) .detail-card__bd { padding-bottom: 72px; }   /* keep the last block clear of the floating add button */
+.refs--strip { grid-template-columns: repeat(8, 72px); }   /* in the Add Entry sheet references stay a thumbnail strip so the inputs stay on screen */
